@@ -106,14 +106,16 @@ namespace Npgsql
 		{
 			NpgsqlCommand command = new NpgsqlCommand("COMMIT", _conn);
 			command.ExecuteNonQuery();
-			
+			_conn.InTransaction = false;
 		}
 		
 		public void Rollback()
 		{
 			NpgsqlCommand command = new NpgsqlCommand("ROLLBACK", _conn);
 			command.ExecuteNonQuery();
-			
+			_conn.InTransaction = false;
 		}
+		
+		
 	}
 }
