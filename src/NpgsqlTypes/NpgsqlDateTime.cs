@@ -29,12 +29,14 @@ namespace NpgsqlTypes
 	public struct NpgsqlDateTime
 	{
 		private DateTime _value;
+		private Boolean _notNull;
 		
 		public static readonly NpgsqlDateTime Null;
 		
 		public NpgsqlDateTime(DateTime value)
 		{
 			_value = value;
+			_notNull = true;
 
 		}
 		
@@ -57,14 +59,14 @@ namespace NpgsqlTypes
 				millisecond = 0;
 			
 			this._value = new DateTime(year, month, day, hour, minute, second, millisecond);
-			
+			_notNull = true;
 		}
 		
 		public Boolean IsNull
 		{
 			get
 			{
-				return false;
+				return !_notNull;
 			}
 		}
 		
@@ -79,6 +81,21 @@ namespace NpgsqlTypes
 			}
 		}
 		
+		public override String ToString()
+		{
+			if (this.IsNull)
+				return "Null";
+			else
+				return _value.ToString();
+		}
+		
+		public String ToISOString()
+		{
+			if (this.IsNull)
+				return "Null";
+			else
+				return _value.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff");
+		}
 				
 		public static explicit operator DateTime (NpgsqlDateTime x)
 		{
