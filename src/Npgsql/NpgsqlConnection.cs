@@ -373,6 +373,9 @@ namespace Npgsql
     public new void Dispose()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", LogLevel.Debug);
+		if (this.connection_state == ConnectionState.Open){
+			this.Close();
+		}
 	    		    	
     }
 	    
