@@ -108,20 +108,50 @@ namespace Npgsql
 			base.RemoveAt(IndexOf(parameterName));
 		}
 		
-		public Object this[String parameterName]
+		public NpgsqlParameter this[String parameterName]
 		{
 			get
 			{
 				// return base[IndexOf(parameterName)];
 				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".this[]", LogLevel.Normal);
-				return this[IndexOf(parameterName)];
+				return (NpgsqlParameter) base[IndexOf(parameterName)];
 			}
 			set
 			{
 				// base[IndexOf(parameterName)] = value;
-				this[IndexOf(parameterName)] = value;
+				base[IndexOf(parameterName)] = value;
 				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Value", LogLevel.Normal);
 			}
 		}
+		
+		public new NpgsqlParameter this[Int32 i]
+		{
+			get
+			{
+				// return base[IndexOf(parameterName)];
+				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".this[]", LogLevel.Normal);
+				return (NpgsqlParameter) base[i];
+			}
+			set
+			{
+				// base[IndexOf(parameterName)] = value;
+				base[i] = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Value", LogLevel.Normal);
+			}
+		}
+		
+		Object IDataParameterCollection.this[String parameterName]
+		{
+		  get
+		  {
+		    return this[parameterName];
+		  }
+		  
+		  set
+		  {
+		    this[parameterName] = (NpgsqlParameter)value;
+		  }
+		}
+		
 	}
 }
