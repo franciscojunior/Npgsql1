@@ -46,6 +46,15 @@ namespace Npgsql
 	    private ConnectionState connection_state;
 	    private String      	connection_string;
 		private ListDictionary	connection_string_values;
+
+		// In the connection string
+		private readonly char CONN_DELIM = ';';  // Delimeter
+		private readonly char CONN_ASSIGN = '=';
+		private readonly String CONN_SERVER = "Server";
+		private readonly String CONN_USERID = "User ID";
+		private readonly String CONN_PASSWORD = "Password";
+		private readonly String CONN_DATABASE = "Database";
+		private readonly String CONN_PORT = "Port";
   		
   		// Values for possible CancelRequest messages.
   		private Int32			cancel_proc_id;
@@ -255,19 +264,19 @@ namespace Npgsql
 	    private void ParseConnectionString()
 	    {
 	    	
-	    	// Get the key-value pairs delimited by semicolon (;)
-	    	String[] pairs = connection_string.Split(new char[] {';'});
+	    	// Get the key-value pairs delimited by CONN_DELIM
+	    	String[] pairs = connection_string.Split(new char[] {CONN_DELIM});
 	    	
 	    	String[] keyvalue;
 	    	// Now, for each pair, get its key-value.
 	    	foreach(String s in pairs)
 	    	{
-	    		// This happen when there are trailling/empty semicolons.
+	    		// This happen when there are trailling/empty CONN_DELIMs
 	    		// Just ignore them.
 	    		if (s == "")	
 	    			continue;
 	    		
-	    		keyvalue = s.Split(new char[] {'='});
+	    		keyvalue = s.Split(new char[] {CONN_ASSIGN});
 	    		
 	    		// Check if there is a key-value pair.
 	    		
@@ -278,18 +287,18 @@ namespace Npgsql
 	    	}
 	    	
 	    	// Now check if there is any missing argument.
-	    	if (connection_string_values["Server"] == null)
-	    		throw new ArgumentException("Connection string argument missing!", "Server");
-	    	if (connection_string_values["User ID"] == null)
-	    		throw new ArgumentException("Connection string argument missing!", "User ID");
-	    	if (connection_string_values["Password"] == null)
-	    		throw new ArgumentException("Connection string argument missing!", "Password");
-	    	if (connection_string_values["Database"] == null)
+	    	if (connection_string_values[CONN_SERVER] == null)
+	    		throw new ArgumentException("Connection string argument missing!", CONN_SERVER);
+	    	if (connection_string_values[CONN_USERID] == null)
+	    		throw new ArgumentException("Connection string argument missing!", CONN_USERID);
+	    	if (connection_string_values[CONN_PASSWORD] == null)
+	    		throw new ArgumentException("Connection string argument missing!", CONN_PASSWORD);
+	    	if (connection_string_values[CONN_DATABASE] == null)
 	    		// Database is optional. "[...] defaults to the user name if empty"
-	    		connection_string_values["Database"] = connection_string_values["User ID"];
-	    	if (connection_string_values["Port"] == null)
+	    		connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
+	    	if (connection_string_values[CONN_PORT] == null)
 	    		// Port is optional. Defaults to 5432.
-	    		connection_string_values["Port"] = 5432;
+	    		connection_string_values[CONN_PORT] = 5432;
 	    }
 	    
 	    private void WriteStartupPacket()
@@ -302,13 +311,13 @@ namespace Npgsql
 	    	output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)((PROTOCOL_VERSION_MAJOR<<16) | PROTOCOL_VERSION_MINOR))), 0, 4);
 	    	
 	    	// Database name.
-	    	String dbname = (String)connection_string_values["Database"];
+	    	String dbname = (String)connection_string_values[CONN_DATABASE];
 	    	// Pad with nulls to get the 64 LimString
 	    	dbname = dbname.PadRight(64, '\x00');
 	    	output_stream.Write(connection_encoding.GetBytes(dbname), 0, 64);
 	    	
 	    	// User name.
-	    	String username = (String)connection_string_values["User ID"];
+	    	String username = (String)connection_string_values[CONN_USERID];
 	    	// Pad with nulls to get the 32 LimString
 	    	username = username.PadRight(32, '\x00');
 	    	output_stream.Write(connection_encoding.GetBytes(username), 0, 32);
