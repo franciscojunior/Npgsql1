@@ -25,6 +25,7 @@
 
 using System;
 using System.Data;
+using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Text;
@@ -229,11 +230,20 @@ namespace Npgsql
 						
 						String ret_string = GetStringFromNetStream(network_stream);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
-						// The number of rows affected is in the third token for insert queries
-						// and in the second token for update and delete queries.
-						// In other words, it is the last token in the 0-based array.
-												
-						rows_affected = Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
+						
+						// Check if the command was insert, delete or update.
+						// Only theses commands return rows affected.
+						// [FIXME] Is there a better way to check this??
+						if ((String.Compare(ret_string_tokens[0], "INSERT", true) == 0) ||
+						    (String.Compare(ret_string_tokens[0], "UPDATE", true) == 0) ||
+						    (String.Compare(ret_string_tokens[0], "DELETE", true) == 0))
+						    
+							// The number of rows affected is in the third token for insert queries
+							// and in the second token for update and delete queries.
+							// In other words, it is the last token in the 0-based array.
+													
+							rows_affected = Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
+					
 					
 						// Now wait for ReadyForQuery message.
 						break;
@@ -318,7 +328,177 @@ namespace Npgsql
 			// Check the connection state.
 			CheckConnectionState();
 			
-			throw new NotImplementedException();	
+			
+			// [FIXME] This code was copied from ExecuteNonQuery.
+			// Maybe should it be put in a private util method?? 
+			
+			NetworkStream network_stream = connection.tcp_connection.GetStream();
+			BufferedStream output_stream = new BufferedStream(network_stream);
+			
+			// Send the query to server.
+			// Write the byte 'Q' to identify a query message.
+			output_stream.WriteByte((byte)'Q');
+			
+			// Write the query. In this case it is the CommandText text.
+			// It is a string terminated by a C NULL character.
+			output_stream.Write(connection.encoding.GetBytes(text + '\x00') , 0, text.Length + 1);
+			
+			// Send bytes.
+			output_stream.Flush();
+			
+			//throw new NotImplementedException();
+			
+			
+			// [FIXME] Is it really necessary? How big?
+			Byte[] input_buffer = new Byte[1500];
+			
+			// Now, enter in the loop to process the response.
+			
+			Boolean ready_for_query = false;
+			String error_message = null;			
+			
+			Int16 num_fields;
+			
+			Object result = null;
+			
+			Int32 message;
+			
+			while (!ready_for_query)
+			{
+				message = network_stream.ReadByte();
+				switch (message)
+				{
+					case 'C':
+						// This is the CompletedResponse message.
+						// Get the string returned.
+						
+						String ret_string = GetStringFromNetStream(network_stream);
+						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
+						
+						/*
+						// Check if the command was insert, delete or update.
+						// Only theses commands return rows affected.
+						// [FIXME] Is there a better way to check this??
+						if ((String.Compare(ret_string_tokens[0], "INSERT", true) == 0) ||
+						    (String.Compare(ret_string_tokens[0], "UPDATE", true) == 0) ||
+						    (String.Compare(ret_string_tokens[0], "DELETE", true) == 0))
+						    
+							// The number of rows affected is in the third token for insert queries
+							// and in the second token for update and delete queries.
+							// In other words, it is the last token in the 0-based array.
+													
+							rows_affected = Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
+					
+						*/
+						// Now wait for ReadyForQuery message.
+						break;
+					
+					case 'P':
+						// This is the cursor response message. 
+						// It is followed by a C NULL terminated string with the name of 
+						// the cursor in a FETCH case or 'blank' otherwise.
+						// In this case it should be always 'blank'.
+						// [FIXME] Get another name for this function.
+						String cursor_name = GetStringFromNetStream(network_stream);
+						
+						// Continue wainting for ReadyForQuery message.
+						break;
+
+					case 'T':
+						// This is the RowDescription message.
+						
+						// Get the number of fields in a row.
+						network_stream.Read(input_buffer, 0, 2);
+						num_fields = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(input_buffer, 0));
+						
+						// [FIXME] Just ignore for now the RowDescription message data.
+						// We only care about the first field of the first row.
+						String field_name;
+						Int32 field_type_oid;
+						Int16 field_type_size;
+						Int32 field_type_modifier;
+						// Get the data about each field.
+						for (Int16 i = 0; i < num_fields; i++)
+						{
+							field_name = GetStringFromNetStream(network_stream);
+							
+							network_stream.Read(input_buffer, 0, 4 + 2 + 4);
+						}
+						
+						field_type_oid = BitConverter.ToInt32(input_buffer, 0);
+						field_type_size = BitConverter.ToInt16(input_buffer, 4);
+						field_type_modifier = BitConverter.ToInt32(input_buffer, 6);
+					
+						
+						// Now wait for the AsciiRow messages.
+						break;
+						
+					case 'D':
+						// This is the AsciiRow message.
+						
+						// Read the bitmap of null fields of the row.
+						// [FIXME] It is hardcoded for just one field.
+						
+						network_stream.Read(input_buffer, 0, 1);
+												
+						// [FIXME] For now, ignore the field mask. Read the first data
+						// of the first row.
+						network_stream.Read(input_buffer, 0, 4);
+						Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
+						network_stream.Read(input_buffer, 0, field_value_size - 4);
+					
+						// [FIXME] Assume a string for now.
+						result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
+					
+						// Now wait for CompletedResponse message.
+						break;
+					
+					case 'I':
+						// This is the EmptyQueryResponse.
+						// [FIXME] Just ignore it this way?
+						// network_stream.Read(input_buffer, 0, 1);
+						GetStringFromNetStream(network_stream);
+						break;
+					
+					case 'E':
+						// This is the ErrorResponse.
+						// Get the string error returned and throw a NpgsqlException.
+						
+						// [FIXME] The function GetStringFromNetStream should be used in NpgsqlConnection class too.
+						// So, this function is a cadidate in potential to be a static method in a util class.
+						
+						error_message = GetStringFromNetStream(network_stream);
+					
+						// Even when there is an error, the backend send the ReadyForQuery message.
+						// So, continue waiting for this message.
+						break;
+					case 'Z':
+						// This is the ReadyForQuery message.
+						// It indicates the process termination.
+						ready_for_query = true;
+						break;
+					
+					default:
+						// This is a message that we should handle and we don't.
+						// Throw a NpgsqlException saying that.
+						// [FIXME] Better exception handling. Close the connection???
+						// This is really ugly!! Right now, the message that wasn`t handled
+						// isn't specified! 
+						
+						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery." + (Char)message);
+				
+					
+				}
+			}
+			
+			// [TODO] Finish method implementation.
+			//throw new NotImplementedException();
+			
+			if (error_message != null)
+				throw new NpgsqlException(error_message);
+			
+			return result;
+			
 		}
 		
 		
