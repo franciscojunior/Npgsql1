@@ -607,6 +607,75 @@ public class t
 }
 </pre>
 
+<h3>Working with binary data and bytea datatype</h3>
+
+<p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix database in its end.</p>
+<p> table schema: 
+    create table tableBytea (field_serial serial, field_bytea bytea)
+</p>
+
+
+<pre class="CodeBox">
+
+using System;
+using System.Data;
+using Npgsql;
+using System.IO;
+
+
+public class t
+{
+	public static void Main(String[] args)
+	{
+		//NpgsqlEventLog.Level = LogLevel.Debug;
+		//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+		NpgsqlConnection conn = new NpgsqlConnection("server=localhost;user id=npgsql_tests;password=npgsql_tests");
+		conn.Open();
+
+		FileStream fs = new FileStream(args[0], FileMode.Open, FileAccess.Read);
+
+		BinaryReader br = new BinaryReader(new BufferedStream(fs));
+
+		Byte[] bytes = br.ReadBytes((Int32)fs.Length);
+		
+		Console.WriteLine(fs.Length);
+
+		br.Close();
+		fs.Close();
+				
+		NpgsqlCommand command = new NpgsqlCommand("insert into tableBytea(field_bytea) values(:bytesData)", conn);
+		
+		NpgsqlParameter param = new NpgsqlParameter(":bytesData", DbType.Binary);
+
+		param.Value = bytes;
+		
+		command.Parameters.Add(param);
+		command.ExecuteNonQuery();
+		command = new NpgsqlCommand("select field_bytea from tableBytea where field_serial = (select max(select field_serial) from tableBytea);", conn);
+		
+
+		Byte[] result = (Byte[])command.ExecuteScalar();
+		fs = new FileStream(args[0] + "banco", FileMode.Create, FileAccess.Write);
+
+		
+		BinaryWriter bw = new BinaryWriter(new BufferedStream(fs));
+
+		bw.Write(result);
+
+		bw.Flush();
+
+		fs.Close();
+		bw.Close();		
+
+
+
+		conn.Close();
+
+	}
+}
+</pre>
+
+
 <h3> 2.1 Npgsql.dll file location </h3>
 
 <p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
