@@ -1,5 +1,34 @@
 
 
+2004-11-21
+
+    Npgsql 0.7beta3 development release
+    
+    Features added:
+        Large Object support: Npgsql now supports large object operations. Thanks Emiliano Necciari (e dot necciari at blogic dot it) for the patch!
+    
+    Bug fixes:
+    
+        Added workaround when using extended query mode to add parameter types explicitly when sending Parse messages. Backend was sending errors for some queries like (select * from t where $1 in (...) ). Backend was saying it could not recognize parameter type of $1. Thanks Martin ( martijn at boland dot org) for heads up.
+        
+        Fixed parameter replace when next byte after parameter name is '\\r'. Thanks Ivan Radovanovic (rivan at sezampro dot yu) for the fix.
+        
+        Fixed NpgsqlDataReader.GetBytes: Added a little fix for proper handling of getbytes with current Npgsql semantics in mind. For while, we just support offset value of 0 as we read all the bytes field value at a time. So there is no copy when offset is not 0.
+        
+        Fixed IDisposable pattern implementation of NpgsqlTransaction. Now it doesn't incorrectly raise InvalidOperation exceptions. Thanks Ivan Radovanovic ( rivan at sezampro dot yu ) for heads up.
+        
+        Fixed NpgsqlCommand.Connection set property. Now connection values can be set when a connection is in place, but just if the connection being set is the same as the connection which the transaction is running on. Thanks Ivan Radovanovic ( rivan at sezampro dot yu ) for heads up.
+        
+        gborg 1000: Fixed NullReferenceException when setting parameter value to DBNull after creating parameter without specifying its NpgsqlDbType.
+        
+        Fixed NpgsqlDataReader.GetBytes for .Net 1.0 compliance. CopyTo() doesn't have an overload which takes an Int64. Thanks Brar Piening (brar at piening dot info) for heads up
+        
+        Fixed assembly info version to 0.7.
+        
+        Fixed handling of invalid authentication methods. Thanks Magnus Hagander (mha at sollentuna dot net) for the heads up.
+        
+        
+
 2004-09-22
     
     Npgsql 0.7beta2 development release
