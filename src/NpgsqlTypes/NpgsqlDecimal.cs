@@ -28,6 +28,10 @@ namespace NpgsqlTypes
 
 	public struct NpgsqlDecimal : INullable
 	{
+		
+		// Good reference about Decimal encoding:
+		// http://www2.hursley.ibm.com/decimal/dcspec.html
+		
 		private Decimal _value;
 		
 		private Boolean _isNull;
@@ -37,7 +41,7 @@ namespace NpgsqlTypes
 		public NpgsqlDecimal(Decimal value)
 		{
 			_value = value;
-			_isNull = false;
+			_isNotNull = true;
 
 		}
 		
@@ -45,7 +49,7 @@ namespace NpgsqlTypes
 		{
 			get
 			{
-				return false;
+				return !_isNotNull;
 			}
 			
 		}
