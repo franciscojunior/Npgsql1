@@ -71,6 +71,9 @@ namespace Npgsql
       		
     // Values for possible CancelRequest messages.
     private NpgsqlBackEndKeyData backend_keydata;
+  	
+  	// Flag for transaction status.
+  	private Boolean							_inTransaction = false;
     
     // Mediator which will hold data generated from backend
     private NpgsqlMediator	_mediator;
@@ -130,7 +133,7 @@ namespace Npgsql
     {
       get
       {
-        return "";
+        return DatabaseName;
       }
     }
 	
@@ -160,12 +163,18 @@ namespace Npgsql
 		public NpgsqlTransaction BeginTransaction()
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LogLevel.Debug);
-			return new NpgsqlTransaction(this);
+			return this.BeginTransaction(IsolationLevel.ReadCommitted);
 		}
 		
 		public NpgsqlTransaction BeginTransaction(IsolationLevel level)
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LogLevel.Debug);
+			
+			if (_inTransaction)
+				throw new InvalidOperationException("Nested/Concurrent transactions aren't supported.");
+			
+			InTransaction = true;
+			
 			return new NpgsqlTransaction(this, level);
 		}
 	
@@ -260,7 +269,8 @@ namespace Npgsql
       finally
       {
         // Even if an exception occurs, let object in a consistent state.
-        connection.Close();
+        if (TcpClient != null)
+        	TcpClient.Close();
         connection_state = ConnectionState.Closed;
       }
     }
@@ -445,6 +455,19 @@ namespace Npgsql
 			get
 			{
 				return _mediator;
+			}
+		}
+		
+		internal Boolean InTransaction
+		{
+			get
+			{
+				return _inTransaction;
+			}
+			
+			set
+			{
+				_inTransaction = value;
 			}
 		}
 		
