@@ -234,7 +234,17 @@ namespace Npgsql
       	
       	// Check if there were any errors.
       	if (_mediator.Errors.Count > 0)
-      		throw new NpgsqlException(_mediator.Errors[0].ToString());
+      	{
+      		StringWriter sw = new StringWriter();
+      		sw.WriteLine("There have been errors on Open()");
+      		uint i = 1;
+      		foreach(string error in _mediator.Errors){
+      			sw.WriteLine("{0}. {1}", i++, error);
+      		}
+      		CurrentState = NpgsqlClosedState.Instance;
+      		_mediator.Reset();
+      		throw new NpgsqlException(sw.ToString());
+      	}
       	
       	backend_keydata = _mediator.GetBackEndKeyData();
       	
