@@ -442,11 +442,16 @@ namespace Npgsql
 
                     // Adjust client encoding.
 
-                    //NpgsqlCommand commandEncoding = new NpgsqlCommand("show client_encoding", this);
-                    //String clientEncoding = (String)commandEncoding.ExecuteScalar();
+                    //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", this);
+                    //String clientEncoding = (String)commandEncoding1.ExecuteScalar();
+                    
+                    Console.WriteLine(clientEncoding);
 
-                    if (ConnectStringValueToString(CONN_ENCODING).ToUpper() == "UNICODE") {
+                    if (ConnectStringValueToString(CONN_ENCODING).ToUpper() == "UNICODE") 
+                    {
                         connection_encoding = Encoding.UTF8;
+                        NpgsqlCommand commandEncoding = new NpgsqlCommand("SET CLIENT_ENCODING TO UNICODE", this);
+                        commandEncoding.ExecuteNonQuery();
                     }
 
                     Connector.ServerVersion = ServerVersion;
