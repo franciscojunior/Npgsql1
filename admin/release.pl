@@ -19,15 +19,15 @@ my $CVS2CL="cvs2cl";
 #
 # example $targets definition:
 #
-#  my $targets = { "ChangeLog" => "file",
-#  		"src/Npgsql" => "dir",
-#  		"src/testsuite" => "dir",
-#  		"admin" => "dir"};
+#  my $targets = { "ChangeLog" => 1,
+#  		"src/Npgsql" => 1,
+#  		"src/testsuite" => 1,
+#  		"admin" => 1};
 #
-my $targets = { "ChangeLog" => "file",
-		"src/Npgsql" => "dir",
-		"src/testsuite" => "dir",
-		"admin" => "dir"};
+my $targets = { "ChangeLog" => 1,
+		"src/Npgsql" => 1,
+		"src/testsuite" => 1,
+		"admin" => 1};
 
 
 # ========================================================================
@@ -37,8 +37,7 @@ my $targets = { "ChangeLog" => "file",
 # ========================================================================
 
 
-my $ERROR_INVALID_FILE_TYPE = 1;
-my $ERROR_NOT_CVS_TAGGED = 2;
+my $ERROR_NOT_CVS_TAGGED = 1;
 
 my $OK="OK\n";
 
@@ -70,10 +69,7 @@ print $OK;
 my $version;
 my $rel_version;
 my $rel_tag;
-open(IN, "grep AssemblyVersion src/Npgsql/AssemblyInfo.cs |");
-while (<IN>) {
-    $version = $_;
-}
+$version = `grep AssemblyVersion src/Npgsql/AssemblyInfo.cs`;
 $version =~ /\"(.*)\"/;
 $version = $1;
 $rel_version = $version;
@@ -87,17 +83,14 @@ my $RELEASE_TAG = "RELEASE-$rel_tag";
 #
 my $target_files = [];
 foreach my $file (sort keys %$targets) {
-    if ( $targets->{ $file } eq "file" ) {
+    if ( -f $file ) {
 	push @{ $target_files }, $file;
-    } elsif ( $targets->{ $file } eq "dir" ) {
+    } elsif ( -d $file ) {
 	open( DIRFILES, "find $file -print |grep -v CVS | grep -v .#| sed 1d |");
 	while(<DIRFILES>) {
 	    $_ =~ s/\n/ /;
 	    push @{ $target_files }, $_;
 	}
-    } else {
-	print qq[Invalid type $targets->{$file}. Valid types are "file" and "dir"];
-	exit $ERROR_INVALID_FILE_TYPE;
     }
 }
 
@@ -109,10 +102,9 @@ my $errors;
 foreach my $file ( @$target_files ) {
     # Ignore the ChangeLog file
     if ($file ne "ChangeLog") { 
-	open(CVSLOG, "cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}' |");
+	my $line = `cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}'`;
 	print "$file... ";
-	my $line;
-	if (!<CVSLOG> || $_ ne $RELEASE_TAG) {
+	if ($line ne $RELEASE_TAG) {
 	    print "not cvs tagged as $RELEASE_TAG\n";
 	    $errors = 1;
 	} else {
