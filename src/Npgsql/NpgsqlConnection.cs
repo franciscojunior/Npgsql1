@@ -75,10 +75,11 @@ namespace Npgsql
         internal readonly Char CONN_DELIM	= ';';  // Delimeter
         internal readonly Char CONN_ASSIGN	= '=';
         internal readonly String CONN_SERVER 	= "SERVER";
+        internal readonly String CONN_PORT 	= "PORT";
+        internal readonly String CONN_PROTOCOL 	= "PROTOCOL";
+        internal readonly String CONN_DATABASE	= "DATABASE";
         internal readonly String CONN_USERID 	= "USER ID";
         internal readonly String CONN_PASSWORD	= "PASSWORD";
-        internal readonly String CONN_DATABASE	= "DATABASE";
-        internal readonly String CONN_PORT 	= "PORT";
         internal readonly String CONN_SSL_ENABLED	= "SSL";
         internal readonly String CONN_ENCODING = "ENCODING";
         internal readonly String CONN_TIMEOUT = "TIMEOUT";
@@ -146,6 +147,17 @@ namespace Npgsql
 
         /// <summary>
         /// Gets or sets the string used to connect to a PostgreSQL database.
+        /// Valid values are:
+        /// Server:        Address/Name of Postgresql Server;
+        /// Port:          Port to connect to;
+        /// Protocol:      Protocol version to use, instead of automatic; Integer 2 or 3;
+        /// Database:      Database name. Defaults to user name if not specified;
+        /// User:          User name;
+        /// Password:      Password for clear text authentication;
+        /// MinPoolSize:   Min size of connection pool;
+        /// MaxPoolSize:   Max size of connection pool;
+        /// Encoding:      Encoding to be used;
+        /// Timeout:       Time to wait for connection open in seconds.
         /// </summary>
         /// <value>The connection string that includes the server name,
         /// the database name, and other parameters needed to establish
@@ -327,41 +339,50 @@ namespace Npgsql
                 throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
             }
 
+            bool                 ForcedProtocolVersion = false;
+            ProtocolVersion      PV;
+
             // Check if there is any missing argument.
             if (connection_string_values[CONN_SERVER] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_SERVER);
             if (connection_string_values[CONN_USERID] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_USERID);
 
-            lock(ConnectorPool.ConnectorPoolMgr)
-            {
-                _connector = ConnectorPool.ConnectorPoolMgr.RequestConnector (
-                            ConnectionString,
-                            MaxPoolSize,
-                            ConnectionTimeout,
-                            false
-                );
+            // If ConnectionString specifies a protocol version, we will 
+            // not try to fall back to version 2 on failure.
+            if (connection_string_values.Contains(CONN_PROTOCOL)) {
+                PV = ConnectStringValueToProtocolVersion(CONN_PROTOCOL);
+                ForcedProtocolVersion = true;
+            } else {
+                PV = ProtocolVersion.Version3;
             }
 
-            String       ServerVersionString = String.Empty;
+            lock(ConnectorPool.ConnectorPoolMgr)
+            {
+                _connector = ConnectorPool.ConnectorPoolMgr.
+                    RequestConnector (ConnectionString, MaxPoolSize, ConnectionTimeout, false);
+            }
+
+            if (_connector == null) {
+                throw new Exception("Internal: Unable to obtain a connector from the connection pool.");
+            }
 
             if (! _connector.IsInitialized)
             {
                 _connector.Encoding = Encoding.Default;
-                _connector.BackendProtocolVersion = ProtocolVersion.Version3;
+                _connector.BackendProtocolVersion = PV;
 
                 try {
                     // Reset state to initialize new connector in pool.
                     CurrentState = NpgsqlClosedState.Instance;
 
-                    // Try first connect using the 3.0 protocol...
                     CurrentState.Open(this);
 
                     // Change the state of connection to open.
                     connection_state = ConnectionState.Open;
 
                     // Check if there were any errors.
-                    if (_mediator.Errors.Count > 0)
+                    if (_mediator.Errors.Count > 0 && ! ForcedProtocolVersion)
                     {
                         // Check if there is an error of protocol not supported...
                         // As the message can be localized, just check the initial unlocalized part of the
@@ -372,13 +393,15 @@ namespace Npgsql
                             // Try using the 2.0 protocol.
                             _mediator.ResetResponses();
                             CurrentState = NpgsqlClosedState.Instance;
-                            _connector.BackendProtocolVersion = ProtocolVersion.Version3;
+                            _connector.BackendProtocolVersion = ProtocolVersion.Version2;
                             CurrentState.Open(this);
                         }
-
-                        // Check for errors and do the Right Thing.
-                        CheckErrors();
                     }
+
+                    // Check for errors and do the Right Thing.
+                    CheckErrors();
+
+                    String       ServerVersionString = String.Empty;
 
                     backend_keydata = _mediator.BackendKeyData;
 
@@ -512,16 +535,6 @@ namespace Npgsql
         /// <summary>
         /// This method parses a connection string.
         /// It translates it to a list of key-value pairs.
-        /// Valid values are:
-        /// Server 		- Address/Name of Postgresql Server
-        /// Port		- Port to connect to.
-        /// Database 	- Database name. Defaults to user name if not specified
-        /// User		- User name
-        /// Password	- Password for clear text authentication
-        /// MinPoolSize - Min size of connection pool
-        /// MaxPoolSize - Max size of connection pool
-        /// Encoding    - Encoding to be used
-        /// Timeout     - Time to wait for connection open. In seconds.
         /// </summary>
         private ListDictionary ParseConnectionString(String CS)
         {
@@ -1023,6 +1036,31 @@ namespace Npgsql
 
             default :
                 throw new ArgumentException(resman.GetString("Exception_InvalidBooleanKeyVal"), Key);
+
+            }
+        }
+
+        /// <summary>
+        /// Return a ProtocolVersion from the current connection string, even if the
+        /// given key is not in the string.
+        /// Throw an appropriate exception if the value is not recognized as
+        /// integer 2 or 3.
+        /// </summary>
+        private ProtocolVersion ConnectStringValueToProtocolVersion(String Key)
+        {
+            if (! connection_string_values.Contains(Key)) {
+                return ProtocolVersion.Version3;
+            }
+
+            switch (ConnectStringValueToInt32(Key)) {
+            case 2 :
+                return ProtocolVersion.Version2;
+
+            case 3 :
+                return ProtocolVersion.Version3;
+
+            default :
+                throw new ArgumentException("Invalid protocol version specified in ConnectionString", Key);
 
             }
         }

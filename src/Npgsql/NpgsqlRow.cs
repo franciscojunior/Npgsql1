@@ -58,6 +58,9 @@ namespace Npgsql
           throw new NotImplementedException("Abstract");
         }
 
+        /// <summary>
+        /// Provide access to the fields in this row.
+        /// </summary>
         public virtual Object this[Int32 index]
         {
             get
