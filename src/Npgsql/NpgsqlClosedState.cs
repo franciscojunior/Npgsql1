@@ -83,9 +83,8 @@ namespace Npgsql
 
 
                     ((SslClientStream)stream).ServerCertValidationDelegate = new CertificateValidationCallback(context.DefaultCertificateValidationCallback);
-// CHECKME - these appear to be wholly unneeded.
-//                    ((SslClientStream)stream).ClientCertSelectionDelegate = context.CertificateSelectionCallback;
-//                    ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = context.PrivateKeySelectionCallback;
+                    ((SslClientStream)stream).ClientCertSelectionDelegate = context.CertificateSelectionCallback;
+                    ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = context.PrivateKeySelectionCallback;
 
                 }
             }

@@ -62,6 +62,21 @@ namespace Npgsql
         /// </summary>
         public event NotificationEventHandler   Notification;
 
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
+        /// </summary>
+        public CertificateValidationCallback    CertificateValidationCallback;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
+        /// </summary>
+        public CertificateSelectionCallback     CertificateSelectionCallback;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
+        /// </summary>
+        public PrivateKeySelectionCallback      PrivateKeySelectionCallback;
+
         private NpgsqlState			                state;
 
         private ConnectionState                 connection_state;
@@ -634,7 +649,7 @@ namespace Npgsql
             if (Parts.Length == 2) {
                 // Check if it is a devel version.
                 if (Parts[1].ToLower().EndsWith("devel")) {
-										Parts[1].Remove(Parts[1].Length - 5, 5);
+										Parts[1] = Parts[1].Remove(Parts[1].Length - 5, 5);
                 }
 
                 // Coerce it into a 3-part version.
@@ -762,13 +777,17 @@ namespace Npgsql
 
 
         /// <summary>
-        /// Default SSL Callback implementation.
+        /// Default SSL CertificateValidationCallback implementation.
         /// </summary>
-        internal Boolean DefaultCertificateValidationCallback(
-            X509Certificate certificate,
-            int[]        certificateErrors)
+        internal bool DefaultCertificateValidationCallback(
+            X509Certificate       certificate,
+            int[]                 certificateErrors)
         {
-            return true;
+            if (CertificateValidationCallback != null) {
+                return CertificateValidationCallback(certificate, certificateErrors);
+            } else {
+                return true;
+            }
         }
 
         internal NpgsqlState CurrentState {
