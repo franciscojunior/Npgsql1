@@ -115,7 +115,8 @@ namespace NpgsqlTypes
 					return parameter.Value.ToString();
 				
 				case DbType.Single:
-				  return ((Single)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
+				  // To not have a value implicitly converted to float8, we add quotes.
+				  return "'" + ((Single)parameter.Value).ToString(NumberFormatInfo.InvariantInfo) + "'";
 			  
 			  case DbType.Double:
 				  return ((Double)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
