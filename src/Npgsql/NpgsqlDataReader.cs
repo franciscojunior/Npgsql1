@@ -207,40 +207,24 @@ namespace Npgsql
 	  public Type GetFieldType(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetFieldType(Int32)", LogLevel.Debug);
-	    //throw new NotImplementedException();
-	  	//[FIXME] hack
+	    	  	
 	  	  	
-	  	return Type.GetType(NpgsqlTypesHelper.GetSystemTypeNameFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid));
+	  	//return Type.GetType(NpgsqlTypesHelper.GetSystemTypeNameFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid));
+	  	
+	  	return NpgsqlTypesHelper.GetSystemTypeFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid);
 	  }
 	  
 	  public Object GetValue(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValue(Int32)", LogLevel.Debug);
-	  	/*if (i < 0 || _rowIndex < 0)
-	  		throw new InvalidOperationException("Cannot read data.");
-	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];*/
-	  	
-	  	Object npgsqlValue = GetNpgsqlValue(i);
-	  	if (npgsqlValue == null)
-	  		return System.DBNull.Value;
-	  	
-	  	return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(_connection.OidToNameMapping, npgsqlValue, _currentResultset.RowDescription[i].type_oid);
-	  }
-	  
-	  
-	  /// <summary>
-	  /// This method is reponsible to get the value in its original form (NpgsqlType).
-	  /// The GetValue(Int32) returns the NpgsqlType converted in the SystemType.
-	  /// </summary>
-	  public Object GetNpgsqlValue(Int32 i)
-	  {
-	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetNpgsqlValue(Int32)", LogLevel.Debug);
 	  	if (i < 0 || _rowIndex < 0)
 	  		throw new InvalidOperationException("Cannot read data.");
-	  	
-	  		  	
 	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];
+	  	
+	  	
 	  }
+	  
+	  
 	  public Int32 GetValues(Object[] values)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValues(Object[])", LogLevel.Debug);
@@ -286,20 +270,8 @@ namespace Npgsql
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBoolean(Int32)", LogLevel.Debug);
 	  	
-  		/*switch ((String) this[i])
-  		{
-  			case "t":
-  				return true;
-  				
-  			case "f":
-  				return false;
-  				
-  			default:
-  				throw new System.InvalidCastException();
-  			
-  		}*/
-  		
-  		return (Boolean) GetNpgsqlBoolean(i);
+  		  		
+  		return (Boolean) GetValue(i);
 	  	
 	  }
 	  
@@ -348,7 +320,7 @@ namespace Npgsql
 	  		throw new System.InvalidCastException();
 	  	}*/
 	  	
-	  	return (Int16) GetNpgsqlInt16(i);
+	  	return (Int16) GetValue(i);
 	  	
 
 	  }
@@ -368,7 +340,7 @@ namespace Npgsql
 	  	}*/
 	  	
 	  	
-	  	return (Int32) GetNpgsqlInt32(i);
+	  	return (Int32) GetValue(i);
 	  
 	  }
 	  
@@ -385,7 +357,7 @@ namespace Npgsql
 	  	{
 	  		throw new System.InvalidCastException();
 	  	}*/
-	  	return (Int64) GetNpgsqlInt64(i);
+	  	return (Int64) GetValue(i);
 	  }
 	  
 	  public Single GetFloat(Int32 i)
@@ -419,7 +391,7 @@ namespace Npgsql
 	  public String GetString(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetString(Int32)", LogLevel.Debug);
-	    return (String) GetNpgsqlString(i);
+	    return (String) GetValue(i);
 	  }
 	  
 	  public Decimal GetDecimal(Int32 i)
@@ -427,21 +399,15 @@ namespace Npgsql
 	    // Should this be done using the GetValue directly and not by converting to String
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetDecimal(Int32)", LogLevel.Debug);
-	  	/*try
-	  	{
-		    return Decimal.Parse((String) this[i]);
-	  	} catch (System.FormatException)
-	  	{
-	  		throw new System.InvalidCastException();
-	  	}*/
 	  	
-	  	return (Decimal) GetNpgsqlDecimal(i);
+	  	
+	  	return (Decimal) GetValue(i);
 	  }
 	  
 	  public DateTime GetDateTime(Int32 i)
 	  {
 	    //throw new NotImplementedException();
-	  	return (DateTime) GetNpgsqlDateTime(i);
+	  	return (DateTime) GetValue(i);
 	  }
 	  
 	  public IDataReader GetData(Int32 i)
@@ -457,47 +423,7 @@ namespace Npgsql
 	  }
 
 
-		public NpgsqlBoolean GetNpgsqlBoolean(Int32 i)
-	  {
-	  	return (NpgsqlBoolean) GetNpgsqlValue(i);
-	  	
-	  }
-		public NpgsqlInt16 GetNpgsqlInt16(Int32 i)
-	  {
-	  	return (NpgsqlInt16) GetNpgsqlValue(i);
-	  	
-	  }
-	  
-	  public NpgsqlInt32 GetNpgsqlInt32(Int32 i)
-	  {
-	  	return (NpgsqlInt32) GetNpgsqlValue(i);
-	  	
-	  }
-	  
-	  public NpgsqlInt64 GetNpgsqlInt64(Int32 i)
-	  {
-	  	return (NpgsqlInt64) GetNpgsqlValue(i);
-	  	
-	  }
-	  
-	  public NpgsqlDateTime GetNpgsqlDateTime(Int32 i)
-	  {
-	  	return (NpgsqlDateTime) GetNpgsqlValue(i);
-	  	
-	  }
-	  
-	  public NpgsqlDecimal GetNpgsqlDecimal(Int32 i)
-	  {
-	  	return (NpgsqlDecimal) GetNpgsqlValue(i);
-	  	
-	  }
-	  
-	  
-	  public NpgsqlString GetNpgsqlString(Int32 i)
-	  {
-	  	return (NpgsqlString) GetNpgsqlValue(i);
-	  	
-	  }
+		
 	  
 	  
 

@@ -47,7 +47,6 @@ namespace Npgsql
 		
 		// Fields to implement IDataParameter
 		private DbType				db_type;
-		private NpgsqlDbType	npgsql_type;
 		private ParameterDirection	direction;
 		private Boolean				is_nullable;
 		private String				name;
@@ -65,17 +64,17 @@ namespace Npgsql
 			
 		}
 		
-		public NpgsqlParameter(String parameterName, NpgsqlDbType parameterType)
+		public NpgsqlParameter(String parameterName, DbType parameterType)
 		{
 			name = parameterName;
-			npgsql_type = parameterType;
+			db_type = parameterType;
 			
 		}
 		
-		public NpgsqlParameter(String parameterName, NpgsqlDbType parameterType, Int32 size, String sourceColumn)
+		public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size, String sourceColumn)
 		{
 			name = parameterName;
-			npgsql_type = parameterType;
+			db_type = parameterType;
 			this.size = size;
 			source_column = sourceColumn;
 			direction = ParameterDirection.Input;
@@ -135,26 +134,10 @@ namespace Npgsql
 			set
 			{
 				db_type = value;
-				npgsql_type = NpgsqlTypesHelper.GetNpgsqlDbTypeFromDbType(db_type);
 				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".DbType = " + value, LogLevel.Normal);
 			}
 		}
 		
-		public NpgsqlDbType NpgsqlDbType
-		{
-			get
-			{
-				return npgsql_type;
-			}
-			
-			// [TODO] Validate data type.
-			set
-			{
-				npgsql_type = value;
-				db_type = NpgsqlTypesHelper.GetDbTypeFromNpgsqlDbType(npgsql_type);
-				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".NpgsqlDbType = " + value, LogLevel.Normal);
-			}
-		}
 		
 		
 		public ParameterDirection Direction

@@ -47,11 +47,11 @@ namespace NpgsqlTests
 	
 			da.InsertCommand = new NpgsqlCommand("insert into tableb(field_int2, field_timestamp, field_numeric) values (:a, :b, :c)", _conn);
 			
-			da.InsertCommand.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Smallint));
+			da.InsertCommand.Parameters.Add(new NpgsqlParameter("a", DbType.Int16));
 	
-			da.InsertCommand.Parameters.Add(new NpgsqlParameter("b", NpgsqlDbType.Timestamp));
+			da.InsertCommand.Parameters.Add(new NpgsqlParameter("b", DbType.DateTime));
 			
-			da.InsertCommand.Parameters.Add(new NpgsqlParameter("c", NpgsqlDbType.Numeric));
+			da.InsertCommand.Parameters.Add(new NpgsqlParameter("c", DbType.Decimal));
 	
 			da.InsertCommand.Parameters[0].Direction = ParameterDirection.Input;
 			da.InsertCommand.Parameters[1].Direction = ParameterDirection.Input;

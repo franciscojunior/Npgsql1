@@ -376,7 +376,9 @@ namespace Npgsql
 			
 			
 			return result;*/
-			return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(connection.OidToNameMapping, ascii_row[0], rd[0].type_oid);
+			
+			//return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(connection.OidToNameMapping, ascii_row[0], rd[0].type_oid);
+			return ascii_row[0];
 			
 			
 		}
@@ -550,7 +552,7 @@ namespace Npgsql
 							throw new InvalidOperationException("Only DbType.Int32, DbType.Int64 datatypes supported");
 							
 					}*/
-					command.Append(NpgsqlTypesHelper.GetBackendTypeNameFromNpgsqlDbType(parameters[i].NpgsqlDbType));
+					command.Append(NpgsqlTypesHelper.GetBackendTypeNameFromDbType(parameters[i].DbType));
 					
 					command.Append(',');
 				}

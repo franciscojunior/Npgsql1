@@ -119,7 +119,7 @@ namespace Npgsql
 				
 				
 				// Add them to the AsciiRow data.
-				data.Add(NpgsqlTypesHelper.ConvertBackendStringToNpgsqlType(oid_to_name_mapping, result.ToString(), row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
+				data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(oid_to_name_mapping, result.ToString(), row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
 				
 			}
 			

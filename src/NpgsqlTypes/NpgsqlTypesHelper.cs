@@ -64,28 +64,28 @@ namespace NpgsqlTypes
     private static readonly String CLASSNAME = "NpgsqlDataReader";
 		
 		
-		public static String GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType npgsqlDbType)
+		public static String GetBackendTypeNameFromDbType(DbType dbType)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType)", LogLevel.Debug);
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType)", Npgsql.LogLevel.Debug);
 			
-			switch (npgsqlDbType)
+			switch (dbType)
 			{
-				case NpgsqlDbType.Boolean:
+				case DbType.Boolean:
 					return "bool";
-				case NpgsqlDbType.Bigint:
+				case DbType.Int64:
 					return "int8";
-				case NpgsqlDbType.Integer:
+				case DbType.Int32:
 					return "int4";
-				case NpgsqlDbType.Numeric:
+				case DbType.Decimal:
 					return "numeric";
-				case NpgsqlDbType.Smallint:
+				case DbType.Int16:
 					return "int2";
-				case NpgsqlDbType.Text:
+				case DbType.String:
 					return "text";
-				case NpgsqlDbType.Timestamp:
+				case DbType.DateTime:
 					return "timestamp";
 				default:
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", npgsqlDbType));
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", dbType));
 				
 			}
 		}
@@ -93,49 +93,26 @@ namespace NpgsqlTypes
 		
 		public static String ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter parameter)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter)", LogLevel.Debug);
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter)", Npgsql.LogLevel.Debug);
 			
-			switch(parameter.NpgsqlDbType)
+			if (parameter.Value == DBNull.Value)
+				return "Null";
+			
+			switch(parameter.DbType)
 			{
-				case NpgsqlDbType.Boolean:
-				case NpgsqlDbType.Bigint:
-				case NpgsqlDbType.Integer:
-									
-				case NpgsqlDbType.Smallint:
+				case DbType.Boolean:
+				case DbType.Int64:
+				case DbType.Int32:
+				case DbType.Int16:
+					return parameter.Value.ToString();
 				
-					if (parameter.Value == DBNull.Value)
-						return "Null";
-					else
-						return parameter.Value.ToString();
-				
-				
-				case NpgsqlDbType.Numeric:
-					if (parameter.Value == DBNull.Value)
-						return "Null";
-					else
+				case DbType.Decimal:
 						return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
 				
-				case NpgsqlDbType.Text:
-				{
-					
-					
-					if (parameter.Value is String)
+				case DbType.String:
 						return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
-					
-					if (parameter.Value == DBNull.Value)
-						return "Null";
-						
-					NpgsqlString value = (NpgsqlString) parameter.Value;
-					
-					if (value.IsNull)
-						return "Null";
-					else
-						// Escape all single quotes in the string.
-						return "'" + value.Value.Replace("'", "\\'") + "'";
-						
-				}
 				
-				case NpgsqlDbType.Timestamp:
+				case DbType.DateTime:
 				{
 					// Value of parameter should be DateTime or NpgsqlDateTime.
 					
@@ -154,7 +131,7 @@ namespace NpgsqlTypes
 				}
 				default:
 					// This should not happen!
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", parameter.NpgsqlDbType));
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", parameter.DbType));
 					
 				
 			}
@@ -180,7 +157,6 @@ namespace NpgsqlTypes
 				case DbType.Decimal:
 					return NpgsqlDbType.Numeric;
 				case DbType.String:
-				case DbType.AnsiString:
 					return NpgsqlDbType.Text;
 				default:
 					return NpgsqlDbType.Text;
@@ -202,11 +178,11 @@ namespace NpgsqlTypes
 				case NpgsqlDbType.Smallint:
 					return DbType.Int16;
 				case NpgsqlDbType.Text:
-					return DbType.AnsiString;
+					return DbType.String;
 				case NpgsqlDbType.Timestamp:
 					return DbType.DateTime;
 				default:
-					return DbType.AnsiString;
+					return DbType.String;
 				
 			}
 		}
@@ -215,17 +191,17 @@ namespace NpgsqlTypes
 		/// This method is responsible to convert a given NpgsqlType to its corresponding system type.
 		/// 
 		/// </summary>
-		public static Object ConvertNpgsqlTypeToSystemType(Hashtable oidToNameMapping, Object data, Int32 typeOid)
+		public static Object ConvertNpsqlTypeToSystemType(Hashtable oidToNameMapping, Object data, Int32 typeOid)
 		{
 		
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlTypeToSystemType(Hashtable, Object, Int32)", LogLevel.Debug);
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlTypeToSystemType(Hashtable, Object, Int32)", Npgsql.LogLevel.Debug);
 			
 			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
 			
 			if (!oidToNameMapping.ContainsKey(typeOid))
-				return (String) (NpgsqlString)data;
+				return data;
 			
 			
 			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
@@ -260,41 +236,45 @@ namespace NpgsqlTypes
 		/// to the corresponding NpgsqlType.
 		/// </summary>
 		/// 
-		public static Object ConvertBackendStringToNpgsqlType(Hashtable oidToNameMapping, String data, Int32 typeOid, Int32 typeModifier)
+		public static Object ConvertBackendStringToSystemType(Hashtable oidToNameMapping, String data, Int32 typeOid, Int32 typeModifier)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertBackendStringToNpgsqlType(Hashtable, String, Int32)", LogLevel.Debug);
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertBackendStringToSystemType(Hashtable, String, Int32)", Npgsql.LogLevel.Debug);
 			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
 			
 			if (!oidToNameMapping.ContainsKey(typeOid))
-				return new NpgsqlString(data);
+				return data;
 			
-			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
+			switch ((DbType)oidToNameMapping[typeOid])
 			{
-				case NpgsqlDbType.Boolean:
-					return NpgsqlBoolean.Parse(data);
-				case NpgsqlDbType.Smallint:
-					return NpgsqlInt16.Parse(data);
-				case NpgsqlDbType.Integer:
-					return NpgsqlInt32.Parse(data);
+				case DbType.Boolean:
+					return (data.ToLower() == "t" ? true : false);
+				case DbType.Int16:
+					return Int16.Parse(data);
+				case DbType.Int32:
+					return Int32.Parse(data);
 				
-				case NpgsqlDbType.Bigint:
-					return NpgsqlInt64.Parse(data);
+				case DbType.Int64:
+					return Int64.Parse(data);
 				
-				case NpgsqlDbType.Numeric:
+				case DbType.Decimal:
 					// Got this manipulation of typemodifier from jdbc driver - file AbstractJdbc1ResultSetMetaData.java.html method getColumnDisplaySize
 					{ 
 						typeModifier -= 4;
 						//Console.WriteLine("Numeric from server: {0} digitos.digitos {1}.{2}", data, (typeModifier >> 16) & 0xffff, typeModifier & 0xffff);
-						return new NpgsqlDecimal(Decimal.Parse(data, NumberFormatInfo.InvariantInfo), (Byte)((typeModifier >> 16) & 0xFFFF), (Byte)(typeModifier & 0xFFFF));
+						return Decimal.Parse(data, NumberFormatInfo.InvariantInfo);
 						
 					}
 				
-				case NpgsqlDbType.Timestamp:
-					return NpgsqlDateTime.Parse(data);
-				case NpgsqlDbType.Text:
-					return new NpgsqlString(data);
+				case DbType.DateTime:
+					
+					return DateTime.Parse(data,
+					                      DateTimeFormatInfo.InvariantInfo,
+					                      DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
+					                        
+				case DbType.String:
+					return data;
 				default:
 					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
 				
@@ -302,81 +282,49 @@ namespace NpgsqlTypes
 			}
 		}
 		
-		///<summary>
-		/// This method gets a type oid and return the equivalent
-		/// Npgsql type name.
-		/// </summary>
-		/// 
-		
-		public static String GetNpgsqlTypeNameFromTypeOidold(Hashtable oidToNameMapping, Int32 typeOid)
-    {
-    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetNpgsqlTypeNameFromTypeOidold(Hashtable, Int32)", LogLevel.Debug);
-    	// This method gets a db type identifier and return the equivalent
-    	// system type name.
-    	
-    	
-    	switch ((NpgsqlDbType)oidToNameMapping[typeOid])
-			{
-				case NpgsqlDbType.Boolean:
-					return "NpgsqlTypes.NpgsqlBoolean";
-				case NpgsqlDbType.Smallint:
-					return "NpgsqlTypes.NpgsqlInt16";
-				case NpgsqlDbType.Integer:
-					return "NpgsqlTypes.NpgsqlInt32";
-				case NpgsqlDbType.Bigint:
-					return "NpgsqlTypes.NpgsqlInt64";
-				case NpgsqlDbType.Numeric:
-					return "NpgsqlTypes.NpgsqlDecimal";
-				case NpgsqlDbType.Timestamp:
-					return "NpgsqlTypes.NpgsqlDateTime";
-				case NpgsqlDbType.Text:
-				default:
-					return "NpgsqlTypes.NpgsqlString";
-			
-			}
-    	
-    }
-    
+		    
     ///<summary>
 		/// This method gets a type oid and return the equivalent
-		/// Npgsql type name.
+		/// Npgsql type.
 		/// </summary>
 		/// 
 		
-		public static String GetSystemTypeNameFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
+		public static Type GetSystemTypeFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
     {
-    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetSystemTypeNameFromTypeOid(Hashtable, Int32)", LogLevel.Debug);
+    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetSystemTypeFromTypeOid(Hashtable, Int32)", Npgsql.LogLevel.Debug);
     	// This method gets a db type identifier and return the equivalent
-    	// system type name.
+    	// system type.
     	
     	//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
     	
-    	if (!oidToNameMapping.ContainsKey(typeOid))
-				return "System.String";
-			
     	
-    	switch ((NpgsqlDbType)oidToNameMapping[typeOid])
+    	
+    	if (!oidToNameMapping.ContainsKey(typeOid))
+				return Type.GetType("System.String");
+			
+    	switch ((DbType)oidToNameMapping[typeOid])
 			{
-				case NpgsqlDbType.Boolean:
-					return "System.Boolean";
-				case NpgsqlDbType.Smallint:
-					return "System.Int16";
-				case NpgsqlDbType.Integer:
-					return "System.Int32";
-				case NpgsqlDbType.Bigint:
-					return "System.Int64";
-				case NpgsqlDbType.Numeric:
-					return "System.Decimal";
-				case NpgsqlDbType.Timestamp:
-					return "System.DateTime";
-				case NpgsqlDbType.Text:
-					return "System.String";
+				case DbType.Boolean:
+					return Type.GetType("System.Boolean");
+				case DbType.Int16:
+					return Type.GetType("System.Int16");
+				case DbType.Int32:
+					return Type.GetType("System.Int32");
+				case DbType.Int64:
+					return Type.GetType("System.Int64");
+				case DbType.Decimal:
+					return Type.GetType("System.Decimal");
+				case DbType.DateTime:
+					return Type.GetType("System.DateTime");
+				case DbType.String:
+					return Type.GetType("System.String");
 				default:
 					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
 			
 			}
+			
     	
     }
     
@@ -388,7 +336,7 @@ namespace NpgsqlTypes
 		/// </summary>
 		public static Hashtable LoadTypesMapping(NpgsqlConnection conn)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".LoadTypesMapping(NpgsqlConnection)", LogLevel.Debug);
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".LoadTypesMapping(NpgsqlConnection)", Npgsql.LogLevel.Debug);
 			
 			// [TODO] Verify another way to get higher concurrency.
 			lock(typeof(NpgsqlTypesHelper))
@@ -421,31 +369,31 @@ namespace NpgsqlTypes
 					// Add the key as a Int32 value so the switch in ConvertStringToNpgsqlType can use it
 					// in the search. If don't, the key is added as string and the switch doesn't work.
 					
-					NpgsqlDbType type;
+					DbType type;
 					String typeName = (String) dr[1];
 										
 					switch (typeName)
 					{
 						case "bool":
-							type = NpgsqlDbType.Boolean;
+							type = DbType.Boolean;
 							break;
 						case "int2":
-							type = NpgsqlDbType.Smallint;
+							type = DbType.Int16;
 							break;
 						case "int4":
-							type = NpgsqlDbType.Integer;
+							type = DbType.Int32;
 							break;
 						case "int8":
-							type = NpgsqlDbType.Bigint;
+							type = DbType.Int64;
 							break;
 						case "numeric":
-							type = NpgsqlDbType.Numeric;
+							type = DbType.Decimal;
 							break;
 						case "timestamp":
-							type = NpgsqlDbType.Timestamp;
+							type = DbType.DateTime;
 							break;
 						default:
-							type = NpgsqlDbType.Text; // Default npgsqltype of the oid. Unsupported types will be returned as NpgsqlString.
+							type = DbType.String; // Default dbtype of the oid. Unsupported types will be returned as String.
 							break;
 					}
 										

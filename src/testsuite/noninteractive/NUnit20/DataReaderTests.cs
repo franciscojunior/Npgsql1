@@ -50,20 +50,6 @@ namespace NpgsqlTests
 			
 		}
 		
-		[Test]
-		public void GetNpgsqlBoolean()
-		{
-			_conn.Open();
-			
-			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = 4;", _conn);
-			
-			NpgsqlDataReader dr = command.ExecuteReader();
-			
-			dr.Read();
-			NpgsqlBoolean result = dr.GetNpgsqlBoolean(4);
-			Assertion.AssertEquals(true, (Boolean)result);
-			
-		}
 		
 		[Test]
 		public void GetChars()
@@ -107,25 +93,6 @@ namespace NpgsqlTests
 			
 		}
 		
-		[Test]
-		public void GetNpgsqlInt32()
-		{
-			_conn.Open();
-			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = 2;", _conn);
-			
-			NpgsqlDataReader dr = command.ExecuteReader();
-			
-			dr.Read();
-			
-			
-			NpgsqlInt32 result = dr.GetNpgsqlInt32(2);
-			
-			//ConsoleWriter cw = new ConsoleWriter(Console.Out);
-			
-			//cw.WriteLine(result.GetType().Name);
-			Assertion.AssertEquals(4, (Int32)result);
-			
-		}
 		
 		[Test]
 		public void GetInt16()
@@ -143,21 +110,6 @@ namespace NpgsqlTests
 			
 		}
 		
-		[Test]
-		public void GetNpgsqlInt16()
-		{
-			_conn.Open();
-			NpgsqlCommand command = new NpgsqlCommand("select * from tableb where field_serial = 1;", _conn);
-			
-			NpgsqlDataReader dr = command.ExecuteReader();
-			
-			dr.Read();
-			
-			NpgsqlInt16 result = dr.GetNpgsqlInt16(1);
-			
-			Assertion.AssertEquals(new NpgsqlInt16(2), result);
-			
-		}
 		
 		[Test]
 		public void GetDecimal()
@@ -177,22 +129,7 @@ namespace NpgsqlTests
 		}
 	
 	
-		[Test]
-		public void GetNpgsqlDecimal()
-		{
-			_conn.Open();
-			NpgsqlCommand command = new NpgsqlCommand("select * from tableb where field_serial = 3;", _conn);
-			
-			NpgsqlDataReader dr = command.ExecuteReader();
-			
-			dr.Read();
-			
-			NpgsqlDecimal result = dr.GetNpgsqlDecimal(3);
-			
-						
-			Assertion.AssertEquals(4.23M, (Decimal)result);
-			
-		}
+		
 		
 		[Test]
 		public void GetDouble()
@@ -295,23 +232,7 @@ namespace NpgsqlTests
 			
 		}
 		
-		
-		[Test]
-		public void GetNpgsqlString()
-		{
-			_conn.Open();
-			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = 1;", _conn);
-			
-			NpgsqlDataReader dr = command.ExecuteReader();
-			
-			dr.Read();
-			
-			NpgsqlString result = dr.GetNpgsqlString(1);
-			
-			Assertion.AssertEquals("Random text", (String)result);
-			
-		}
-		
+				
 		[Test]
 		public void GetValueByName()
 		{
