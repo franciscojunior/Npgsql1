@@ -44,6 +44,7 @@ namespace Npgsql
 		private ArrayList							data;
 		private Byte[]								null_map_array;
 		private Int16									num_fields;
+		private readonly Int16	READ_BUFFER_SIZE = 300; //[FIXME] Is this enough??
 		
 		public NpgsqlAsciiRow(Int16 numFields)
 		{
@@ -59,7 +60,7 @@ namespace Npgsql
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ReadFromStream()", LogLevel.Debug);
 			
-			Byte[] input_buffer = new Byte[300]; //[FIXME] Is this enough??
+			Byte[] input_buffer = new Byte[READ_BUFFER_SIZE]; 
 			
 			Array.Clear(null_map_array, 0, null_map_array.Length);
 			
@@ -86,14 +87,30 @@ namespace Npgsql
 								
 				Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
 							
+				Int32 bytes_left = field_value_size - 4;
+				
+				StringBuilder result = new StringBuilder();
+				
+				while (bytes_left > READ_BUFFER_SIZE)
+				{
+					// Now, read just the field value.
+					PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
+					
+					// Read the bytes as string.
+					result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
+									
+					bytes_left -= READ_BUFFER_SIZE;
+				}
+				
 				// Now, read just the field value.
-				PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, field_value_size - 4);
+				PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, bytes_left);
 				
 				// Read the bytes as string.
-				String result = new String(encoding.GetChars(input_buffer, 0, field_value_size - 4));
+				result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
+				
 				
 				// Add them to the AsciiRow data.
-				data.Add(result);
+				data.Add(result.ToString());
 				
 			}
 			
