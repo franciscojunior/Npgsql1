@@ -74,7 +74,7 @@ p.headnotes {
 
 <p />
 
-<p class="headnotes">Last update: 2002-07-05 18:00 by mcmicro</p>
+<p class="headnotes">Last update: 2003-05-31 12:40 by fxjr</p>
 <p class="headnotes">Category: External documentation</p>
 <p class="headnotes">Intended Audience: Npgsql Users</p>
 
@@ -429,6 +429,183 @@ public static class NpgsqlUserManual
 <p> This code assumes a table called tablea with at least a field called field_int4 of type int4.
 
 
+<h3> Working with Datasets </h3>
+
+<p> You can use Npgsql when working with Datasets. This allows you to do changes in the dataset and have them propagated back to 
+backend. The below example shows how to add a row using the Dataset:</p>
+<pre class="CodeBox">
+
+// This method expects the following table in the backend:
+//
+//	create table tableb(field_int2 int2, field_timestamp timestamp, field_numeric numeric);
+//
+//	
+void AddWithDataSet(NpgsqlConnection conn)
+{	
+	conn.Open();
+			
+	DataSet ds = new DataSet();
+
+	NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb", conn);
+	
+	da.InsertCommand = new NpgsqlCommand("insert into tableb(field_int2, field_timestamp, field_numeric) " + 
+							" values (:a, :b, :c)", conn);
+			
+	da.InsertCommand.Parameters.Add(new NpgsqlParameter("a", DbType.Int16));
+	
+	da.InsertCommand.Parameters.Add(new NpgsqlParameter("b", DbType.DateTime));
+			
+	da.InsertCommand.Parameters.Add(new NpgsqlParameter("c", DbType.Decimal));
+	
+	da.InsertCommand.Parameters[0].Direction = ParameterDirection.Input;
+	da.InsertCommand.Parameters[1].Direction = ParameterDirection.Input;
+	da.InsertCommand.Parameters[2].Direction = ParameterDirection.Input;
+	
+	da.InsertCommand.Parameters[0].SourceColumn = "field_int2";
+	da.InsertCommand.Parameters[1].SourceColumn = "field_timestamp";
+	da.InsertCommand.Parameters[2].SourceColumn = "field_numeric";
+	
+	da.Fill(ds);
+	
+	DataTable dt = ds.Tables[0];
+	
+	DataRow dr = dt.NewRow();
+	dr["field_int2"] = 4;
+	dr["field_timestamp"] = new DateTime(2003, 03, 03, 14, 0, 0);
+	dr["field_numeric"] = 7.3M;
+			
+	dt.Rows.Add(dr);
+			
+	DataSet ds2 = ds.GetChanges();
+	
+	da.Update(ds2);
+	
+	ds.Merge(ds2);
+	ds.AcceptChanges();
+}
+		
+</pre>
+
+<h3> Working with strong typed datasets </h3>
+
+<p> This example will show how to use a strong typed dataset generated with xsd. To do so, we need a .xsd file specifing the 
+schema to the strong dataset. You can generate this file by hand, or you can use xsd to generate it for you. To have xsd generate
+the .xsd for you, you have to suppy it with a .xml file which it will infer the .xsd from. We can use a .xml file generated with 
+a DataAdapter.WriteXml() method:</p>
+<pre class="CodeBox">
+public void GenerateXmlFromDataSet(NpgsqlConnection conn)
+{
+	conn.Open();
+			
+						
+	NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tablea", conn);
+		
+	DataSet ds = new DataSet();
+			
+	da.Fill(ds);
+			
+	ds.WriteXml("StrongDataSetFeed.xml");
+}
+</pre>
+
+
+<p> This will give us a file which looks similar to this:</p>
+
+<pre class="CodeBox">
+&lt;?xml version="1.0" standalone="yes"?&gt;
+&lt;NewDataSet&gt;
+  &lt;Table&gt;
+    &lt;field_serial&gt;1&lt;/field_serial&gt;
+    &lt;field_text&gt;Random text&lt;/field_text&gt;
+  &lt;/Table&gt;
+  &lt;Table&gt;
+    &lt;field_serial&gt;2&lt;/field_serial&gt;
+    &lt;field_int4&gt;4&lt;/field_int4&gt;
+  &lt;/Table&gt;
+  &lt;Table&gt;
+    &lt;field_serial&gt;3&lt;/field_serial&gt;
+    &lt;field_int8&gt;8&lt;/field_int8&gt;
+  &lt;/Table&gt;
+  &lt;Table&gt;
+    &lt;field_serial&gt;4&lt;/field_serial&gt;
+    &lt;field_bool&gt;true&lt;/field_bool&gt;
+  &lt;/Table&gt;
+  &lt;Table&gt;
+    &lt;field_serial&gt;5&lt;/field_serial&gt;
+    &lt;field_text&gt;Text with ' single quote&lt;/field_text&gt;
+  &lt;/Table&gt;
+&lt;/NewDataSet&gt;
+
+</pre>
+
+<p> This file will be used with xsd to generate the .xsd file with the following command:</p>
+<pre class="CodeBox">
+xsd StrongDataSetFeed.xml
+</pre>
+
+<p> xsd will produce an xml schema which will have all types specified as string, we just change the xsd to use the 
+correct types and have a .xsd file similar to this:</p>
+<pre class="CodeBox">
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata"&gt;
+  &lt;xs:element name="NewDataSet" msdata:IsDataSet="true" msdata:Locale="pt-BR"&gt;
+    &lt;xs:complexType&gt;
+      &lt;xs:choice maxOccurs="unbounded"&gt;
+        &lt;xs:element name="Table"&gt;
+          &lt;xs:complexType&gt;
+            &lt;xs:sequence&gt;
+              &lt;xs:element name="field_serial" type="xs:int" minOccurs="0" /&gt;
+              &lt;xs:element name="field_text" type="xs:string" minOccurs="0" /&gt;
+              &lt;xs:element name="field_int4" type="xs:int" minOccurs="0" /&gt;
+              &lt;xs:element name="field_int8" type="xs:long" minOccurs="0" /&gt;
+              &lt;xs:element name="field_bool" type="xs:boolean" minOccurs="0" /&gt;
+            &lt;/xs:sequence&gt;
+          &lt;/xs:complexType&gt;
+        &lt;/xs:element&gt;
+      &lt;/xs:choice&gt;
+    &lt;/xs:complexType&gt;
+  &lt;/xs:element&gt;
+&lt;/xs:schema&gt;
+
+</pre>
+
+
+<p> With this file we issue the following command to have xsd generate the strong dataset:</p>
+
+<pre class="CodeBox">
+xsd StrongDataSetFeed.xsd /dataset
+</pre>
+
+<p>Which will generate a file we can compile to get an assembly with the strong dataset. To use it, we do the following:</p>
+
+<pre class="CodeBox">
+using System;
+using Npgsql;
+
+
+public class t
+{
+	public static void Main(String[] args)
+	{
+		NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+
+		conn.Open();
+		
+		NpgsqlDataAdapter da = new NpgsqlDataAdapter("Select * from tablea", conn);
+	
+
+		NewDataSet n = new NewDataSet();
+
+		da.Fill(n);
+
+		foreach (NewDataSet._TableRow tr in n._Table)
+		{
+			Console.WriteLine(tr.field_serial);
+		}
+	}
+}
+</pre>
+
 <h3> 2.1 Npgsql.dll file location </h3>
 
 <p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
@@ -437,6 +614,14 @@ on how the runtime probes (locates) assemblies to be loaded. There is also a sec
 <p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
 So, for example the application directory is called "ASPNETApplication", Npgsql.dll must be placed in the "ASPNETApplication\bin" directory.
 If it's not, you will get a lot of compiling errors when trying to use Npgsql.</p>
+<p> You can also put the Npgsql assembly in the Global Cache Assembly. Since 0.4 version, Npgsql is strongly signed which means you can
+use gacutil to install it. Issue the following command to do it:</p>
+<pre class="CodeBox">
+gacutil -i Npgsql.dll
+</pre>
+
+<p> Please, refer to "Installing an Assembly in the Global Cache Assembly" section of MSDN docs for more help.
+
 
 <h3> 2.2 Using Npgsql Logging support </h3>
 
