@@ -1,6 +1,6 @@
 <project name="NpgsqlTests" default="build" basedir=".">
 
-    <property name="NUnit20.dir" value="d:\win32app\nant-0.8.2" />
+    <property name="NAnt.dir" value="c:\win32app\nant-0.8.2" />
     <property name="assemblyname" value="NpgsqlTests" />
     
     <target name="clean" description="cleans the build directory">
@@ -17,7 +17,7 @@
           <includes name="${testfiles.dir}\*.cs" />
         </sources>
         <references>
-          <includes name="${NUnit20.dir}\bin\nunit.framework.dll" />
+          <includes name="${NAnt.dir}\bin\nunit.framework.dll" />
           <includes name="${ms.build.dir}\Npgsql.dll" />
         </references>
       </csc>
