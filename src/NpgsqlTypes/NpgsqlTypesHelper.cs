@@ -103,12 +103,23 @@ namespace NpgsqlTypes
 					return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
 				
 				case NpgsqlDbType.Text:
-					// Escape all single quotes in the string.
-					return "'" + parameter.Value.ToString().Replace("'", "\'") + "'";
+				{
+					NpgsqlString value = (NpgsqlString) parameter.Value;
+					if (value.IsNull)
+						return "Null";
+					else
+						// Escape all single quotes in the string.
+						return "'" + parameter.Value.ToString().Replace("'", "\'") + "'";
+				}
 				
 				case NpgsqlDbType.Timestamp:
-					return "'" + ((DateTime)parameter.Value).ToString("u") + "'";
-				
+				{
+					NpgsqlDateTime value = (NpgsqlDateTime) parameter.Value;
+					if (value.IsNull)
+						return "Null";
+					else
+					return "'" + ((NpgsqlDateTime)parameter.Value).ToISOString() + "'";
+				}
 				default:
 					// This should not happen!
 					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", parameter.NpgsqlDbType));
