@@ -16,9 +16,6 @@
 <link rel="stylesheet" href="global.css">
 <script language="JavaScript" src="global.js"></script>
 
-<!-- Table Layout Stylesheet -->
-
-</style>
 
 </head><body>
 
@@ -40,8 +37,38 @@
 
 <p>This document describes the Npgsql Connector class.</p>
 
-<p>The connector class is used internally in Npgsql to provide access to the physical connection to the PostgreSQL server. Its main purpose is to hide the connection pool issues from the user of the connection class. It provides an interface to the connection pool mangager and the Npgsql connection class.</p>
+<p>The connector class is used internally in Npgsql to provide access to the physical connection to the PostgreSQL server. Its main purpose is to hide the connection pool issues from the connection class. </p>
 
+<h2>Interface</h2>
+
+<h3>Pproperties</h3>
+<dl>
+<dt>Pooled</dt>
+<dd>Controls the pooling of the physical connection: If false, then the physical connection is closed and the associcated connector destroyed in the Release() method. If true, the pyhical connection is held open and the connector is pooled by the connector pool manager.</dd>
+
+<dt>Shared</dt>
+<dd>Enables the physical connector to be shared by multiple connection objects.</dd>
+
+<dt>ConnectString</dt>
+<dd>The connection string is used to open a physical connection to the database server. The connector pool manager looks at the connection string to determine if a connector is suitable to be returned to the requesting connection object.</dd>
+</dl>
+
+
+<h3>Methods</h3>
+<dl>
+<dt>Release()</dt>
+<dd>Called from Connection.Close(). If the Pooled property is false, the pyhsical connection is closed and the connector object then subject to the garbage collection. If the Pooled property is true, the physical connection is held open and the connector object is inserted into the pool manager's pooled connections list, in order to subsequently get recycled. </dd>
+</dl>
+
+
+<h3>Events</h3>
+<p>There are currently no events.</p>
+
+
+<h2>Concecpts</h2>
+
+
+<p></p>
 
 <h3>Life Cylcle of a Connector Object</h3>
 

@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" >
+<HTML>
+<HEAD>
+<TITLE>Connection Pool Test Application</TITLE>
+
+<meta http-equiv="content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-Style-Type" content="text/css">
+<meta http-equiv="expires" content="">
+<meta name="category" content="IT/Database/PostgreSQL/Npgsql/Docs/Internal">
+<meta name="filename" content="class-connector.htm">
+<meta name="date" content="2002-06-17">
+<meta name="author" content="Ulrich Sprick">
+<meta name="robots" content="nofollow">
+<meta name="keywords" content="IT; Database; PostgreSQL; Npgsql; Communication; Documentation; Class; Connector;">
+<meta name="description" content="This document describes the connector class">
+
+<link rel="stylesheet" href="global.css">
+<script language="JavaScript" src="global.js"></script>
+
+</HEAD><BODY>
+
+<h1 align=center>Connection Pool Test Application</h1><hr>
+
+<p class=pgstats>Last update: 2002-06-18 01:48:00 by usp
+ &bull; Category: Internal documentation
+ &bull; Intended Audience: Npgsql Developers</p>
+
+<h3>Form Description</h3>
+
+<p>The app visualizes the way a connector uses the connector and pool manager interface. It is also used to test and debug Connector and ConnectorPool logic.</p>
+
+<p>The form is divided into 3 areas:</p>
+<ol>
+<li>The connector request definition area</li>
+<li>The (logical) connections area</li>
+<li>The pool managers connector lists area.</li>
+</ol>
+
+<img src="connpool-testform.png">
+
+<h3>Working with pooled connectors</h3>
+<p>Right after start there are no Connections, and the pool manager's shared and pooled connectors lists are blank. Fill the connection string textbox, select whether you want the connections shared or not, and then click "Request". This will call the RequestConnector() method of the ConnectorPoolMgr. Request a non shared connector first. The new logical Connection appears as in the Connections listbox.</p>
+
+<p>The properties appear in the following order:</p>
+
+<ul>
+<li>Connector instance number, a sort of Connector ID.</li>
+<li>The Pooled property. A captial letter indicates it is set.</li>
+<li>The Shared property.</li>
+<li>The number of clients (Connections) sharing that connector</li>
+<li>The connection string</li>
+</ul>
+
+<p>The Modiy box works only if a Connection entry is selected. Try to change the share property: It can only be edited, if it is not in use. That is: upon request.</p>
+
+<p>Now clear the Pooled property. That is reflected in the listbox. Make the connector unpooled and then Release() the connector. The Connection disappears, as the connector does: it is not pooled, the physical connection is closed, the connector is thrown away.</p>
+
+<p>Next request a new connector, non shared connector. Select the connection. The modify checkboxes reflect the settings. Leave the connector pooled, and release it: The connector appears in the Pooled Connectors listbox. You may click the Refresh button deliberately. </p>
+
+<p>Request the same connector again: The pooled connector will be recycled and therefor removed from the pooled connectors list. A logical connection entry appears and shows the recycled connector (verify the connector ID).</p>
+
+<p>Select the connection and release the connector. Modify the connection string and request a connector. As the connection string could not be matched, a new connector is created.</p>
+
+<p>Release the connector. It appears in the pooled connectors list.</p>
+
+
+<h3>Working with Shared Connectors</h3>
+
+<p>Request a shared connector by checking the box in the request area. If you did not change the connection string, the pooled connector with the matching connection string will be recycled: The connector appears not only in the connection listbox, but in the shared connectors list, too. Note the Shared property set, and 1 connection working on that connector.</p>
+
+<p>Request another shared connector with the same connection string: There will appear a new Connection object in the list, working on the same connector, as you can see by the connector IDs. The shared connectors list shows 2 connections operating on the connector.</p>
+
+<p>Release one of the shared connections. The connection entry disappears, but the pool manager's connection lists remain unchanged. Except that now only 1 connection is working on the connector.</p>
+
+<p>Clear the Pooled property, and the shared connectors list refresh button. The connector's Pooled property is cleared. Now relase that connector.</p>
+
+<p>You might expect that the connector is deleted. But note, that when releasing a shared connector the pooled property is ignored: Shared connectors are always pooled.</p>
+
+<p>You may play around a while and get a feeling for what's going on. And you may explore what is happening in the debugger as well. I hope I have no bugs in the implementation, but as it is proven, that a non-trivial program cannot be proven to be correct (Alan Turing?), one can only prove that a program is incorrect - if it is incorrect. Good luck && happy hunting.</p>
+
+<h3>Summary</h3>
+
+<p>The Connection class code has do deal with 3 properties and methods:</p>
+
+<ul>
+<li>ConnectorPoolMgr.RequestConnector()</li>
+<li>Connector.Release()</li>
+<li>Connector.Pooled</li>
+</ul>
+
+<p>That's all. The rest is inside the Connector and ConnectorPool class.</p>
+
+</BODY>
+</HTML>

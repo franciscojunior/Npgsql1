@@ -1,0 +1,96 @@
+<html><head>
+
+<title>Npgsql: Connection Pooling</title>
+
+<meta http-equiv="content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-Style-Type" content="text/css">
+<meta http-equiv="expires" content="">
+<meta name="category" content="IT/Database/PostgreSQL/Npgsql/Docs/Internal">
+<meta name="filename" content="dev-connpool-ovw.htm">
+<meta name="date" content="2002-06-18">
+<meta name="author" content="Ulrich Sprick">
+<meta name="robots" content="nofollow">
+<meta name="keywords" content="IT; Database; PostgreSQL; Npgsql; Communication; Documentation; Class; Connector Pool;">
+<meta name="description" content="This document describes the connector pool class">
+
+<link rel="stylesheet" href="global.css">
+<script language="JavaScript" src="global.js"></script>
+
+<!-- Table Layout Stylesheet -->
+
+</style>
+
+</head><body>
+
+<h1 align=center>Npgsql: Connection Pooling Overview</h1><hr>
+
+<table width=100%>
+<tr>
+<td width=33% align=left>&larr; <a href="">???</a></td>
+<td width=33% align=center><a href="index.htm">Up</a></td>
+<td width=33% align=right><a href="">???</a> &rarr;</td>
+</tr>
+</table><hr>
+
+<p> </p>
+
+<p class=pgstats>Last update: 2002-06-18 01:48:00 by usp &bull;
+Category: Internal documentation &bull;
+Intended Audience: Application Developers</p>
+
+<p>This document provides an overview over the connection pooling, the concepts and implementation.</p>
+
+<h3>Backgrounds</h3>
+<p>Establishing a connection is costly and time consuming: Backend background process, fork.
+Disconnected paradigm of ADO.NET.
+Leads to connection pooling and sharing</p>
+
+<h3>Connection Pooling</h3>
+<p>Connection.Close() doesn't close the physical connection.
+Instead held open, and stored in a pool for later reuse.
+Avoids the need to establish a new physical connection.
+Speeds up interaction with backend.</p>
+
+<h3>Connection Sharing</h3>
+<p>Idea: Multiple connection objects share a single physical connection. Goal: Reduce backend load, reduce resource usage, speed up backend frontend interaction, releaf application designer from dealing with central connection management.</p>
+
+<h3>Implementation Overview</h3>
+<p>Separation of physical connection handling from the logical connection the application designer works with. Introduction the connector class.</p>
+
+<p>Connector class handles opening and closing the physical connection. Properties controls the behaviour: <I>Shared</I> and <I>Pooled</I> properties.</p>
+
+<p>Connector administration by ConnectorPool class. Parts: 2 separate lists for shared and pooled connectors, one connector request method used by connection object when it needs to obtain a physical connection to the database.</p>
+
+<p>Connector is choosen from the lists based on the connection string: Must match. Whether shared or not has an effect on which list are searched for a connector.</p>
+
+<p>If the application doesn't need connection anymore, the connector is handed back to the connector pool manager. Depending on the connector properties the connector is left in the shared connectors list, moved in the pooled connectors list or handed over to the garbage collection for destruction.</p>
+
+<p>Diagram ?</p>
+
+<h3>Special Feature: Requested Connector Closing</h3>
+
+<p>There are some situations when a client must gain exclusive access to a database. Connection pooling adds an extra obstacle to this task, as the physical connections are held open by the connector pool. This means the user has to terminate all applications connecting to that database. This may introduce a certain inconveniance. And if there are applications spread over different workstations in the LAN this could get an entertaining task easily. But the Npgsql provides a means which facilitates this task:</p>
+
+<p>When a connector establishes a connection to it's database, it issues a LISTEN() command to the database server, with the topic equal to the name of the connected database connected to. If there is a client in the net who wants exclusive access to a database, he issues a NOTIFY() command with the name of the requested database. This will get the database backend send a notification message to every connector which has subsribed to this topic previously. </p>
+
+<p>The receiving connector reacts on this message with closing it's physical connection, but only if the connector is currently in the state "pooled", i.e. unused by the application. Then the connector removes itself from the pooled connectors list of the connector pool manager, thereby transfering itself to the system's garbage collection. </p>
+
+<p>Closing the physical connection is safe, because connectors held in the pooled connectors list are currently not used by the application.</p>
+
+<p>This feature eliminates the need for shutting down every database application in the net, and if all application adhere to the disconnected paramdigm, there will be a good chance for an application to get exclusive access to a database.</p>
+
+
+<h3>Further benefits</h3>
+
+<p>Isolating the physical connection handling in the connector class provicdes a good commencement point for implementing alternatives to tcp/ip connection methods, for example the lightweight NetBIOS protocol, Remote Procedure Call RPC, Named Pipes or proprietary protocols. </p>
+<p>Implementation design:</p>
+<ol>
+<li>Construction of an abstract connector base class, defining the general connector behaviour, interface to the connector pool manager etc.</li>
+<li>Implementing the various protocol specific code in a set of derived classes based on virtual method calls.</li>
+<li>The various connector types are handled by connector pool manager and connection object through their uniform ConnectorBase class interface.</li>
+</ol>
+<p>This approach keeps Npgsql open for the future developement.</p>
+
+
+</body>
+</html>
