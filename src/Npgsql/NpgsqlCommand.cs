@@ -805,7 +805,7 @@ namespace Npgsql
             // Check the connection state first.
             CheckConnectionState();
 	    
-	    // reset any responses just before getting new ones
+            // reset any responses just before getting new ones
             connector.Mediator.ResetResponses();
 
 
@@ -815,38 +815,32 @@ namespace Npgsql
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();
             } 
-			else 
-			{
-            	try
-				{
+            else 
+            {
+                try
+                {
 					
-					BindParameters();
+                    BindParameters();
 
-					// Check for errors and/or notifications and do the Right Thing.
-					connector.CheckErrorsAndNotifications();
+                    // Check for errors and/or notifications and do the Right Thing.
+                    connector.CheckErrorsAndNotifications();
 
-					connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
+                    connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
 
-					// Check for errors and/or notifications and do the Right Thing.
-					connector.CheckErrorsAndNotifications();
-				}
-              	finally
-				{
-					// As per documentation:
-					// "[...] When an error is detected while processing any extended-query message,
-					// the backend issues ErrorResponse, then reads and discards messages until a
-					// Sync is reached, then issues ReadyForQuery and returns to normal message processing.[...]"
-					// So, send a sync command if we get any problems.
+                    // Check for errors and/or notifications and do the Right Thing.
+                    connector.CheckErrorsAndNotifications();
+                }
+                finally
+                {
+                    // As per documentation:
+                    // "[...] When an error is detected while processing any extended-query message,
+                    // the backend issues ErrorResponse, then reads and discards messages until a
+                    // Sync is reached, then issues ReadyForQuery and returns to normal message processing.[...]"
+                    // So, send a sync command if we get any problems.
 
-					connector.Sync();
-					
-
-				}
-			}
-           
+                    connector.Sync();
+                }
+            }           
         }
-
-
     }
-
 }

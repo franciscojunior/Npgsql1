@@ -57,7 +57,7 @@ namespace Npgsql
     /// PostgreSQL server.
     /// </summary>
     [System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlConnection))]
-    public sealed class NpgsqlConnection : Component, IDbConnection
+    public sealed class NpgsqlConnection : Component, IDbConnection, ICloneable
     {
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlConnection";
@@ -449,20 +449,31 @@ namespace Npgsql
             disposed = true;
         }
 
-/* CHECKME - this isn't an ICloneable...
         /// <summary>
         /// Create a new (unconnected) connection based on this one.
         /// </summary>
         /// <returns>A new NpgsqlConnction object.</returns>
-        public Object Clone()
+        Object ICloneable.Clone()
+        {
+					return Clone();
+        }
+
+        /// <summary>
+        /// Create a new (unconnected) connection based on this one.
+        /// </summary>
+        /// <returns>A new NpgsqlConnction object.</returns>
+        public NpgsqlConnection Clone()
         {
             CheckNotDisposed();
 
-            return new NpgsqlConnection(ConnectionString);
+						NpgsqlConnection C = new NpgsqlConnection(ConnectionString);
+
+						if (connector != null) {
+							C.Open();
+						}
+
+						return C;
         }
-
-*/
-
 
         //
         // Internal methods and properties
