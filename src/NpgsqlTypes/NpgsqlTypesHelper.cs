@@ -203,7 +203,8 @@ namespace NpgsqlTypes
 					{ 
 						typeModifier -= 4;
 						//Console.WriteLine("Numeric from server: {0} digitos.digitos {1}.{2}", data, (typeModifier >> 16) & 0xffff, typeModifier & 0xffff);
-						return new NpgsqlDecimal(Decimal.Parse(data, NumberFormatInfo.InvariantInfo));
+						return new NpgsqlDecimal(Decimal.Parse(data, NumberFormatInfo.InvariantInfo), (Byte)((typeModifier >> 16) & 0xFFFF), (Byte)(typeModifier & 0xFFFF));
+						
 					}
 				
 				case NpgsqlDbType.Timestamp:
