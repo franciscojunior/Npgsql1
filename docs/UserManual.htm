@@ -74,7 +74,7 @@ p.headnotes {
 
 <p />
 
-<p class="headnotes">Last update: 2002-07-03 23:00 by fxjr</p>
+<p class="headnotes">Last update: 2002-07-05 18:00 by mcmicro</p>
 <p class="headnotes">Category: External documentation</p>
 <p class="headnotes">Intended Audience: Npgsql Users</p>
 
@@ -83,24 +83,24 @@ p.headnotes {
 
 <p> Npgsql is a .Net Data Provider for <a href="http://www.postgresql.org">Postgresql Database Server</a>. </p>
 
-<p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to use PostgreSQL server to send and receive data. It is developed using the
-guidelines as specified in .Net docs.</p>
+<p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to use a PostgreSQL server to send and receive data. It is developed using the
+guidelines specified in the .Net docs.</p>
 
 <h2> 2. Npgsql Usage </h2>
 
-<p> This section explains Npgsql usage in a .Net Application. If you are used to develop Data Access applications using the
-Sql Server, OleDB or ODBC.NET providers, using Npgsql will be almost the same.</p>
+<p> This section explains Npgsql usage in a .Net Application. If you are used to developing Data Access applications using the
+Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
 <p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
 
-<p> First, to use Npgsql objects more easily, you have to tell the compiler to use the Npgsql namespace. It will be needed also to specify the
-System.Data as a lot of classes used to data manipulation is in this namespace. To do that, in C#, you use the using directive: </p>
+<p> First, to use Npgsql objects more easily, you have to tell the compiler to use the Npgsql namespace. It will also be needed to use the
+System.Data namespace as a lot of classes used for data manipulation reside in it. To do that, in C#, you use the using directive: </p>
 
 <pre class="CodeBox">
 using System.Data;
 using Npgsql;
 </pre>
 
-<p>For example, to stablish a connection to a server located at ip 172.16.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
+<p>For example, to establish a connection to a server located at ip 172.16.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
 <pre class="CodeBox">
 using System.Data;
 using Npgsql;
@@ -116,7 +116,7 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-<p>This code doesn't do very much useful things. It only connects to the database and disconnects. If there is any error, a NpgsqlException would be thrown.
+<p>This source doesn't do anything useful. It only connects to the database and disconnects. If there is an error, a NpgsqlException is thrown.
 Now, suppose there is a table called table1 with two fields a and b both of type int. If you want to add the tuple (1, 1) in this table you could send the 
 insert statement as follows:
 
@@ -181,24 +181,23 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-Other queries could also be used, for example "select count(*) from table1". Also, queries that doesn't return single values
-could be used, but just the first column of the first row would be returned.
+Other queries could also be used, for example "select count(*) from table1". Also, queries that don't return single values
+could be used, but only the first column of the first row would be returned.
 
 <h3> 2.1 Npgsql.dll file location </h3>
 
-<p> In order to .Net Runtime locate Npgsql.dll, it must be put in the same directory the application is, unless you specify other 
-directory as a path to private components through a configuration file (using the probing element). Please, see .Net docs for information
-on how runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
+<p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
+directory as a path to private components through a configuration file (using the probing element). Please, see the .Net docs for information
+on how the runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
 <p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
 So, for example the application directory is called "ASPNETApplication", Npgsql.dll must be placed in the "ASPNETApplication\bin" directory.
-If don't, you will get a lot of compiling errors when trying to use Npgsql.</p>
+If it's not, you will get a lot of compiling errors when trying to use Npgsql.</p>
 
 <h3> 2.2 Using Npgsql Logging support </h3>
 
-<p> Sometimes it is necessary to see messages Npgsql logs. May it to track some error or strange behavior or just to see what is happening inside the
-Npgsql. </p>
+<p> Sometimes it is necessary to trace Npgsql's behaviour to track errors. Npgsql can log messages to a specified file or to the console or both.
 
-<p> Npgsql can log messages to a specified file or to the console or both. Also, there is three levels of logging: <br />
+<p> There are three levels of logging: <br/>
 <ul>
   <li> None </li>
   <li> Normal </li>
@@ -206,15 +205,15 @@ Npgsql. </p>
 </ul>
 </p>
 
-<p> What file to use, if log to console and what level are specified through the NpgsqlEventLog static properties:
+<p> The following NpgsqlEventLog static properties may also be used:
 <ul>
   <li> Level - Can be one of the LogLevel enum values: None, Normal, Debug. </li>
-  <li> LogName - Full path of the file where write log to. </li>
-  <li> EchoMessages - Says if it is to log to console.</li>
+  <li> LogName - Full path of the file where to log into. </li>
+  <li> EchoMessages - Log to the console.</li>
 </ul>
 </p>
 
-<p> The example below shows how to log to console and a file using the level Debug: </p>
+<p> The example below shows how to log to the console and a file using the level Debug: </p>
 
 <pre class="CodeBox">
 using System.Data;
