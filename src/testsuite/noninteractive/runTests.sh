@@ -107,9 +107,12 @@ then
     echo "==========================="
     echo "**** All tests passed  ****"
     echo "==========================="
+    echo "OK" > ${NPGSQL_TEST_STATUS_FILE}
+    exit 0
 else
     echo "============================="
     echo "**** Some test(s) failed ****"
     echo "============================="
+    echo "FAILED" > ${NPGSQL_TEST_STATUS_FILE}
+    exit 1
 fi
-

@@ -1,3 +1,23 @@
+#
+# Makefile
+#
+# Copyright (C) 2002 The Npgsql Development Team
+# npgsql-general@gborg.postgresql.org
+# http://gborg.postgresql.org/project/npgsql/projdisplay.php
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+# 
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 NPGSQL_LIB=Npgsql.dll
 MONO=mono
 CC=mcs
@@ -21,15 +41,16 @@ NPGSQL_TEST_STRING=-U $(NPGSQL_UID) -h $(NPGSQL_HOST) -d $(NPGSQL_DB)
 NPGSQL_TESTS_LOG=npgsql_tests.log
 NPGSQL_TESTS_SHARED_SRC=NpgsqlTests.cs
 NPGSQL_TESTS_SHARED_LIB=NpgsqlTests.dll
+NPGSQL_TEST_STATUS_FILE=npqsql_tests_status
 
 export CC CPPFLAGS NPGSQL_template_DB NPGSQL_TEST_STRING NPGSQL_TESTS_LOG \
 	NPGSQL_DB_PREFIX NPGSQL_DB NPGSQL_HOST NPGSQL_UID NPGSQL_PWD PSQL \
-	NPGSQL_TESTS_SHARED_SRC NPGSQL_TESTS_SHARED_LIB MONO
+	NPGSQL_TESTS_SHARED_SRC NPGSQL_TESTS_SHARED_LIB NPGSQL_TEST_STATUS_FILE MONO
 
 export PGPASSWORD=$(NPGSQL_PWD)
 export PGUSER=$(NPGSQL_UID)
 
-all: links db tests
+all: compile_lib links db tests
 
 db:
 	@echo "==========================================================" && \
@@ -58,11 +79,15 @@ db:
 	-f add_data.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
 	(echo "FAILED" && exit 1)
 
+compile_lib:
+	(cd ../../Npgsql; make)
+
 links:
 	@test -L $(NPGSQL_LIB) || ln -s ../../Npgsql/$(NPGSQL_LIB) $(NPGSQL_LIB)
 
 tests:
 	@./runTests.sh 2>&1 | tee -a ${NPGSQL_TESTS_LOG}
+	grep OK ${NPGSQL_TEST_STATUS_FILE} || exit 1
 
 clean:
 	rm -rf *~ out_* *.exe $(NPGSQL_LIB) $(NPGSQL_TESTS_LOG) \
