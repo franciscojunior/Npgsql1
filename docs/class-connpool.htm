@@ -70,7 +70,7 @@ Intended Audience: Npgsql Developers</p>
 <table>
 <tr style="vertical-align:top;">
 <td></td>
-<td width=50><img style="float:right;" src="connection-pooling-4.png">
+<td><img style="float:right;" src="connection-pooling-3.png">
 <p>The algorithm for requesting a connector is quit simple.</p>
 <p>If a shared connector is requested the pool manager starts with searching the SharedConnectors list for a connector with a matching connect string.</p>
 <p>If a suitable connector is found, its ShareCounter gets incremented to reflect the number of Connections working on this connector. Then the connector object is returned to the calling connection object.</p>
