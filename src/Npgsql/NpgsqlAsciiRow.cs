@@ -74,7 +74,7 @@ namespace Npgsql
 			Array.Clear(null_map_array, 0, null_map_array.Length);
 			
 			// Read the null fields bitmap.
-			inputStream.Read(null_map_array, 0, null_map_array.Length );
+			PGUtil.CheckedStreamRead(inputStream, null_map_array, 0, null_map_array.Length );
 			
 			// Get the data.
 			for (Int16 field_count = 0; field_count < row_desc.NumFields; field_count++)
