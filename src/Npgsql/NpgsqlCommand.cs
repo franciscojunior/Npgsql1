@@ -663,7 +663,6 @@ namespace Npgsql
                 planName = Connector.NextPlanName();
                 String portalName = Connector.NextPortalName();
 
-                Console.WriteLine(planName);
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
                 Connector.Parse(parse);
@@ -808,7 +807,6 @@ namespace Npgsql
             if (addProcedureParenthesis)
                 result += ")";
 
-            Console.WriteLine(functionReturnsRecord);
             if (functionReturnsRecord)
                 result = AddFunctionReturnsRecordSupport(result);
                 
@@ -970,8 +968,6 @@ namespace Npgsql
 
             planName = Connector.NextPlanName();
 
-            Console.WriteLine(planName);
-            
             StringBuilder command = new StringBuilder("prepare " + planName);
 
             String textCommand = text;
