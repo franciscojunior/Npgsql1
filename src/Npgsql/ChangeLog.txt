@@ -1,3 +1,13 @@
+
+2002-06-07
+	fxjr:
+					NpgsqlConnection.cs
+								- Changed WriteStartupPacked implementation to use PGUtil.WriteLimString()
+								method.
+					
+					PGUtil.cs
+								- Started implementation of the method WriteLimString().
+								
 2002-06-07
 	dpage:
         	- Added NpgsqlEventLog class to handle event & debug logging
