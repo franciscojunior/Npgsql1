@@ -406,7 +406,9 @@ namespace Npgsql
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ProcessServerVersion()", LogLevel.Debug);
 			
-			SupportsPrepare = _serverVersion.IndexOf("PostgreSQL 7.3") != -1;
+			
+			SupportsPrepare = (_serverVersion.IndexOf("PostgreSQL 7.3") != -1) || 
+												(_serverVersion.IndexOf("PostgreSQL 7.4") != -1) ;
 			
 		}
     
