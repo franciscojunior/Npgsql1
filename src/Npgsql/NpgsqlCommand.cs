@@ -228,7 +228,8 @@ namespace Npgsql
 						// This is the CompletedResponse message.
 						// Get the string returned.
 						
-						String ret_string = GetStringFromNetStream(network_stream);
+						// String ret_string = GetStringFromNetStream(network_stream);
+						String ret_string = PGUtil.ReadString(network_stream, connection.encoding);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
 						
 						// Check if the command was insert, delete or update.
@@ -254,8 +255,9 @@ namespace Npgsql
 						// the cursor in a FETCH case or 'blank' otherwise.
 						// In this case it should be always 'blank'.
 						// [FIXME] Get another name for this function.
-						String cursor_name = GetStringFromNetStream(network_stream);
 						
+						//String cursor_name = GetStringFromNetStream(network_stream);
+						String cursor_name = PGUtil.ReadString(network_stream, connection.encoding);
 						// Continue wainting for ReadyForQuery message.
 						break;
 
@@ -263,17 +265,17 @@ namespace Npgsql
 						// This is the EmptyQueryResponse.
 						// [FIXME] Just ignore it this way?
 						// network_stream.Read(input_buffer, 0, 1);
-						GetStringFromNetStream(network_stream);
+						//GetStringFromNetStream(network_stream);
+						PGUtil.ReadString(network_stream, connection.encoding);
 						break;
 					
 					case 'E':
 						// This is the ErrorResponse.
 						// Get the string error returned and throw a NpgsqlException.
 						
-						// [FIXME] The function GetStringFromNetStream should be used in NpgsqlConnection class too.
-						// So, this function is a cadidate in potential to be a static method in a util class.
 						
-						error_message = GetStringFromNetStream(network_stream);
+						// error_message = GetStringFromNetStream(network_stream);
+						error_message = PGUtil.ReadString(network_stream, connection.encoding);
 					
 						// Even when there is an error, the backend send the ReadyForQuery message.
 						// So, continue waiting for this message.
@@ -341,14 +343,11 @@ namespace Npgsql
 			
 			// Write the query. In this case it is the CommandText text.
 			// It is a string terminated by a C NULL character.
-			output_stream.Write(connection.encoding.GetBytes(text + '\x00') , 0, text.Length + 1);
+			PGUtil.WriteString(text, output_stream, connection.encoding);
 			
 			// Send bytes.
 			output_stream.Flush();
-			
-			//throw new NotImplementedException();
-			
-			
+						
 			// [FIXME] Is it really necessary? How big?
 			Byte[] input_buffer = new Byte[1500];
 			
@@ -376,7 +375,8 @@ namespace Npgsql
 						// This is the CompletedResponse message.
 						// Get the string returned.
 						
-						String ret_string = GetStringFromNetStream(network_stream);
+						//String ret_string = GetStringFromNetStream(network_stream);
+						String ret_string = PGUtil.ReadString(network_stream, connection.encoding);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
 						
 						// [FIXME] Just ignore the command string returned?
@@ -390,7 +390,9 @@ namespace Npgsql
 						// the cursor in a FETCH case or 'blank' otherwise.
 						// In this case it should be always 'blank'.
 						// [FIXME] Get another name for this function.
-						String cursor_name = GetStringFromNetStream(network_stream);
+						// String cursor_name = GetStringFromNetStream(network_stream);
+						String cursor_name = PGUtil.ReadString(network_stream, connection.encoding);
+					
 						
 						// Continue wainting for ReadyForQuery message.
 						break;
@@ -409,7 +411,7 @@ namespace Npgsql
 						Int16 field_type_size;
 						Int32 field_type_modifier;
 						
-						field_name = GetStringFromNetStream(network_stream);
+						field_name = PGUtil.ReadString(network_stream, connection.encoding);
 							
 						network_stream.Read(input_buffer, 0, 4 + 2 + 4);
 						
@@ -425,8 +427,8 @@ namespace Npgsql
 						// Note that we are starting from the second field if it exists.
 						for (Int16 i = 1; i < num_fields; i++)
 						{
-							Console.WriteLine("hi");
-							field_name = GetStringFromNetStream(network_stream);
+							//field_name = GetStringFromNetStream(network_stream);
+							field_name = PGUtil.ReadString(network_stream, connection.encoding);
 							
 							network_stream.Read(input_buffer, 0, 4 + 2 + 4);
 						}
@@ -446,36 +448,48 @@ namespace Npgsql
 						// In reality, this should be almost always 1, because it
 						// is the only field that must be processed.
 						
-						
+						// [FIXME] For now, ignore the field mask. 
 						network_stream.Read(input_buffer, 0, (num_fields + 7)/8 );
-												
-						// [FIXME] For now, ignore the field mask. Read the first data
-						// of the first row.
-						network_stream.Read(input_buffer, 0, 4);
-						Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
-						network_stream.Read(input_buffer, 0, field_value_size - 4);
+							
+							
+						for (Int32 field_count = 0; field_count < num_fields; field_count++)
+						{
+							
+							// Read the first data of the first row.
+							// Read the size of the field + sizeof(Int32)
+							network_stream.Read(input_buffer, 0, 4);
+							Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
+							
+							// Now, read just the field value.
+							network_stream.Read(input_buffer, 0, field_value_size - 4);
 					
-						// Get only the first value.
-						if (result == null)
-							
-							// Read the bytes as string.
-							result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
-							
-							// Now convert the string to the field type.
-							// [FIXME] Hardcoded values for int types and string.
-							// Change to NpgsqlDbType.
-							// For while only int4 and string are strong typed.
-							// Any other type will be returned as string.
-							switch (result_type)
+							// Get only the first value.
+							if (result == null)
 							{
-								case 23:	// int4, integer.
-									result = Convert.ToInt32(result);
-									break;
 								
+								// Read the bytes as string.
+								result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
+								
+								// Now convert the string to the field type.
+								// [FIXME] Hardcoded values for int types and string.
+								// Change to NpgsqlDbType.
+								// For while only int4 and string are strong typed.
+								// Any other type will be returned as string.
+								switch (result_type)
+								{
+									case 23:	// int4, integer.
+										result = Convert.ToInt32(result);
+										break;
+									
+								}
 							}
-							
-					
-					
+							else 
+							{
+								// Just ignore the fields values.
+								connection.encoding.GetChars(input_buffer, 0, field_value_size - 4);
+							}
+						}
+						
 						// Now wait for CompletedResponse message.
 						break;
 					
@@ -483,7 +497,8 @@ namespace Npgsql
 						// This is the EmptyQueryResponse.
 						// [FIXME] Just ignore it this way?
 						// network_stream.Read(input_buffer, 0, 1);
-						GetStringFromNetStream(network_stream);
+						// GetStringFromNetStream(network_stream);
+						PGUtil.ReadString(network_stream, connection.encoding);
 						break;
 					
 					case 'E':
@@ -493,7 +508,8 @@ namespace Npgsql
 						// [FIXME] The function GetStringFromNetStream should be used in NpgsqlConnection class too.
 						// So, this function is a cadidate in potential to be a static method in a util class.
 						
-						error_message = GetStringFromNetStream(network_stream);
+						// error_message = GetStringFromNetStream(network_stream);
+						error_message = PGUtil.ReadString(network_stream, connection.encoding);
 					
 						// Even when there is an error, the backend send the ReadyForQuery message.
 						// So, continue waiting for this message.
@@ -555,33 +571,6 @@ namespace Npgsql
 			if (connection.State != ConnectionState.Open)
 				throw new InvalidOperationException("The Connection is not open");
 			
-		}
-		
-		
-		///<summary>
-		/// This method gets a C NULL terminated string from the network stream.
-		/// It keeps reading a byte in each time until a NULL byte is returned.
-		/// It returns the resultant string of bytes read.
-		/// This string is sent from backend.
-		/// </summary>
-		
-		private String GetStringFromNetStream(NetworkStream network_stream)
-		{
-			// [FIXME] Is 512 enough? At least it can't be more than MTU = 1500 on ethernet.
-			Byte[] buffer = new Byte[512];
-			Byte b;
-			Int16 counter = 0;
-			
-			// [FIXME] Is this cast always safe?
-			b = (Byte)network_stream.ReadByte();
-			while(b != 0)
-			{
-				buffer[counter] = b;
-				counter++;
-				b = (Byte)network_stream.ReadByte();
-			}
-			
-			return connection.encoding.GetString(buffer, 0, counter);
-		}
+		}						
 	}
 }
