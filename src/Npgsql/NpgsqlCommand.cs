@@ -41,7 +41,8 @@ namespace Npgsql
 		private Int32											timeout;
 		private CommandType								type;
 		private NpgsqlParameterCollection	parameters;
-		
+		private String										planName;
+		private static Int32							planIndex = 0;
     // Logging related values
     private static readonly String CLASSNAME = "NpgsqlCommand";
 		
@@ -56,6 +57,7 @@ namespace Npgsql
 		{
 		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlCommand()", LogLevel.Debug);
 			
+			planName = String.Empty;
 			text = cmdText;
 			this.connection = connection;
 			parameters = new NpgsqlParameterCollection();
@@ -362,7 +364,13 @@ namespace Npgsql
 			CheckConnectionState();
 			
 			// [TODO] Finish method implementation.
-			throw new NotImplementedException();
+			//throw new NotImplementedException();
+			
+			//NpgsqlCommand command = new NpgsqlCommand("prepare plan1 as " + GetCommandText(), connection );
+			NpgsqlCommand command = new NpgsqlCommand(GetPrepareCommandText(), connection );						
+			command.ExecuteNonQuery();
+			
+						
 			
 		}
 		
@@ -397,27 +405,146 @@ namespace Npgsql
 		/// </summary>
 		/// 
 		
-		public String GetCommandText()
+		internal String GetCommandText()
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetCommandText()", LogLevel.Debug);
-			// If there is no parameters, just return the text.
+			
+			if (planName == String.Empty)
+				return GetClearCommandText();
+			else
+				return GetPreparedCommandText();
+			
+					
+		}
+		
+		
+		private String GetClearCommandText()
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetClearCommandText()", LogLevel.Debug);
+			
 			if (parameters.Count == 0)
 				return text;
 			
+			CheckParameters();
+			
 			String result = text;
 			String parameterName;
-			
+						
 			// Now check if the parameters are there and replace them for the actual values.
 			for (Int32 i = 0; i < parameters.Count; i++)
 			{
 				parameterName = parameters[i].ParameterName;
-				if (result.IndexOf(parameterName) <= 0)
-					throw new NpgsqlException("Parameter :" + parameterName + " wasn't found in the query.");
-				
 				result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
 			}
-						
+			
 			return result;
+			
+		}
+		
+		
+		
+		private String GetPreparedCommandText()
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetPreparedCommandText()", LogLevel.Debug);
+			
+			if (parameters.Count == 0)
+				return "execute " + planName;
+			
+			CheckParameters();
+			
+			StringBuilder result = new StringBuilder("execute " + planName + '(');
+			
+			
+			for (Int32 i = 0; i < parameters.Count; i++)
+			{
+				result.Append(parameters[i].Value.ToString() + ',');
+				//result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
+			}
+			
+			result = result.Remove(result.Length - 1, 1);
+			result.Append(')');
+			
+			return result.ToString();
+			
+		}
+		
+		
+		private String GetPrepareCommandText()
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetPrepareCommandText()", LogLevel.Debug);
+			
+			
+			planName = "plan" + System.Threading.Interlocked.Increment(ref planIndex);
+			
+			StringBuilder command = new StringBuilder("prepare " + planName);
+			
+			String textCommand = text;
+			
+			
+			
+			if (parameters.Count > 0)
+			{
+				CheckParameters();
+				
+				command.Append('(');
+				Int32 i;
+				for (i = 0; i < parameters.Count; i++)
+				{
+					//[TODO] Add support for all types. 
+					
+					switch (parameters[i].DbType)
+					{
+						case DbType.Int32:
+							command.Append("int4");
+							break;
+														
+						case DbType.Int64:
+							command.Append("int8");
+							break;
+						
+						default:
+							throw new InvalidOperationException("Only DbType.Int32, DbType.Int64 datatypes supported");
+							
+					}
+					
+					command.Append(',');
+				}
+				
+				command = command.Remove(command.Length - 1, 1);
+				command.Append(')');
+				
+				
+				String parameterName;
+				
+				for (i = 0; i < parameters.Count; i++)
+				{
+					//result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
+					parameterName = parameters[i].ParameterName;
+					textCommand = textCommand.Replace(':' + parameterName, "$" + (i+1));
+				}
+				
+			}
+			
+			
+			command.Append(" as ");
+			command.Append(textCommand);
+			
+			
+			return command.ToString();
+					
+		}
+		
+		private void CheckParameters()
+		{
+			String parameterName;
+			
+			for (Int32 i = 0; i < parameters.Count; i++)
+			{
+				parameterName = parameters[i].ParameterName;
+				if (text.IndexOf(':' + parameterName) <= 0)
+					throw new NpgsqlException("Parameter :" + parameterName + " wasn't found in the query.");
+			}
 		}
 	}
+	
 }
