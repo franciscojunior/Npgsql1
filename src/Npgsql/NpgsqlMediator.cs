@@ -71,11 +71,24 @@ namespace Npgsql
 		public void AddCompletedResponse(String response)
 		{
 			if (_rd != null)
+			{
 				// Finished receiving the resultset. Add it to the buffer.
 				_resultSets.Add(new NpgsqlResultSet(_rd, _rows));
+				
+				// Add a placeholder response.
+				_responses.Add(null);
+				
+				// Discard the RowDescription.
+				_rd = null;
+			}
 			else
+			{
+				// Add a placeholder resultset.
+				_resultSets.Add(null);
 				// It was just a non query string. Just add the response.
-			_responses.Add(response);
+				_responses.Add(response);
+			}
+						
 		}
 		
 		public void AddRowDescription(NpgsqlRowDescription rowDescription)
