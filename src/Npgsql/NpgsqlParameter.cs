@@ -99,7 +99,8 @@ namespace Npgsql
 			// http://msdn.microsoft.com/library/en-us/cpguide/html/cpconusingparameterswithdataadapters.asp
 			// Should this be in this.Value.set{}?
 			//I don't really know so I leave it here where it will not hurt.
-			if(value == null){
+			if((value == null) || (value == DBNull.Value)){
+                
         // don't really know what to do - leave default and do further exploration
 			}else if(value.GetType() == typeof(bool)){
 				db_type = DbType.Boolean;
