@@ -31,7 +31,7 @@ using System.Collections;
 namespace Npgsql
 {
 		
-	public class NpgsqlDataReader : IDataReader
+	public class NpgsqlDataReader : IDataReader, IEnumerable
 	{
 		
 		
@@ -199,7 +199,8 @@ namespace Npgsql
 	  
 	  public String GetDataTypeName(Int32 i)
 	  {
-	  	throw new NotImplementedException();
+	  	// FIXME: have a type name instead of the oid
+		return (_currentResultset.RowDescription[i].type_oid).ToString();
 	  }
 	  
 	  public Type GetFieldType(Int32 i)
@@ -492,6 +493,11 @@ namespace Npgsql
 
 			return result;
 
+		}
+		
+		IEnumerator IEnumerable.GetEnumerator ()
+		{
+			return new System.Data.Common.DbEnumerator (this);
 		}
 	}
 }
