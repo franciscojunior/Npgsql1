@@ -289,7 +289,7 @@ namespace Npgsql
 			
 			
 			// Get the resultsets and create a Datareader with them.
-			return new NpgsqlDataReader(connection.Mediator.GetResultSets(), connection);
+			return new NpgsqlDataReader(connection.Mediator.GetResultSets(), connection.Mediator.GetCompletedResponses(), connection);
 		}
 		
 		public Object ExecuteScalar()
@@ -331,6 +331,9 @@ namespace Npgsql
 			
 			switch (rd[0].type_oid)
 			{
+				case 20:	// int8, integer.
+					result = Convert.ToInt64(ascii_row[0]);
+					break;
 				case 23:	// int4, integer.
 					result = Convert.ToInt32(ascii_row[0]);
 					break;
