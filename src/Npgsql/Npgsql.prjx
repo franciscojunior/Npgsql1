@@ -13,6 +13,7 @@
     <File name=".\NpgsqlParameter.cs" subtype="Code" buildaction="Compile" />
     <File name=".\LICENSE.txt" subtype="Code" buildaction="Nothing" />
     <File name=".\NpgsqlCommand.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\STATUS.txt" subtype="Code" buildaction="Nothing" />
   </Contents>
   <Configurations active="Debug">
     <Configuration name="Debug" description="">
