@@ -87,7 +87,7 @@ links:
 
 tests:
 	@./runTests.sh 2>&1 | tee -a ${NPGSQL_TESTS_LOG}
-	grep OK ${NPGSQL_TEST_STATUS_FILE} || exit 1
+	@grep OK ${NPGSQL_TEST_STATUS_FILE} || exit 1
 
 clean:
 	rm -rf *~ out_* *.exe $(NPGSQL_LIB) $(NPGSQL_TESTS_LOG) \
