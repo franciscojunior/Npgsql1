@@ -6,8 +6,8 @@
     <members>
         <member name="T:Npgsql.NpgsqlConnection">
             <summary>
-            	This class represents a connection to 
-            PostgreSQL Server.
+            	This class represents a connection to a
+            PostgreSQL server.
             </summary>
             
         </member>
