@@ -5,7 +5,7 @@
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
-//	Copyright (C) 2002 Francisco Jr.
+//	Copyright (C) 2002 The Npgsql Development Team
 //
 
 // This library is free software; you can redistribute it and/or
@@ -41,18 +41,17 @@ namespace Npgsql
 		// Logging related values
     private static readonly String CLASSNAME = "NpgsqlAsciiRow";
 		
-		private NpgsqlRowDescription	desc;
 		private ArrayList							data;
 		private Byte[]								null_map_array;
+		private Int16									num_fields;
 		
-		
-		public NpgsqlAsciiRow(NpgsqlRowDescription rowDescription)
+		public NpgsqlAsciiRow(Int16 numFields)
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlAsciiRow()", LogLevel.Debug);
 			
-			desc = rowDescription;
 			data = new ArrayList();
-			null_map_array = null;
+			null_map_array = new Byte[(numFields + 7)/8];
+			num_fields = numFields;
 		}
 		
 		
@@ -61,28 +60,27 @@ namespace Npgsql
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ReadFromStream()", LogLevel.Debug);
 			
 			Byte[] input_buffer = new Byte[300]; //[FIXME] Is this enough??
-			Int16 num_fields = desc.NumFields;
-			null_map_array = new Byte[(num_fields + 7)/8];
-					
-			// Read the null fields bitmap.
-			inputStream.Read(null_map_array, 0, (num_fields + 7)/8 );
 			
+			// Read the null fields bitmap.
+			inputStream.Read(null_map_array, 0, null_map_array.Length );
+									
 			// Get the data.
-			for (Int32 field_count = 0; field_count < num_fields; field_count++)
+			for (Int16 field_count = 0; field_count < num_fields; field_count++)
 			{
 				// Check if this field isn't null
 				if (IsNull(field_count))
 					// Field is null just keep next field.
 					continue;
-							
-				// Read the first data of the first row.
-				// Read the size of the field + sizeof(Int32)
-				inputStream.Read(input_buffer, 0, 4);
-				Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
 				
+				// Read the first data of the first row.
+								
+				PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, 4);
+								
+				Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
+							
 				// Now, read just the field value.
-				inputStream.Read(input_buffer, 0, field_value_size - 4);
-		
+				PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, field_value_size - 4);
+				
 				// Read the bytes as string.
 				String result = new String(encoding.GetChars(input_buffer, 0, field_value_size - 4));
 				
@@ -98,6 +96,10 @@ namespace Npgsql
 			// [FIXME] Check more optimized way of doing this.
 			// Should this be public or private?
 			
+			// Check valid index range.
+			if ((index < 0) || (index >= num_fields))
+					throw new ArgumentOutOfRangeException("index");
+			
 			// Check if the value (index) of the field is null 
 			
 			// Get the byte that holds the bit index position.
@@ -110,18 +112,13 @@ namespace Npgsql
 		}
 			
 		
-		public NpgsqlRowDescription RowDescription
-		{
-			get
-			{
-				return desc;
-			}
-		}
-		
 		public Object this[Int32 index]
 		{
 			get
 			{
+				
+				if ((index < 0) || (index >= num_fields))
+					throw new ArgumentOutOfRangeException("this[] index value");
 				// [FIXME] Should return null or something else
 				// more meaningful?
 				return (IsNull(index) ? null : data[index]);
