@@ -26,7 +26,11 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.Data;
+using System.Net;
+using System.Text;
+using System.IO;
 using Npgsql;
+using System.Resources;
 
 
 
@@ -62,14 +66,21 @@ namespace NpgsqlTypes
 		
 		// Logging related values
     private static readonly String CLASSNAME = "NpgsqlDataReader";
+    private static ResourceManager resman = new ResourceManager(typeof(NpgsqlTypesHelper));
+	  
+	  // From include/utils/datetime.h. Thanks to Carlos Guzman Alvarez
+	  private static readonly DateTime postgresEpoch = new DateTime(2000, 1, 1);
+	  
 		
 		
 		public static String GetBackendTypeNameFromDbType(DbType dbType)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType)", Npgsql.LogLevel.Debug);
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetBackendTypeNameFromDbType");
 			
 			switch (dbType)
 			{
+			  case DbType.Binary:
+			    return "bytea";
 				case DbType.Boolean:
 					return "bool";
 			  case DbType.Single:
@@ -85,6 +96,7 @@ namespace NpgsqlTypes
 				case DbType.Int16:
 					return "int2";
 				case DbType.String:
+                case DbType.AnsiString:
 					return "text";
 				case DbType.DateTime:
 					return "timestamp";
@@ -92,22 +104,59 @@ namespace NpgsqlTypes
 			    return "date";
 			  case DbType.Time:
 			    return "time";
-				default:
-					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", dbType));
+			  default:
+					throw new NpgsqlException(String.Format(resman.GetString("Exception_TypeNotSupported"), dbType));
 				
 			}
+		}
+		
+		public static Object ConvertBackendBytesToStytemType(Hashtable oidToNameMapping, Byte[] data, Encoding encoding, Int32 fieldValueSize, Int32 typeOid, Int32 typeModifier)
+		{
+		  NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertBackendBytesToStytemType");
+			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
+			// when connecting because we don't have yet loaded typeMapping. The switch below
+			// crashes with NullPointerReference when it can't find the typeOid.
+			
+			if (!oidToNameMapping.ContainsKey(typeOid))
+				return data;
+			
+			switch ((DbType)oidToNameMapping[typeOid])
+			{
+				case DbType.Binary:
+				  return data;
+			  case DbType.Boolean:
+			    return BitConverter.ToBoolean(data, 0);
+			  case DbType.DateTime:
+			    return DateTime.MinValue.AddTicks(IPAddress.NetworkToHostOrder(BitConverter.ToInt64(data, 0)));
+			    
+			  case DbType.Int16:
+				  return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(data, 0));
+			  case DbType.Int32:
+				  return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(data, 0));
+			  case DbType.Int64:
+				  return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(data, 0));
+			  case DbType.String:
+              case DbType.AnsiString:
+			    return encoding.GetString(data, 0, fieldValueSize);
+				default:
+				  throw new NpgsqlException("Type not supported in binary format");
+			}
+				
+		
 		}
 		
 		
 		public static String ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter parameter)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter)", Npgsql.LogLevel.Debug);
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertNpgsqlParameterToBackendStringValue");
 			
-			if (parameter.Value == DBNull.Value)
+			if ((parameter.Value == DBNull.Value) || (parameter.Value == null))
 				return "Null";
 			
 			switch(parameter.DbType)
 			{
+			  case DbType.Binary:
+			    return "'" + ConvertByteArrayToBytea((Byte[])parameter.Value) + "'";
 				case DbType.Boolean:
 				case DbType.Int64:
 				case DbType.Int32:
@@ -131,6 +180,7 @@ namespace NpgsqlTypes
 					return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
 				
 				case DbType.String:
+                case DbType.AnsiString:
 					return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
 				
 				case DbType.Time:
@@ -138,7 +188,7 @@ namespace NpgsqlTypes
 					
 				default:
 					// This should not happen!
-					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", parameter.DbType));
+					throw new NpgsqlException(String.Format(resman.GetString("Exception_TypeNotSupported"), parameter.DbType));
 					
 				
 			}
@@ -153,7 +203,7 @@ namespace NpgsqlTypes
 		/// 
 		public static Object ConvertBackendStringToSystemType(Hashtable oidToNameMapping, String data, Int32 typeOid, Int32 typeModifier)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertBackendStringToSystemType(Hashtable, String, Int32)", Npgsql.LogLevel.Debug);
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertBackendStringToSystemType");
 			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
@@ -163,6 +213,9 @@ namespace NpgsqlTypes
 			
 			switch ((DbType)oidToNameMapping[typeOid])
 			{
+			  case DbType.Binary:
+			    return ConvertByteAToByteArray(data);
+			  
 				case DbType.Boolean:
 					return (data.ToLower() == "t" ? true : false);
 			  
@@ -191,7 +244,7 @@ namespace NpgsqlTypes
 				
 				case DbType.DateTime:
 					
-					// Get the date time parsed in all expected formats for timestamp.
+                    // Get the date time parsed in all expected formats for timestamp.
 					return DateTime.ParseExact(data,
 					                           new String[] {"yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss.ff", "yyyy-MM-dd HH:mm:ss.f", "yyyy-MM-dd HH:mm:ss"}, 
 					                           DateTimeFormatInfo.InvariantInfo,
@@ -209,14 +262,17 @@ namespace NpgsqlTypes
 					                           new String[] {"HH:mm:ss.ffff", "HH:mm:ss.fff", "HH:mm:ss.ff", "HH:mm:ss.f", "HH:mm:ss"}, 
 					                           DateTimeFormatInfo.InvariantInfo,
 					                           DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
-				case DbType.String:
+			  
+			  case DbType.String:
+              case DbType.AnsiString:
 					return data;
 				default:
-					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
+					throw new NpgsqlException(String.Format(resman.GetString("Exception_TypeNotSupported"),  oidToNameMapping[typeOid]));
 				
 			
 			}
 		}
+		
 		
 		    
     ///<summary>
@@ -227,7 +283,7 @@ namespace NpgsqlTypes
 		
 		public static Type GetSystemTypeFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
     {
-    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetSystemTypeFromTypeOid(Hashtable, Int32)", Npgsql.LogLevel.Debug);
+    	NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetSystemTypeFromTypeOid");
     	// This method gets a db type identifier and return the equivalent
     	// system type.
     	
@@ -242,6 +298,8 @@ namespace NpgsqlTypes
 			
     	switch ((DbType)oidToNameMapping[typeOid])
 			{
+			  case DbType.Binary:
+			    return Type.GetType("System.Byte[]");
 				case DbType.Boolean:
 					return Type.GetType("System.Boolean");
 				case DbType.Int16:
@@ -261,9 +319,10 @@ namespace NpgsqlTypes
 				case DbType.Time:
 					return Type.GetType("System.DateTime");
 				case DbType.String:
+                case DbType.AnsiString:
 					return Type.GetType("System.String");
 				default:
-					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
+                    throw new NpgsqlException(String.Format(resman.GetString("Exception_TypeNotSupported"), oidToNameMapping[typeOid]));
 			
 			}
 			
@@ -278,7 +337,7 @@ namespace NpgsqlTypes
 		/// </summary>
 		public static Hashtable LoadTypesMapping(NpgsqlConnection conn)
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".LoadTypesMapping(NpgsqlConnection)", Npgsql.LogLevel.Debug);
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "LoadTypesMapping");
 			
 			// [TODO] Verify another way to get higher concurrency.
 			lock(typeof(NpgsqlTypesHelper))
@@ -298,7 +357,7 @@ namespace NpgsqlTypes
 				// Bootstrap value as the datareader below will use ConvertStringToNpgsqlType above.
 				//oidToNameMapping.Add(26, "oid");
 								
-				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'date', 'float4', 'float8', 'int2', 'int4', 'int8', 'numeric', 'text', 'time', 'timestamp');", conn);
+				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'bytea', 'date', 'float4', 'float8', 'int2', 'int4', 'int8', 'numeric', 'text', 'time', 'timestamp');", conn);
 				
 				NpgsqlDataReader dr = command.ExecuteReader();
 				
@@ -318,6 +377,9 @@ namespace NpgsqlTypes
 					{
 						case "bool":
 							type = DbType.Boolean;
+							break;
+					  case "bytea":
+							type = DbType.Binary;
 							break;
 					  case "date":
 					    type = DbType.Date;
@@ -361,6 +423,79 @@ namespace NpgsqlTypes
 			
 			
 		}
+		
+		
+		
+		private static Byte[] ConvertByteAToByteArray(String byteA)
+  	{
+        NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertByteAToByteArray");
+  		Int32 octalValue = 0;
+  		Int32 byteAPosition = 0;
+  
+  		Int32 byteAStringLength = byteA.Length;
+  
+  		MemoryStream ms = new MemoryStream();
+  		
+  		while (byteAPosition < byteAStringLength)
+  		{
+  		  
+  
+        // The IsDigit is necessary in case we receive a \ as the octal value and not
+        // as the indicator of a following octal value in decimal format.
+        // i.e.: \201\301P\A
+  			if (byteA[byteAPosition] == '\\')
+  			  
+  				if (byteAPosition + 1 == byteAStringLength)
+  				{
+  					octalValue = '\\';
+  				  byteAPosition++;
+  				}
+  				else if (Char.IsDigit(byteA[byteAPosition + 1]))
+  				{
+  					octalValue = (Byte.Parse(byteA[byteAPosition + 1].ToString()) << 6);
+  					octalValue |= (Byte.Parse(byteA[byteAPosition + 2].ToString()) << 3);
+  					octalValue |= Byte.Parse(byteA[byteAPosition + 3].ToString());
+  					byteAPosition += 4;
+  					
+  				}
+  				else
+  				{
+  					octalValue = '\\';
+  					byteAPosition += 2;	
+  				}
+  				
+  					
+  			else
+  			{
+  				octalValue = (Byte)byteA[byteAPosition];
+  				byteAPosition++;
+  			}	
+
+  			
+  			ms.WriteByte((Byte)octalValue);
+  			
+  		}
+  
+  		return ms.ToArray();
+  
+  
+  	}
+  	
+  	private static String ConvertByteArrayToBytea(Byte[] byteArray)
+  	{
+        NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertByteArrayToBytea");
+  		StringBuilder  result = new StringBuilder("");		
+  
+  		foreach(Byte byteToConvert in byteArray)
+  		{
+  			result.Append("\\\\");
+  			result.Append((byteToConvert & 0xC0) >> 6);
+  			result.Append((byteToConvert & 0x38) >> 3);
+  			result.Append(byteToConvert & 0x07);
+  		}
+  
+  		return result.ToString();
+  	}	
 		
 	}
 	
