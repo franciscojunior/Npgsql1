@@ -415,6 +415,7 @@ namespace Npgsql
 	    }
 	    
 	    // Internal properties
+	    
 	    internal TcpClient tcp_connection
 	    {
 	    	get
@@ -422,6 +423,14 @@ namespace Npgsql
 	    		return connection;
 	    	}
 	    	
+	    }
+	    
+	    internal Encoding encoding
+	    {
+	    	get
+	    	{
+	    		return connection_encoding;
+	    	}
 	    }
   	}
 }
