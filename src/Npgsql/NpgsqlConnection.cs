@@ -53,7 +53,7 @@ namespace Npgsql
     /// PostgreSQL server.
     /// </summary>
     [System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlConnection))]
-    public sealed class NpgsqlConnection : Component, IDbConnection, ICloneable
+    public sealed class NpgsqlConnection : Component, IDbConnection
     {
         // Logging related values
         private readonly String CLASSNAME = "NpgsqlConnection";
@@ -79,6 +79,7 @@ namespace Npgsql
         public PrivateKeySelectionCallback      PrivateKeySelectionCallback;
 
         private NpgsqlState			                state;
+        private bool                            disposed = false;
 
         private ConnectionState                 connection_state;
 //        private String                          connection_string;
@@ -171,8 +172,9 @@ namespace Npgsql
         /// Database:      Database name. Defaults to user name if not specified;
         /// User:          User name;
         /// Password:      Password for clear text authentication;
+        /// Pooling:       True or False. Controls whether connection pooling is used.  Default = True;
         /// MinPoolSize:   Min size of connection pool;
-        /// MaxPoolSize:   Max size of connection pool;
+        // (NOT USED AT THIS TIME) MaxPoolSize:   Max size of connection pool;
         /// Encoding:      Encoding to be used;
         /// Timeout:       Time to wait for connection open in seconds.
         /// </summary>
@@ -349,6 +351,10 @@ namespace Npgsql
         /// </summary>
         public void Open()
         {
+            if (disposed) {
+                throw new ObjectDisposedException(CLASSNAME);
+            }
+
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
 
             // Check if the connection is already open.
@@ -477,11 +483,22 @@ namespace Npgsql
         }
 
         /// <summary>
-        /// Closes the connection to the database.
+        /// Releases the connection to the database.  If the connection is pooled, it will be
+        ///	made available for re-use.  If it is non-pooled, the actual connection will be shutdown.
         /// </summary>
         public void Close()
         {
-            Dispose(true);
+            if (_connector == null) {
+                return;
+            }
+
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
+
+            ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, false);
+            _connector = null;
+
+            connection_state = ConnectionState.Closed;
+            CurrentState = NpgsqlClosedState.Instance;
         }
 
         /// <summary>
@@ -507,27 +524,16 @@ namespace Npgsql
         }
 
         /// <summary>
-        /// Releases the unmanaged resources used by the
-        /// <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see>
-        /// and optionally releases the managed resources.
+        /// Releases all resources used by the
+        /// <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see>.
         /// </summary>
-        /// <param name="disposing"><b>true</b> to release both managed and unmanaged resources;
-        /// <b>false</b> to release only unmanaged resources.</param>
+        /// <param name="disposing"><b>true</b> when called from Dispose();
+        /// <b>false</b> when being called from the finalizer.</param>
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                // Only if explicitly calling Close or dispose we still have access to
-                // managed resources.
-                NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Dispose", disposing);
-
-                ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, false);
-                _connector = null;
-
-                connection_state = ConnectionState.Closed;
-                CurrentState = NpgsqlClosedState.Instance;
-            }
+            Close();
             base.Dispose (disposing);
+						disposed = true;
         }
 
 
