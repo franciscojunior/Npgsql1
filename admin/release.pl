@@ -241,7 +241,8 @@ sub prepare_release_files() {
 ######################################################################
 sub check_notices() {
     my $target_files = shift;
-    my $copyright = "Copyright\ \(C\)\ 2002\ The\ Npgsql\ Development\ Team";
+    my $copyright = 'Copyright \(C\) 2002 The Npgsql Development Team';
+    my $url = 'http:\/\/gborg\.postgresql\.org\/project\/npgsql\/projdisplay\.php';
     my $licenses = { LGPL => "GNU Lesser General Public" };
     my $errors = 0;
 
@@ -269,12 +270,12 @@ sub check_notices() {
 		$errors = 1;
 	    }
 
-#FIXME: This doesn't work. Hm...
 	    # Make sure the copyright is there
-#	    if ( $file_content !~ m/$copyright/ ) {
-#		print "File $file is missing a proper copyright\n";
-#		$errors = 1;
-#	    }
+	    if ( $file_content !~ m/$copyright/
+		 || $file_content !~ m/$url/) {
+		print "File $file is missing a proper copyright\n";
+		$errors = 1;
+	    }
 	}
     }
 
