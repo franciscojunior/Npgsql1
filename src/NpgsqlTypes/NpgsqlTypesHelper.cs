@@ -84,6 +84,10 @@ namespace NpgsqlTypes
 					return "text";
 				case DbType.DateTime:
 					return "timestamp";
+			  case DbType.Date:
+			    return "date";
+			  case DbType.Time:
+			    return "time";
 				default:
 					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", dbType));
 				
@@ -106,17 +110,21 @@ namespace NpgsqlTypes
 				case DbType.Int16:
 					return parameter.Value.ToString();
 				
+				case DbType.Date:
+				  return "'" + ((DateTime)parameter.Value).ToString("yyyy-MM-dd") + "'";
+					
+				case DbType.DateTime:
+				  return "'" + ((DateTime)parameter.Value).ToString("yyyy-MM-dd HH:mm:ss.fff") + "'";
+					
 				case DbType.Decimal:
-						return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
+					return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
 				
 				case DbType.String:
-						return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
+					return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
 				
-				case DbType.DateTime:
-				{
-					return "'" + ((DateTime)parameter.Value).ToString("yyyy-MM-dd HH:mm:ss.fff") + "'";
+				case DbType.Time:
+				  return "'" + ((DateTime)parameter.Value).ToString("HH:mm:ss.ffff") + "'";
 					
-				}
 				default:
 					// This should not happen!
 					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", parameter.DbType));
@@ -126,98 +134,6 @@ namespace NpgsqlTypes
 			
 		}
 		
-		
-		
-		public static NpgsqlDbType GetNpgsqlDbTypeFromDbType(DbType dbType)
-		{
-			switch (dbType)
-			{
-				case DbType.Boolean:
-					return NpgsqlDbType.Boolean;
-				case DbType.DateTime:
-					return NpgsqlDbType.Timestamp;
-				case DbType.Int16:
-					return NpgsqlDbType.Smallint;
-				case DbType.Int32:
-					return NpgsqlDbType.Integer;
-				case DbType.Int64:
-					return NpgsqlDbType.Bigint;
-				case DbType.Decimal:
-					return NpgsqlDbType.Numeric;
-				case DbType.String:
-					return NpgsqlDbType.Text;
-				default:
-					return NpgsqlDbType.Text;
-			}
-		}
-		
-		public static DbType GetDbTypeFromNpgsqlDbType(NpgsqlDbType npgsqlDbType)
-		{
-			switch (npgsqlDbType)
-			{
-				case NpgsqlDbType.Bigint:
-					return DbType.Int64;
-				case NpgsqlDbType.Boolean:
-					return DbType.Boolean;
-				case NpgsqlDbType.Integer:
-					return DbType.Int32;
-				case NpgsqlDbType.Numeric:
-					return DbType.Decimal;
-				case NpgsqlDbType.Smallint:
-					return DbType.Int16;
-				case NpgsqlDbType.Text:
-					return DbType.String;
-				case NpgsqlDbType.Timestamp:
-					return DbType.DateTime;
-				default:
-					return DbType.String;
-				
-			}
-		}
-		
-		/// <summary>
-		/// This method is responsible to convert a given NpgsqlType to its corresponding system type.
-		/// 
-		/// </summary>
-		public static Object ConvertNpsqlTypeToSystemType(Hashtable oidToNameMapping, Object data, Int32 typeOid)
-		{
-		
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlTypeToSystemType(Hashtable, Object, Int32)", Npgsql.LogLevel.Debug);
-			
-			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
-			// when connecting because we don't have yet loaded typeMapping. The switch below
-			// crashes with NullPointerReference when it can't find the typeOid.
-			
-			if (!oidToNameMapping.ContainsKey(typeOid))
-				return data;
-			
-			
-			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
-			{
-				case NpgsqlDbType.Boolean:
-					return (Boolean)(NpgsqlBoolean)data;
-				case NpgsqlDbType.Smallint:
-					return (Int16)(NpgsqlInt16)data;
-				case NpgsqlDbType.Integer:
-					return (Int32)(NpgsqlInt32)data;
-				
-				case NpgsqlDbType.Bigint:
-					return (Int64)(NpgsqlInt64)data;
-				
-				case NpgsqlDbType.Numeric:
-					return (Decimal)(NpgsqlDecimal)data;
-				case NpgsqlDbType.Timestamp:
-					return (DateTime)(NpgsqlDateTime)data;
-				case NpgsqlDbType.Text:
-					return (String)(NpgsqlString)data;
-				default:
-						throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
-				
-				
-					
-			}
-			
-		}
 		
 		///<summary>
 		/// This method is responsible to convert the string received from the backend
@@ -262,7 +178,19 @@ namespace NpgsqlTypes
 					                           new String[] {"yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss.ff", "yyyy-MM-dd HH:mm:ss.f", "yyyy-MM-dd HH:mm:ss"}, 
 					                           DateTimeFormatInfo.InvariantInfo,
 					                           DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
-					                        
+				
+				case DbType.Date:
+				  return DateTime.ParseExact(data,
+					                           "yyyy-MM-dd", 
+					                           DateTimeFormatInfo.InvariantInfo,
+					                           DateTimeStyles.AllowWhiteSpaces);
+				
+				case DbType.Time:
+				  
+				  return DateTime.ParseExact(data,
+					                           new String[] {"HH:mm:ss.ffff", "HH:mm:ss.fff", "HH:mm:ss.ff", "HH:mm:ss.f", "HH:mm:ss"}, 
+					                           DateTimeFormatInfo.InvariantInfo,
+					                           DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
 				case DbType.String:
 					return data;
 				default:
@@ -307,6 +235,8 @@ namespace NpgsqlTypes
 				case DbType.Decimal:
 					return Type.GetType("System.Decimal");
 				case DbType.DateTime:
+				case DbType.Date:
+				case DbType.Time:
 					return Type.GetType("System.DateTime");
 				case DbType.String:
 					return Type.GetType("System.String");
@@ -346,7 +276,7 @@ namespace NpgsqlTypes
 				// Bootstrap value as the datareader below will use ConvertStringToNpgsqlType above.
 				//oidToNameMapping.Add(26, "oid");
 								
-				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'int2', 'int4', 'int8', 'numeric', 'text', 'timestamp');", conn);
+				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'date', 'int2', 'int4', 'int8', 'numeric', 'text', 'time', 'timestamp');", conn);
 				
 				NpgsqlDataReader dr = command.ExecuteReader();
 				
@@ -367,6 +297,9 @@ namespace NpgsqlTypes
 						case "bool":
 							type = DbType.Boolean;
 							break;
+					  case "date":
+					    type = DbType.Date;
+					    break;
 						case "int2":
 							type = DbType.Int16;
 							break;
@@ -379,6 +312,9 @@ namespace NpgsqlTypes
 						case "numeric":
 							type = DbType.Decimal;
 							break;
+					  case "time":
+					    type = DbType.Time;
+					    break;
 						case "timestamp":
 							type = DbType.DateTime;
 							break;
