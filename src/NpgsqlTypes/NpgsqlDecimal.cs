@@ -66,6 +66,14 @@ namespace NpgsqlTypes
 			}
 		}
 		
+		public override String ToString()
+		{
+			if (this.IsNull)
+				return "Null";
+			else
+				return _value.ToString();
+		}
+		
 		public static explicit operator NpgsqlDecimal (NpgsqlBoolean x) 
 		{
 			
