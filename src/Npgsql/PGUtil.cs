@@ -41,6 +41,8 @@ namespace Npgsql
 	internal sealed class PGUtil
 	{
 		
+    // Logging related values
+    private static readonly String CLASSNAME = "PGUtil";
 				
 		///<summary>
 		/// This method gets a C NULL terminated string from the network stream.

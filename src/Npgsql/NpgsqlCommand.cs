@@ -42,8 +42,8 @@ namespace Npgsql
 		private CommandType					type;
 		private NpgsqlParameterCollection	parameters;
 		
-		
-		
+    // Logging related values
+    private static readonly String CLASSNAME = "NpgsqlCommand";
 		
 		// Constructors
 		

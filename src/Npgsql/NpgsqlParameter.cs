@@ -33,6 +33,10 @@ namespace Npgsql
 	///</summary>
 	public sealed class NpgsqlParameter : IDbDataParameter, IDataParameter
 	{
+	
+    // Logging related values
+    private static readonly String CLASSNAME = "NpgsqlParameter";
+    
 		// Fields to implement IDbDataParameter interface.
 		private byte 				precision;
 		private byte 				scale;

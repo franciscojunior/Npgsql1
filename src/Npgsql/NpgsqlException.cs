@@ -28,20 +28,24 @@ namespace Npgsql
 {
 	public class NpgsqlException : Exception
 	{
+	
+    // Logging related values
+    private static readonly String CLASSNAME = "NpgsqlException";
+    
 		public NpgsqlException()
 		{
-			
+			NpgsqlEventLog.LogMsg("An NpgsqlException occured: <no message>", 1);
 		}
 		
 		public NpgsqlException(String message) : base(message)
 		{
-			
+		  NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message, 1);
 		}
 		
 		public NpgsqlException(String message, Exception inner)
 		: base(message, inner)
 		{
-			
+			NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message + " (" + inner.Message + ")", 1);
 		}
 	}
 }

@@ -40,6 +40,9 @@ namespace Npgsql
 	public class NpgsqlParameterCollection : ArrayList, IDataParameterCollection
 	{
 		
+    // Logging related values
+    private static readonly String CLASSNAME = "NpgsqlParameterCollection";
+    
 		public override Int32 Add(Object parameter)
 		{
 			// Call the add version that receives a NpgsqlParameter as parameter

@@ -1,16 +1,32 @@
+2002-06-07
+	dpage:
+        	- Added NpgsqlEventLog class to handle event & debug logging
+
+        	NpgsqlConnection.cs
+            		- Added some event/debug logging.
+
+        	NpgsqlException.cs
+            		- Added some event/debug logging.
+
+2002-06-06
+	dpage:
+        	NpgsqlConnection.cs
+            		- Make connection strings case-insensitive
+            		- Allow use of ODBC style UID & PWD options
+
 2002-06-03
-    fxjr:
-        NpgsqlConnection.cs
-            - Some code cleanup.
-            - Fixed handling of AuthenticationRequest message to read the exact number of 
-            bytes (4). connection.ReceiveBufferSize crashed in Mono.
+	fxjr:
+        	NpgsqlConnection.cs
+            		- Some code cleanup.
+            		- Fixed handling of AuthenticationRequest message to read the exact number of 
+            		bytes (4). connection.ReceiveBufferSize crashed in Mono.
         
-        NpgsqlParameterCollection.cs
-        	- Changed indexer this[String] implementation to call this[Int32] instead of
-        	base[Int32] because Mono didn't compile it.
+        	NpgsqlParameterCollection.cs
+        		- Changed indexer this[String] implementation to call this[Int32] instead of
+        		base[Int32] because Mono didn't compile it.
         	
-        - Now, Npgsql can be compiled and run in Mono. But just the connection estabilishment
-        is working.
+        	- Now, Npgsql can be compiled and run in Mono. But just the connection estabilishment
+        	is working.
 
 2002-06-01
 	
