@@ -87,7 +87,10 @@ namespace Npgsql
     /*private BufferedStream	output_stream;
     private Byte[]					input_buffer;*/
     private Encoding				connection_encoding;
-  		
+  	
+  	private Boolean					_supportsPrepare = false;
+  	
+  	
     public NpgsqlConnection() : this(String.Empty){}
 
     public NpgsqlConnection(String ConnectionString)
@@ -237,7 +240,11 @@ namespace Npgsql
       	
         // Change the state of connection to open.
         connection_state = ConnectionState.Open;
-	    			    		
+      	
+      	// Get version information to enable/disable server version features.
+      	NpgsqlCommand command = new NpgsqlCommand("select version()", this);
+      	ProcessServerVersion((String) command.ExecuteScalar());
+      		    			    		
       }
       catch(SocketException e)
       {
@@ -366,7 +373,21 @@ namespace Npgsql
         connection_string_values[CONN_PORT] = PG_PORT;
     	
     }
-	    
+
+
+		/// <summary>
+		/// This method is required to set all the version dependent features flags.
+		/// SupportsPrepare means the server can use prepared query plans (7.3+)
+		/// 
+		/// </summary>
+		 		 
+		private void ProcessServerVersion(String serverVersion)
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ProcessServerVersion()", LogLevel.Debug);
+			
+			SupportsPrepare = serverVersion.IndexOf("PostgreSQL 7.3") != -1;
+			
+		}
     
     // State 
 		internal void Query( NpgsqlCommand queryCommand )
@@ -479,6 +500,19 @@ namespace Npgsql
 			set
 			{
 				_inTransaction = value;
+			}
+		}
+		
+		internal Boolean SupportsPrepare
+		{
+			get
+			{
+				return _supportsPrepare;
+			}
+			
+			set
+			{
+				_supportsPrepare = value;
 			}
 		}
 		

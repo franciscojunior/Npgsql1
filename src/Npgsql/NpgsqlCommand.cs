@@ -380,7 +380,11 @@ namespace Npgsql
 		public void Prepare()
 		{
 		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Prepare()", LogLevel.Debug);
+			
 		  
+		  if (!connection.SupportsPrepare)
+		  	return;	// Do nothing.
+		  	
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -447,7 +451,10 @@ namespace Npgsql
 			String result = text;
 			
 			if (type == CommandType.StoredProcedure)
-					result = "select * from " + result;
+				if (connection.SupportsPrepare)
+					result = "select * from " + result; // This syntax is only available in 7.3+ as well SupportsPrepare.
+				else
+					result = "select " + result;				// Only a single result return supported. 7.2 and earlier.
 						
 			if (parameters.Count == 0)
 				return result;
