@@ -1,0 +1,7 @@
+
+
+2002-05-25
+
+	- Npgsql is now capable of sending some queries like insert, update and delete.
+	Note that parameters in these queries aren't work yet. So they must be 'full'
+	queries like insert into <table> values (<value1>, <value2>, ...).
