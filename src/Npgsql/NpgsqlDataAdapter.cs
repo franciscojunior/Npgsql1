@@ -81,6 +81,14 @@ namespace Npgsql
 			
 		}
 		
+		ITableMappingCollection IDataAdapter.TableMappings
+		{
+			get
+			{
+				return TableMappings;
+			}
+		}
+		
 		IDbCommand IDbDataAdapter.DeleteCommand
 		{
 			get
