@@ -1,4 +1,22 @@
 
+2002-05-24
+
+	fxjr:
+		NpgsqlCommand.cs
+			- Created explicit interface implementation of property Parameters 
+			IDataParameterCollection IDbCommand.Parameters.
+			- Created a Parameters property that returns strong value NpgsqParameterCollection.
+		
+		NpgsqlParameter.cs
+			- Created constructors NpgsqlParameter() and NpgsqlParameter(String, DbType)
+		
+		NpgsqlConnection.cs
+			- Changed implementation of NpgsqlConnection() to call the NpgsqlConnection(String)
+		
+		
+		- Changed ChangeLog format!
+		
+
 2002-05-23
 	
 	- Finish draft NpgsqlCommand class implementation so that it compiles without errors :)
