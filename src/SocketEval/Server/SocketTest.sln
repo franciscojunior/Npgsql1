@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server.csproj", "{EDBBBFB4-8D21-11D6-8EED-0001020AB003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "..\Client\Client.csproj", "{EDBBBFBA-8D21-11D6-8EED-0001020AB003}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{EDBBBFB4-8D21-11D6-8EED-0001020AB003}.Debug.ActiveCfg = Debug|.NET
+		{EDBBBFB4-8D21-11D6-8EED-0001020AB003}.Debug.Build.0 = Debug|.NET
+		{EDBBBFB4-8D21-11D6-8EED-0001020AB003}.Release.ActiveCfg = Release|.NET
+		{EDBBBFB4-8D21-11D6-8EED-0001020AB003}.Release.Build.0 = Release|.NET
+		{EDBBBFBA-8D21-11D6-8EED-0001020AB003}.Debug.ActiveCfg = Debug|.NET
+		{EDBBBFBA-8D21-11D6-8EED-0001020AB003}.Debug.Build.0 = Debug|.NET
+		{EDBBBFBA-8D21-11D6-8EED-0001020AB003}.Release.ActiveCfg = Release|.NET
+		{EDBBBFBA-8D21-11D6-8EED-0001020AB003}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

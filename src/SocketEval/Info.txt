@@ -1,0 +1,13 @@
+The SocketEval folder contains a project group, intended for evaluation of .net socket programming issues. I have checked out especially the asynchronous programming techniques.
+
+Whats going on inside?
+
+The server app creates a listener object, listening on port 11000, waiting for an incoming connection.
+
+The client connects to the server on port 11000. The connection request is recognized by the server in the Listener.AcceptCallback() method. The listener object then creates a session controller object and starts listening to the client. The messages sent by the client are echoed on the console.
+
+The whole processing is done in the background, so the user interface remains reactive properly.
+
+The files in this folder are uploaded in order to have the Npgsql developer team (and others, of course) a look in my ongoing work. It's not ready yet, so please be patient, essential functions will follow.
+
+2002-07-03 ulrich sprick, Npgsql dev team
