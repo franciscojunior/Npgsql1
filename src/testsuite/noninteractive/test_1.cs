@@ -28,11 +28,12 @@ public class Test_1
 
       String connstring;
       connstring = NpgsqlTests.getConnectionString();
-      System.Console.WriteLine("Test Works");
 
       NpgsqlConnection conn = new NpgsqlConnection(connstring);
 
       conn.Open();
       conn.Close();
+
+      System.Console.WriteLine("Test Works");
     }
 }
