@@ -258,6 +258,20 @@ namespace Npgsql
         }
 
         /// <summary>
+        /// Return the data type OID of the column at index <param name="Index"></param>.
+        /// </summary>
+        public String GetDataTypeOID(Int32 Index)
+        {
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDataTypeName");
+
+            CheckHaveResultSet();
+
+            NpgsqlTypeInfo  TI = GetTypeInfo(Index);
+
+            return _currentResultset.RowDescription[Index].type_oid.ToString();
+        }
+
+        /// <summary>
         /// Return the data type name of the column at index <param name="Index"></param>.
         /// </summary>
         public String GetDataTypeName(Int32 Index)

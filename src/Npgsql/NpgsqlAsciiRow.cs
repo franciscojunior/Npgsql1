@@ -117,7 +117,7 @@ namespace Npgsql
 
 
                 // Add them to the AsciiRow data.
-                data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_modifier));
+                data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_size, field_descr.type_modifier));
 
             }
         }
@@ -165,7 +165,7 @@ namespace Npgsql
                     // Read the bytes as string.
                     result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
                     // Add them to the AsciiRow data.
-                    data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_modifier));
+                    data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_size, field_descr.type_modifier));
                 }
                 else
                     data.Add(NpgsqlTypesHelper.ConvertBackendBytesToSystemType(field_descr.type_info, input_buffer, encoding, field_value_size, field_descr.type_modifier));

@@ -196,12 +196,12 @@ namespace NpgsqlTypes
         /// This method is responsible to convert the string received from the backend
         /// to the corresponding NpgsqlType.
         /// </summary>
-        public static Object ConvertBackendStringToSystemType(NpgsqlTypeInfo TypeInfo, String data, Int32 typeModifier)
+        public static Object ConvertBackendStringToSystemType(NpgsqlTypeInfo TypeInfo, String data, Int16 typeSize, Int32 typeModifier)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertBackendStringToSystemType");
 
             if (TypeInfo != null) {
-                return TypeInfo.ConvertToNative(data, typeModifier);
+                return TypeInfo.ConvertToNative(data, typeSize, typeModifier);
             } else {
                 return data;
             }
@@ -229,7 +229,7 @@ namespace NpgsqlTypes
 
                 oidToNameMapping = new NpgsqlTypeMapping();
 
-                NpgsqlCommand       command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'box', 'bytea', 'char', 'date', 'float4', 'float8', 'int2', 'int4', 'int8', 'numeric', 'point', 'text', 'time', 'timestamp', 'timestamptz', 'timetz', 'varchar');", conn);
+                NpgsqlCommand       command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'box', 'bytea', 'char', 'circle', 'date', 'float4', 'float8', 'int2', 'int4', 'int8', 'lseg', 'numeric', 'path', 'point', 'polygon', 'text', 'time', 'timestamp', 'timestamptz', 'timetz', 'varchar');", conn);
                 NpgsqlDataReader    dr = command.ExecuteReader();
 
                 while (dr.Read())
@@ -250,12 +250,17 @@ namespace NpgsqlTypes
                     case "box":
                         dbtype = DbType.Object;
                         systype = typeof(RectangleF);
-                        BackendConvert = new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToRectangleF);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToRectangle);
                         break;
                     case "bytea":
                         dbtype = DbType.Binary;
                         systype = typeof(System.Byte[]);
                         BackendConvert = new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToBinary);
+                        break;
+                    case "circle":
+                        dbtype = DbType.Object;
+                        systype = typeof(NpgsqlCircle);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToCircle);
                         break;
                     case "date":
                         dbtype = DbType.Date;
@@ -282,14 +287,29 @@ namespace NpgsqlTypes
                         dbtype = DbType.Int64;
                         systype = typeof(Int64);
                         break;
+                    case "lseg":
+                        dbtype = DbType.Object;
+                        systype = typeof(NpgsqlLSeg);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToLSeg);
+                        break;
                     case "numeric":
                         dbtype = DbType.Decimal;
                         systype = typeof(Decimal);
                         break;
+                    case "path":
+                        dbtype = DbType.Object;
+                        systype = typeof(NpgsqlPath);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToPath);
+                        break;
                     case "point":
                         dbtype = DbType.Object;
                         systype = typeof(PointF);
-                        BackendConvert = new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToPointF);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToPoint);
+                        break;
+                    case "polygon":
+                        dbtype = DbType.Object;
+                        systype = typeof(NpgsqlPolygon);
+                        BackendConvert = new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToPolygon);
                         break;
                     case "time":
                     case "timetz":
@@ -405,11 +425,11 @@ namespace NpgsqlTypes
     /// <summary>
     /// Delegate called to convert the given backend data to its native representation.
     /// </summary>
-    internal delegate Object ConvertBackendToNativeHandler(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier);
+    internal delegate Object ConvertBackendToNativeHandler(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier);
     /// <summary>
     /// Delegate called to convert the given native data to its backand representation.
     /// </summary>
-    internal delegate String ConvertNativeToBackendHandler(NpgsqlTypeInfo TypeInfo, Object NativeData, Int32 TypeModifier);
+    internal delegate String ConvertNativeToBackendHandler(NpgsqlTypeInfo TypeInfo, Object NativeData);
 
     /// <summary>
     /// Represents a backend data type.
@@ -471,10 +491,16 @@ namespace NpgsqlTypes
         public Type Type
         { get { return _Type; } }
 
-        public Object ConvertToNative(String BackendData, Int32 TypeModifier)
+        /// <summary>
+        /// Perform a data conversion from a backend representation to 
+        /// a native object.
+        /// </summary>
+        /// <param name="BackendData">Data sent from the backend.</param>
+        /// <param name="TypeModifier">Type modifier field sent from the backend.</param>
+        public Object ConvertToNative(String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             if (_ConvertBackendToNative != null) {
-                return _ConvertBackendToNative(this, BackendData, TypeModifier);
+                return _ConvertBackendToNative(this, BackendData, TypeSize, TypeModifier);
             } else {
                 try {
                     return Convert.ChangeType(BackendData, Type, CultureInfo.InvariantCulture);
@@ -484,10 +510,15 @@ namespace NpgsqlTypes
             }
         }
 
-        public String ConvertToBackend(Object NativeData, Int32 TypeModifier)
+        /// <summary>
+        /// Perform a data conversion from a native object to
+        /// a backend representation.
+        /// </summary>
+        /// <param name="NativeData">Native .NET object to be converted.</param>
+        public String ConvertToBackend(Object NativeData)
         {
             if (_ConvertNativeToBackend != null) {
-                return _ConvertNativeToBackend(this, NativeData, TypeModifier);
+                return _ConvertNativeToBackend(this, NativeData);
             } else {
                 return (String)Convert.ChangeType(NativeData, typeof(String), CultureInfo.InvariantCulture);
             }
@@ -598,8 +629,7 @@ namespace NpgsqlTypes
 
     /// <summary>
     /// Provide event handlers to convert all native supported data types from their backend
-    /// text representation to a .NET object.  Only types that need special handling are handled
-    /// here.  All other will be handled by standard .NET conversion routines.
+    /// text representation to a .NET object.
     /// </summary>
     internal abstract class BasicBackendToNativeTypeConverter
     {
@@ -647,7 +677,7 @@ namespace NpgsqlTypes
         /// <summary>
         /// Binary data.
         /// </summary>
-        internal static Object ToBinary(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToBinary(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             return NpgsqlTypesHelper.ConvertByteAToByteArray(BackendData);
         }
@@ -655,7 +685,7 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql boolean to a System.Boolean.
         /// </summary>
-        internal static Object ToBoolean(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToBoolean(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             return (BackendData.ToLower() == "t" ? true : false);
         }
@@ -663,7 +693,7 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql datetime to a System.DateTime.
         /// </summary>
-        internal static Object ToDateTime(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToDateTime(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             // Get the date time parsed in all expected formats for timestamp.
             return DateTime.ParseExact(BackendData,
@@ -675,7 +705,7 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql date to a System.DateTime.
         /// </summary>
-        internal static Object ToDate(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToDate(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             return DateTime.ParseExact(BackendData,
                                         DateFormats,
@@ -686,18 +716,25 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql time to a System.DateTime.
         /// </summary>
-        internal static Object ToTime(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToTime(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             return DateTime.ParseExact(BackendData,
                                         TimeFormats,
                                         DateTimeFormatInfo.InvariantInfo,
                                         DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
         }
+    }
 
+    /// <summary>
+    /// Provide event handlers to convert extended native supported data types from their backend
+    /// text representation to a .NET object.
+    /// </summary>
+    internal abstract class ExtendedBackendToNativeTypeConverter
+    {
         /// <summary>
         /// Convert a postgresql point to a System.PointF.
         /// </summary>
-        internal static Object ToPointF(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToPoint(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             // FIXME - uh actually parse the data
             return new PointF(100,250);
@@ -706,11 +743,46 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql point to a System.RectangleF.
         /// </summary>
-        internal static Object ToRectangleF(NpgsqlTypeInfo TypeInfo, String BackendData, Int32 TypeModifier)
+        internal static Object ToRectangle(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             // FIXME - uh actually parse the data
             return new RectangleF(100,250,20,40);
         }
 
+        /// <summary>
+        /// LDeg.
+        /// </summary>
+        internal static Object ToLSeg(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            // FIXME - uh actually parse the data
+            return new NpgsqlLSeg(new PointF(10,20), new PointF(30,40));
+        }
+
+        /// <summary>
+        /// Path.
+        /// </summary>
+        internal static Object ToPath(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            // FIXME - uh actually parse the data
+            return new NpgsqlPath(new PointF[] { new PointF(10,20), new PointF(30,40), new PointF(50,60) } );
+        }
+
+        /// <summary>
+        /// Polygon.
+        /// </summary>
+        internal static Object ToPolygon(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            // FIXME - uh actually parse the data
+            return new NpgsqlPolygon(new PointF[] { new PointF(10,20), new PointF(30,40), new PointF(50,60) } );
+        }
+
+        /// <summary>
+        /// Circle.
+        /// </summary>
+        internal static Object ToCircle(NpgsqlTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            // FIXME - uh actually parse the data
+            return new NpgsqlCircle(new PointF(10,20), 100);
+        }
     }
 }
