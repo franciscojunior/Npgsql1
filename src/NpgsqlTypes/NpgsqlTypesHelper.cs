@@ -145,10 +145,10 @@ namespace NpgsqlTypes
 				case "timestamp":
 					return (DateTime)(NpgsqlDateTime)data;
 				case "text":
+				default:
 					return (String)(NpgsqlString)data;
 				
-				default:
-					return data;
+				
 					
 			}
 			
@@ -185,10 +185,9 @@ namespace NpgsqlTypes
 				case "timestamp":
 					return NpgsqlDateTime.Parse(data);
 				case "text":
-					return new NpgsqlString(data);
 				default:
-					return data;
-					
+					return new NpgsqlString(data);
+				
 			
 			}
 		}
