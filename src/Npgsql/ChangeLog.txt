@@ -9,7 +9,11 @@
 			- Finish a little functional ExecuteNonQuery() method.
 			Now, you can execute some queries that don't return rows like insert, delete
 			and update!! See status for more information.
-		
+			- Fixed ExecuteNonQuery so that commands like create table and others that
+			don't return number of rows affected do not throw exception.
+			- Finish a little functional ExecuteScalar() method. Now it is possible
+			to execute queries like select count(*) from table. It is very unstable.
+			
 		- Added STATUS.txt file.
 		
 2002-05-24
