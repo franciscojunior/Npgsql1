@@ -224,6 +224,9 @@ namespace Npgsql
         internal NpgsqlConnector Connector {
             get
             {
+                if (connector == null && this.connection != null)
+                    connector = this.connection.Connector;
+                    
                 return connector;
             }
         }
@@ -576,7 +579,7 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CheckConnectionState");
             
             // Check the connection state.
-            if (connector == null || connector.State != ConnectionState.Open) {
+            if (Connector == null || Connector.State != ConnectionState.Open) {
                 throw new InvalidOperationException(resman.GetString("Exception_ConnectionNotOpen"));
             }
         }
