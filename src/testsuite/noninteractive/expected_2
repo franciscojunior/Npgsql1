@@ -14,6 +14,10 @@ Connection completed
   </Table>
   <Table>
     <field_serial>4</field_serial>
-    <field_bool>t</field_bool>
+    <field_bool>true</field_bool>
+  </Table>
+  <Table>
+    <field_serial>5</field_serial>
+    <field_text>Text with ' single quote</field_text>
   </Table>
 </NewDataSet>

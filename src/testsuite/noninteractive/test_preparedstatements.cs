@@ -71,7 +71,7 @@ public class test_preparedstatements
 			  {
   			  for (i = 0; i < j; i++)
   			  {
-  			    Console.Write("{0} \t", dr[i] == null ? "null" : dr[i]);
+  			    Console.Write("{0} \t", dr[i] == DBNull.Value ? "null" : dr[i]);
   			   
   			  }
   			  Console.WriteLine();
