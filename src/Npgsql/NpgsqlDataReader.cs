@@ -232,7 +232,7 @@ namespace Npgsql
 	  /// This method is reponsible to get the value in its original form (NpgsqlType).
 	  /// The GetValue(Int32) returns the NpgsqlType converted in the SystemType.
 	  /// </summary>
-	  private Object GetNpgsqlValue(Int32 i)
+	  public Object GetNpgsqlValue(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetNpgsqlValue(Int32)", LogLevel.Debug);
 	  	if (i < 0 || _rowIndex < 0)
