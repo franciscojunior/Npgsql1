@@ -110,8 +110,8 @@ namespace Npgsql
         private Int32                            _planIndex;
         private Int32                            _portalIndex;
 
-        private const String                     _planNamePrefix = "NpgsqlPlan";
-        private const String                     _portalNamePrefix = "NpgsqlPortal";
+        private const String                     _planNamePrefix = "npgsqlplan";
+        private const String                     _portalNamePrefix = "npgsqlportal";
 
 
 
@@ -243,6 +243,12 @@ namespace Npgsql
             {
                 // Here we use a fake NpgsqlCommand, just to send the test query string.
                 Query(new NpgsqlCommand("select 1 as ConnectionTest"));
+                
+                // Clear mediator.
+                Mediator.ResetResponses();
+                Mediator.ResetExpectations();
+                
+                
             }
             catch
             {
@@ -679,6 +685,7 @@ namespace Npgsql
     ///</summary>
     internal String NextPortalName()
         {
+            
             return _portalNamePrefix + System.Threading.Interlocked.Increment(ref _portalIndex);
         }
 
@@ -688,7 +695,6 @@ namespace Npgsql
         ///</summary>
         internal String NextPlanName()
         {
-
             return _planNamePrefix + System.Threading.Interlocked.Increment(ref _planIndex);
         }
 
