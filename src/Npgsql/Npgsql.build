@@ -26,8 +26,6 @@
    <property name="monoresgen.bat" value="${mono.home}/monoresgen"/>
     </target>
 
-    <call target="monoset-win32" if="${nant.platform.win32}"/>
-    <call target="monoset-unix"  if="${nant.platform.unix}"/>
     
     <property name="testfiles.dir" value="../testsuite/noninteractive/NUnit20"/>
     <property name="locales" value="de,es,fi"/>
@@ -70,13 +68,13 @@
         </resgen>
         <resgen todir="${ms.res.dir}/Design">
             <resources>
-                <includes name="./Design/ConnectionStringEditorForm.resx"/>
+                <include name="./Design/ConnectionStringEditorForm.resx"/>
             </resources>
         </resgen>
 
         <resgen todir="${ms.res.dir}/NpgsqlTypes">
             <resources>
-                <includes name="../NpgsqlTypes/NpgsqlTypesHelper.resx"/>
+                <include name="../NpgsqlTypes/NpgsqlTypesHelper.resx"/>
             </resources>
         </resgen>
     </target>
@@ -94,26 +92,26 @@
     <target name="build" depends="resources">
         <csc target="library" output="${ms.build.dir}/${assemblyname}.dll" debug="${debug}" doc="${xmldoc}">
             <references>
-                <includes name="System.Data.dll" />
-                <includes name="System.Windows.Forms.dll" />
-                <includes name="System.Drawing.dll" />
-                <includes name="System.Design.dll" />
-                <includes name="${tls.lib}" />
+                <include name="System.Data.dll" />
+                <include name="System.Windows.Forms.dll" />
+                <include name="System.Drawing.dll" />
+                <include name="System.Design.dll" />
+                <include name="${tls.lib}" />
             </references>
             <resources prefix="${assemblyname}.Design">
-                <includes name="${ms.res.dir}/Design/*.resources"/>
+                <include name="${ms.res.dir}/Design/*.resources"/>
             </resources>
             <resources prefix="NpgsqlTypes">
-                <includes name="${ms.res.dir}/NpgsqlTypes/*.resources"/>
+                <include name="${ms.res.dir}/NpgsqlTypes/*.resources"/>
             </resources>
             <resources prefix="${assemblyname}">
-                <includes name="${ms.res.dir}/*.resources"/>
-                <includes name="*.bmp"/>
+                <include name="${ms.res.dir}/*.resources"/>
+                <include name="*.bmp"/>
             </resources>
             <sources>
-                <includes name="*.cs"/>
-                <includes name="../NpgsqlTypes/*.cs"/>
-                <includes name="./Design/*.cs"/>
+                <include name="*.cs"/>
+                <include name="../NpgsqlTypes/*.cs"/>
+                <include name="./Design/*.cs"/>
             </sources>
         </csc>
         
@@ -129,13 +127,13 @@
             <mkdir dir="${ms.res.dir}/${locale}"/>
             <resgen todir="${ms.res.dir}/${locale}">
                 <resources>
-                    <includes name="*.${locale}.resx"/>
+                    <include name="*.${locale}.resx"/>
                 </resources>
             </resgen>
             <mkdir dir="${ms.res.dir}/Design/${locale}"/>
             <resgen todir="${ms.res.dir}/Design/${locale}">
                 <resources>
-                    <includes name="./Design/*.${locale}.resx"/>
+                    <include name="./Design/*.${locale}.resx"/>
                 </resources>
             </resgen>
             <!--
@@ -170,8 +168,8 @@
             <property name="nant.project.basedir" value="${nant.project.basedir}/build"/>
             <al culture="${locale}" output="${ms.build.dir}/${locale}/${assemblyname}.resources.dll" target="lib" template="${ms.build.dir}/${assemblyname}.dll">
                 <sources>
-                    <includes name="${ms.res.dir}/${locale}/*.resources"/>
-                    <includes name="${ms.res.dir}/Design/${locale}/*.resources"/>
+                    <include name="${ms.res.dir}/${locale}/*.resources"/>
+                    <include name="${ms.res.dir}/Design/${locale}/*.resources"/>
                 </sources>
             </al>
             <property name="nant.project.basedir" value="${basedir_bkp}"/>
@@ -179,6 +177,10 @@
     </target>
 
     <target name="monobuild" depends="init,monoresources">
+        
+        <call target="monoset-win32" if="${nant.platform.win32}"/>
+        <call target="monoset-unix"  if="${nant.platform.unix}"/>
+
         <exec program="${mcs.bat}" commandline='-g -t:library -r System.Data.dll -r System.Windows.Forms.dll -r System.Design.dll -r System.Security.dll -r Mono.Security.dll -r System.Drawing.dll -out:"${mono.build.dir}/${assemblyname}.dll" -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources *.cs ../NpgsqlTypes/*.cs ./Design/*.cs'/>
         <delete file="${assemblyname}.Design.ConnectionStringEditorForm.resources"/>
         <delete file="${assemblyname}.NpgsqlCommand.bmp"/>
@@ -207,7 +209,7 @@
     <target name="apidocs" depends="build">
         <ndoc>
             <assemblies basedir="${ms.build.dir}">
-                <includes name="${assemblyname}.dll"/>
+                <include name="${assemblyname}.dll"/>
             </assemblies>
             <!--
             <summaries basedir="${ms.build.dir}">
