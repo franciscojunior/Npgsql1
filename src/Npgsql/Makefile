@@ -25,16 +25,16 @@ MONO_BUILD_DIR=$(BUILD_DIR)/mono
 NUNIT_BUILD_DIR=$(BUILD_DIR)/nunittests
 
 NUNIT_PATH=/home/fxjr/Mono/mcs/nunit20/nunit-console.exe` 
-RESGENFLAGS=Design/ConnectionStringEditorForm.resx Npgsql.Design.ConnectionStringEditorForm.resources
+RESGENFLAGS= /compile Design/ConnectionStringEditorForm.resx,Npgsql.Design.ConnectionStringEditorForm.resources NpgsqlCommand.resx,Npgsql.NpgsqlCommand.resources NpgsqlConnection.resx,Npgsql.NpgsqlConnection.resources NpgsqlEventLog.resx,Npgsql.NpgsqlEventLog.resources NpgsqlParameter.resx,Npgsql.NpgsqlParameter.resources NpgsqlParameterCollection.resx,Npgsql.NpgsqlParameterCollection.resources NpgsqlTransaction.resx,Npgsql.NpgsqlTransaction.resources
 # Allow compiling under Cygwin
 ifeq ($(OS),"Windows_NT")
 	CC=csc.exe
 	RESGEN=resgen.exe
-	LDFLAGS=/r:System.Data.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /res:Npgsql.NpgsqlCommand.bmp /res:Npgsql.NpgsqlConnection.bmp /res:Npgsql.NpgsqlDataAdapter.bmp /res:Npgsql.Design.ConnectionStringEditorForm.resources /target:library /out:$(NPGSQL_LIB)
+	LDFLAGS=/r:System.Data.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Design.dll /res:Npgsql.NpgsqlCommand.bmp /res:Npgsql.NpgsqlConnection.bmp /res:Npgsql.NpgsqlDataAdapter.bmp /res:Npgsql.Design.ConnectionStringEditorForm.resources /res:Npgsql.NpgsqlCommand.resources /res:Npgsql.NpgsqlConnection.resources /res:Npgsql.NpgsqlEventLog.resources /res:Npgsql.NpgsqlParameter.resources /res:Npgsql.NpgsqlParameterCollection.resources /res:Npgsql.NpgsqlTransaction.resources /target:library /out:$(NPGSQL_LIB)
 else
 	CC=mcs 
 	RESGEN=monoresgen
-	LDFLAGS=-r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
+	LDFLAGS=-r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -r System.Design.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources -resource:Npgsql.NpgsqlCommand.resources -resource:Npgsql.NpgsqlConnection.resources -resource:Npgsql.NpgsqlEventLog.resources -resource:Npgsql.NpgsqlParameter.resources -resource:Npgsql.NpgsqlParameterCollection.resources -resource:Npgsql.NpgsqlTransaction.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
 OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs ./Design/*.cs)
@@ -49,8 +49,8 @@ all: $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS)
 
 clean:
-	rm -rf $(NPGSQL_LIB) *~
-	rm -f Npgsql.Design.ConnectionStringEditorForm.resources
+	rm -rf $(MONO_BUILD_DIR)/$(NPGSQL_LIB) *~
+	rm -f *.resources
 	rm -f Npgsql.NpgsqlCommand.bmp
 	rm -f Npgsql.NpgsqlConnection.bmp
 	rm -f Npgsql.NpgsqlDataAdapter.bmp
