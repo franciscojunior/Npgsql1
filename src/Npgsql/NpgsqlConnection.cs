@@ -64,7 +64,7 @@ namespace Npgsql
     private readonly String CONN_DATABASE = "DATABASE";
     private readonly String CONN_PORT 		= "PORT";
 
-    // Postgres default port
+		// Postgres default port
     private readonly String PG_PORT = "5432";
 		
     // These are for ODBC connection string compatibility
@@ -88,7 +88,7 @@ namespace Npgsql
     private Byte[]					input_buffer;*/
     private Encoding				connection_encoding;
   		
-    public NpgsqlConnection() : this(""){}
+    public NpgsqlConnection() : this(String.Empty){}
 
     public NpgsqlConnection(String ConnectionString)
     {
@@ -102,7 +102,8 @@ namespace Npgsql
     	
     	_mediator = new NpgsqlMediator();
     	
-      ParseConnectionString();
+    	if (connection_string != String.Empty)
+				ParseConnectionString();
     }
 
 		///<value> This is the ConnectionString value </value>
@@ -116,7 +117,8 @@ namespace Npgsql
       {
         connection_string = value;
         NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".ConnectionString = " + value, LogLevel.Normal);
-        ParseConnectionString();
+      	if (connection_string != String.Empty)
+        	ParseConnectionString();
       }
     }
 	
@@ -222,6 +224,9 @@ namespace Npgsql
         if (connection_state == ConnectionState.Open)
           throw new NpgsqlException("Connection already open");
 		    		    
+		   	if (connection_string == String.Empty)
+		   		throw new InvalidOperationException("ConnectionString cannot be empty.");
+      	
 		    CurrentState.Open(this);
       	
       	// Check if there were any errors.
@@ -311,8 +316,8 @@ namespace Npgsql
     private void ParseConnectionString()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LogLevel.Debug);
-	    	
-      // Get the key-value pairs delimited by CONN_DELIM
+	    
+	    // Get the key-value pairs delimited by CONN_DELIM
       String[] pairs = connection_string.Split(new Char[] {CONN_DELIM});
 	    	
       String[] keyvalue;
@@ -357,6 +362,7 @@ namespace Npgsql
       if (connection_string_values[CONN_PORT] == null)
         // Port is optional. Defaults to PG_PORT.
         connection_string_values[CONN_PORT] = PG_PORT;
+    	
     }
 	    
     
@@ -373,6 +379,7 @@ namespace Npgsql
 		{
 			CurrentState.Startup( this );
 		}
+		
 		internal NpgsqlState CurrentState
 		{
 			get 
