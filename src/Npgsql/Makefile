@@ -20,18 +20,25 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 NPGSQL_LIB=Npgsql.dll
+BUILD_DIR=build
+MONO_BUILD_DIR=$(BUILD_DIR)/mono
+NUNIT_BUILD_DIR=$(BUILD_DIR)/nunittests
+
+NUNIT_PATH=/home/fxjr/Mono/mcs/nunit20/nunit-console.exe` 
 # Allow compiling under Cygwin
 ifeq ($(OS),"Windows_NT")
 	CC=csc.exe
 	LDFLAGS=/r:System.Data.dll /target:library /out:$(NPGSQL_LIB)
 else
-	CC=mcs
-	LDFLAGS=-r System.Data.dll --target library -o $(NPGSQL_LIB)
+	CC=mcs 
+	LDFLAGS=-r System.Data.dll --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
 OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs)
 
 all: $(OBJECTS)
+	mkdir -p $(MONO_BUILD_DIR)
+	mkdir -p $(NUNIT_BUILD_DIR) 
 	$(CC) $(LDFLAGS) $(OBJECTS)
 
 clean:
@@ -39,3 +46,9 @@ clean:
 
 changelog:
 	$(CVS2CL)
+
+nunittests:
+	(cd ../testsuite/noninteractive/NUnit20/ && make && cd ../../../)
+	(cp $(MONO_BUILD_DIR)/$(NPGSQL_LIB) $(NUNIT_BUILD_DIR))
+	 
+	(cd $(NUNIT_BUILD_DIR) && mono $(NUNIT_PATH) NpgsqlTests.dll && cd ../../)
