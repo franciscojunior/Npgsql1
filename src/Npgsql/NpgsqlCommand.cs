@@ -226,13 +226,12 @@ namespace Npgsql
                 if (this.Connection == value)
                     return;
 
-                if (this.transaction != null && this.transaction.Connection == null)
-                    this.transaction = null;
-                if (this.connection != null && this.Connector.Transaction != null)
+                if (this.transaction != null && this.connection != null && this.Connector.Transaction != null)
                     throw new InvalidOperationException(resman.GetString("Exception_SetConnectionInTransaction"));
 
 
                 this.connection = value;
+                Transaction = null;
                 if (this.connection != null)
                     connector = this.connection.Connector;
 
