@@ -1,6 +1,6 @@
 // created on 07/06/2002 at 09:34
 
-// Npgsql.NpgsqlConnection.cs
+// Npgsql.NpgsqlEventLog.cs
 // 
 // Author:
 //	Dave Page (dpage@postgresql.org)
