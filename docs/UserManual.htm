@@ -609,7 +609,7 @@ public class t
 
 <h3>Working with binary data and bytea datatype</h3>
 
-<p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix database in its end.</p>
+<p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix "database" in its end.</p>
 <p> table schema: 
     create table tableBytea (field_serial serial, field_bytea bytea)
 </p>
@@ -655,7 +655,7 @@ public class t
 		
 
 		Byte[] result = (Byte[])command.ExecuteScalar();
-		fs = new FileStream(args[0] + "banco", FileMode.Create, FileAccess.Write);
+		fs = new FileStream(args[0] + "database", FileMode.Create, FileAccess.Write);
 
 		
 		BinaryWriter bw = new BinaryWriter(new BufferedStream(fs));
@@ -672,6 +672,80 @@ public class t
 		conn.Close();
 
 	}
+}
+</pre>
+
+<h3>Working with large object support</h3>
+
+<p> This sample is the same as the bytea code support above. The difference is that we will use the large object support of Postgresql. This sample stores the file in postgresql and later removes it. As bytea sample, it writes a file with a "database" suffix.
+
+</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+using System.IO;
+
+public class c
+{
+    public static void Main(String[] args)
+    {
+        NpgsqlConnection newconn = new NpgsqlConnection("server=localhost;user id=npgsql_tests;password=npgsql_tests");
+
+        newcon.Open();
+        NpgsqlTransaction t = newcon.BeginTransaction();
+        LargeObjectManager lbm = new LargeObjectManager(newcon);
+
+        int noid = lbm.Create(LargeObjectManager.READWRITE);
+        LargeObject lo =  lbm.Open(noid,LargeObjectManager.READWRITE);
+
+        FileStream fs = File.OpenRead(args[0]);
+
+        byte[] buf = new byte[fs.Length];
+        fs.Read(buf,0,(int)fs.Length);
+
+        lo.Write(buf);
+        lo.Close();
+        t.Commit();
+        
+        
+        t = newcon.BeginTransaction();
+        
+        lo =  lbm.Open(noid,LargeObjectManager.READWRITE);
+        
+        FileStream fsout = File.OpenWrite(args[0] + "banco");
+        
+        buf = lo.Read(lo.Size());
+        
+        fsout.Write(buf, 0, (int)lo.Size());
+        fsout.Flush();
+        fsout.Close();
+        lo.Close();
+        t.Commit();
+        
+        
+        DeleteLargeObject(noid);
+        
+        Console.WriteLine("noid: {0}", noid);
+        newcon.Close();
+    }
+    
+    public static void DeleteLargeObject(Int32 noid)
+    {
+        NpgsqlConnection conn = new NpgsqlConnection("server=localhost;user id=npgsql_tests;password=npgsql_tests");
+
+        newcon.Open();
+        NpgsqlTransaction t = newcon.BeginTransaction();
+        LargeObjectManager lbm = new LargeObjectManager(newcon);
+        lbm.Delete(noid);
+        
+        t.Commit();
+        
+        newcon.Close();
+
+    }
 }
 </pre>
 
