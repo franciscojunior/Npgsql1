@@ -26,8 +26,7 @@
 
 using System;
 using System.Windows.Forms;
-using System.Security;
-using System.Security.Principal;
+using System.Data;
 using Npgsql;
 
 
@@ -56,6 +55,7 @@ using Npgsql;
     private System.Windows.Forms.Button cmdScalar;
     private System.Windows.Forms.Label lblScalar;
     private System.Windows.Forms.TextBox txtScalar;
+    private System.Windows.Forms.Button cmdDisconnect;
     private NpgsqlConnection cnDB;
 
     public frmMain()
@@ -65,13 +65,9 @@ using Npgsql;
 
       // Bind functions to the buttons
       cmdConnect.Click += new System.EventHandler(cmdConnect_Click);
+      cmdDisconnect.Click += new System.EventHandler(cmdDisconnect_Click);
       cmdNonQuery.Click += new System.EventHandler(cmdNonQuery_Click);
       cmdScalar.Click += new System.EventHandler(cmdScalar_Click);
-
-      // Set the default username
-      AppDomain.CurrentDomain.SetPrincipalPolicy(PrincipalPolicy.WindowsPrincipal);
-      WindowsPrincipal objUser = (WindowsPrincipal)System.Threading.Thread.CurrentPrincipal; 
-      txtUsername.Text = objUser.Identity.Name.Substring(objUser.Identity.Name.IndexOf("\\") + 1);
     }
 
     /// <summary>
@@ -79,37 +75,63 @@ using Npgsql;
     /// </summary>
     protected override void Dispose( bool disposing )
     {
+      if (cnDB.State == ConnectionState.Closed)
+      {
+        try
+        {
+          cnDB.Close();
+        }
+        catch (NpgsqlException ex)
+        {
+          // Do nothing...
+        }
+      }
+      
       base.Dispose( disposing );
     }
 
+    /// <summary>
+    /// Connect to the database using the specified
+    /// connection details.
+    /// </summary>
     private void cmdConnect_Click(object sender, System.EventArgs e) 
     {
 		
-		  txtLog.Text = txtLog.Text + "Connecting to PostgreSQL:\r\n";
+		  log("Connecting to PostgreSQL...");
+		  
+		  if (cnDB != null)
+		  {
+        if (cnDB.State != ConnectionState.Closed)
+        {
+          log("Error: Already connected!");
+          log("Finished connecting!\r\n"); 
+          return;
+        }
+      }
 		  
       // Check the data
       if (txtHostname.Text == "")
       {
-        txtLog.Text = txtLog.Text + "Error: No hostname was specified!\r\n";
-        txtLog.Text = txtLog.Text + "Finished connecting!\r\n\n"; 
+        log("Error: No hostname was specified!");
+        log("Finished connecting!\r\n"); 
         return;
       }
       if (txtPort.Text == "")
       {
-        txtLog.Text = txtLog.Text + "Error: No port was specified!\r\n";
-        txtLog.Text = txtLog.Text + "Finished connecting!\r\n\n"; 
+        log("Error: No port was specified!");
+        log("Finished connecting!\r\n"); 
         return;
       }
       if (txtUsername.Text == "")
       {
-        txtLog.Text = txtLog.Text + "Error: No username was specified!\r\n";
-        txtLog.Text = txtLog.Text + "Finished connecting!\r\n\n"; 
+        log("Error: No username was specified!");
+        log("Finished connecting!\r\n"); 
         return;
       }
 
       // Setup a connection string
-      string szConnect = "Database=template1;Server=" + txtHostname.Text + ";Port=" + int.Parse(txtPort.Text) + ";User ID=" + txtUsername.Text + ";Password=" + txtPassword.Text + ";";
-      txtLog.Text = txtLog.Text + "Connection String: " + szConnect + "\r\n";
+      string szConnect = "DATABASE=template1;SERVER=" + txtHostname.Text + ";PORT=" + int.Parse(txtPort.Text) + ";UID=" + txtUsername.Text + ";PWD=" + txtPassword.Text + ";";
+      log("Connection String: " + szConnect);
 
       // Attempt to open a connection
       cnDB = new NpgsqlConnection(szConnect);
@@ -120,75 +142,170 @@ using Npgsql;
       } 
       catch (NpgsqlException ex) 
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished connecting!\r\n"); 
         return;
       }
       catch(InvalidOperationException ex)
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished connecting!\r\n"); 
         return;
       } 
-      finally
-      {
-        txtLog.Text = txtLog.Text + "Finished connecting!\r\n\n"; 
-      }
-      
-    }
-    
-    private void cmdNonQuery_Click(object sender, System.EventArgs e) 
-    {
-    
-      txtLog.Text = txtLog.Text + "Executing Non-Query:\r\n";
-      txtLog.Text = txtLog.Text + "Query: " + txtNonQuery.Text + "\r\n";
-      
+
+      // Get the PostgreSQL version number as proof
       try
       {
-        NpgsqlCommand cmdNQ = new NpgsqlCommand(txtNonQuery.Text, cnDB);
-        cmdNQ.ExecuteNonQuery();
+        NpgsqlCommand cmdVer = new NpgsqlCommand("SELECT version()", cnDB);
+        Object ObjVer = cmdVer.ExecuteScalar();
+        log(ObjVer.ToString());
       }
       catch(NpgsqlException ex)
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished connecting!\r\n");
+        return;
+      } 
+      catch(InvalidOperationException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished connecting!\r\n");
+        return;
+      } 
+      log("Finished connecting!\r\n"); 
+    }
+    
+    /// <summary>
+    /// Disconnect from the database
+    /// </summary>
+    private void cmdDisconnect_Click(object sender, System.EventArgs e) 
+    {
+      log("Disconnecting from PostgreSQL...");    
+      if (cnDB != null)
+      {
+        if (cnDB.State != ConnectionState.Closed)
+        {
+          try
+          {
+            cnDB.Close();
+          }
+          catch (NpgsqlException ex)
+          {
+            log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+            log("Finished disconnecting!\r\n");
+            return;
+          }
+        }
+        else
+        {
+          log("Error: The connection is already closed!"); 
+        }
+      } 
+      else
+      {
+        log("Error: The connection is already closed!"); 
+      }
+      log("Finished disconnecting!\r\n"); 
+    }
+
+    /// <summary>
+    /// Execute a non-query. This is a query that doesn't
+    /// return a result. The value returned is generally
+    /// the number of records affected.
+    /// </summary>
+    private void cmdNonQuery_Click(object sender, System.EventArgs e) 
+    {
+    
+      log("Executing Non-Query...");
+      log("Query: " + txtNonQuery.Text);
+      
+      // Check the connection state
+      if (cnDB == null) 
+      {
+        log("Error: The connection has not been opened.");
+        log("Finished executing Non-Query!\r\n");
+        return;
+      }
+      else
+      {
+        if (cnDB.State != ConnectionState.Open)
+        {
+          log("Error: The connection has not been opened.");
+          log("Finished executing Non-Query!\r\n"); 
+          return;        
+        }
+      }
+      
+      // Attempt to execute the query
+      try
+      {
+        NpgsqlCommand cmdNQ = new NpgsqlCommand(txtNonQuery.Text, cnDB);
+        Int32 iRes = cmdNQ.ExecuteNonQuery();
+        log("Records affected: " + iRes);
+      }
+      catch(NpgsqlException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Non-Query!\r\n"); 
         return;
       }
       catch(InvalidOperationException ex)
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Non-Query!\r\n"); 
         return;
-      } 
-      finally
-      {
-        txtLog.Text = txtLog.Text + "Finished executing Non-Query!\r\n\r\n"; 
       }
-      
+      log("Finished executing Non-Query!\r\n"); 
     }
     
     private void cmdScalar_Click(object sender, System.EventArgs e) 
     {
-      txtLog.Text = txtLog.Text + "Executing Scalar:\r\n";
-      txtLog.Text = txtLog.Text + "Query: " + txtScalar.Text + "\r\n";
-    
+      log("Executing Scalar...");
+      log("Query: " + txtScalar.Text);
+      
+      // Check the connection state
+      if (cnDB == null) 
+      {
+        log("Error: The connection has not been opened.");
+        log("Finished executing Scalar!\r\n"); 
+        return;
+      }
+      else
+      {
+        if (cnDB.State != ConnectionState.Open)
+        {
+          log("Error: The connection has not been opened.");
+          log("Finished executing Scalar!\r\n");
+          return;  
+        }
+      }
+      
+      // Attempt to execute the query
       try
       {
-        NpgsqlCommand cmdNQ = new NpgsqlCommand(txtNonQuery.Text, cnDB);
-        Object iRes = cmdNQ.ExecuteScalar();
-        txtLog.Text = txtLog.Text + "Result: " + iRes.ToString()  + "\r\n";
+        NpgsqlCommand cmdNQ = new NpgsqlCommand(txtScalar.Text, cnDB);
+        Object objRes = cmdNQ.ExecuteScalar();
+        log("Result: " + objRes.ToString());
       }
       catch(NpgsqlException ex)
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Scalar!\r\n"); 
         return;
       } 
       catch(InvalidOperationException ex)
       {
-        txtLog.Text = txtLog.Text + "Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace;
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Scalar!\r\n"); 
         return;
       } 
-      finally
-      {
-        txtLog.Text = txtLog.Text + "Finished executing Scalar!\r\n\r\n"; 
-      }
-
+      log("Finished executing Scalar!\r\n"); 
+    }
+      
+    public void log(String szMessage)
+    {
+      txtLog.AppendText(System.DateTime.Now + " - " + szMessage + "\r\n");
+      txtLog.SelectionStart = txtLog.Text.Length;
     }
 
 		#region Windows Form Designer generated code
@@ -212,14 +329,15 @@ using Npgsql;
       this.lblPort = new System.Windows.Forms.Label();
       this.lblHostname = new System.Windows.Forms.Label();
       this.ExecuteNonQuery = new System.Windows.Forms.TabPage();
-      this.ExecuteScalar = new System.Windows.Forms.TabPage();
-      this.txtLog = new System.Windows.Forms.TextBox();
+      this.cmdNonQuery = new System.Windows.Forms.Button();
       this.txtNonQuery = new System.Windows.Forms.TextBox();
       this.lblNonQuery = new System.Windows.Forms.Label();
-      this.cmdNonQuery = new System.Windows.Forms.Button();
+      this.ExecuteScalar = new System.Windows.Forms.TabPage();
       this.cmdScalar = new System.Windows.Forms.Button();
       this.txtScalar = new System.Windows.Forms.TextBox();
       this.lblScalar = new System.Windows.Forms.Label();
+      this.txtLog = new System.Windows.Forms.TextBox();
+      this.cmdDisconnect = new System.Windows.Forms.Button();
       this.tabset.SuspendLayout();
       this.Connection.SuspendLayout();
       this.ExecuteNonQuery.SuspendLayout();
@@ -241,6 +359,7 @@ using Npgsql;
       // Connection
       // 
       this.Connection.Controls.AddRange(new System.Windows.Forms.Control[] {
+                                                                             this.cmdDisconnect,
                                                                              this.cmdConnect,
                                                                              this.txtPassword,
                                                                              this.txtUsername,
@@ -258,9 +377,9 @@ using Npgsql;
       // 
       // cmdConnect
       // 
-      this.cmdConnect.Location = new System.Drawing.Point(488, 16);
+      this.cmdConnect.Location = new System.Drawing.Point(488, 8);
       this.cmdConnect.Name = "cmdConnect";
-      this.cmdConnect.Size = new System.Drawing.Size(88, 32);
+      this.cmdConnect.Size = new System.Drawing.Size(88, 24);
       this.cmdConnect.TabIndex = 27;
       this.cmdConnect.Text = "&Connect";
       // 
@@ -345,29 +464,13 @@ using Npgsql;
       this.ExecuteNonQuery.TabIndex = 1;
       this.ExecuteNonQuery.Text = "ExecuteNonQuery";
       // 
-      // ExecuteScalar
+      // cmdNonQuery
       // 
-      this.ExecuteScalar.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                                this.cmdScalar,
-                                                                                this.txtScalar,
-                                                                                this.lblScalar});
-      this.ExecuteScalar.Location = new System.Drawing.Point(4, 22);
-      this.ExecuteScalar.Name = "ExecuteScalar";
-      this.ExecuteScalar.Size = new System.Drawing.Size(592, 62);
-      this.ExecuteScalar.TabIndex = 2;
-      this.ExecuteScalar.Text = "ExecuteScalar";
-      // 
-      // txtLog
-      // 
-      this.txtLog.AutoSize = false;
-      this.txtLog.Location = new System.Drawing.Point(8, 104);
-      this.txtLog.Multiline = true;
-      this.txtLog.Name = "txtLog";
-      this.txtLog.ReadOnly = true;
-      this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-      this.txtLog.Size = new System.Drawing.Size(600, 224);
-      this.txtLog.TabIndex = 11;
-      this.txtLog.Text = "";
+      this.cmdNonQuery.Location = new System.Drawing.Point(488, 16);
+      this.cmdNonQuery.Name = "cmdNonQuery";
+      this.cmdNonQuery.Size = new System.Drawing.Size(88, 32);
+      this.cmdNonQuery.TabIndex = 28;
+      this.cmdNonQuery.Text = "&Execute Non-Query";
       // 
       // txtNonQuery
       // 
@@ -388,13 +491,17 @@ using Npgsql;
       this.lblNonQuery.TabIndex = 24;
       this.lblNonQuery.Text = "Non-Query";
       // 
-      // cmdNonQuery
+      // ExecuteScalar
       // 
-      this.cmdNonQuery.Location = new System.Drawing.Point(488, 16);
-      this.cmdNonQuery.Name = "cmdNonQuery";
-      this.cmdNonQuery.Size = new System.Drawing.Size(88, 32);
-      this.cmdNonQuery.TabIndex = 28;
-      this.cmdNonQuery.Text = "&Execute Non-Query";
+      this.ExecuteScalar.Controls.AddRange(new System.Windows.Forms.Control[] {
+                                                                                this.cmdScalar,
+                                                                                this.txtScalar,
+                                                                                this.lblScalar});
+      this.ExecuteScalar.Location = new System.Drawing.Point(4, 22);
+      this.ExecuteScalar.Name = "ExecuteScalar";
+      this.ExecuteScalar.Size = new System.Drawing.Size(592, 62);
+      this.ExecuteScalar.TabIndex = 2;
+      this.ExecuteScalar.Text = "ExecuteScalar";
       // 
       // cmdScalar
       // 
@@ -422,6 +529,26 @@ using Npgsql;
       this.lblScalar.Size = new System.Drawing.Size(36, 13);
       this.lblScalar.TabIndex = 29;
       this.lblScalar.Text = "Scalar";
+      // 
+      // txtLog
+      // 
+      this.txtLog.AutoSize = false;
+      this.txtLog.Location = new System.Drawing.Point(8, 104);
+      this.txtLog.Multiline = true;
+      this.txtLog.Name = "txtLog";
+      this.txtLog.ReadOnly = true;
+      this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+      this.txtLog.Size = new System.Drawing.Size(600, 224);
+      this.txtLog.TabIndex = 11;
+      this.txtLog.Text = "";
+      // 
+      // cmdDisconnect
+      // 
+      this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
+      this.cmdDisconnect.Name = "cmdDisconnect";
+      this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
+      this.cmdDisconnect.TabIndex = 28;
+      this.cmdDisconnect.Text = "&Disconnect";
       // 
       // frmMain
       // 
