@@ -74,6 +74,8 @@ namespace Npgsql
 
             Array.Clear(null_map_array, 0, null_map_array.Length);
 
+	    Decoder decoder = encoding.GetDecoder();
+	    
             // Read the null fields bitmap.
             PGUtil.CheckedStreamRead(inputStream, null_map_array, 0, null_map_array.Length );
 
@@ -103,8 +105,13 @@ namespace Npgsql
                     // Now, read just the field value.
                     PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
 
-                    // Read the bytes as string.
-                    result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
+                    int charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
+
+                    char[] chars = new char[charCount];
+                    
+		    int charLen = decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
+
+                    result.Append(new String(chars));
 
                     bytes_left -= READ_BUFFER_SIZE;
                 }
@@ -130,6 +137,9 @@ namespace Npgsql
 
             PGUtil.ReadInt32(inputStream, input_buffer);
             Int16 numCols = PGUtil.ReadInt16(inputStream, input_buffer);
+	    
+	    Decoder decoder = encoding.GetDecoder();
+	    
 
             for (Int16 field_count = 0; field_count < numCols; field_count++)
             {
@@ -148,13 +158,29 @@ namespace Npgsql
 
                 while (bytes_left > READ_BUFFER_SIZE)
                 {
+		
                     // Now, read just the field value.
                     PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
 
                     // Read the bytes as string.
-                    result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
+                    //result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
+                    int charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
+
+                    char[] chars = new char[charCount];
+                    
+		    int charLen = decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
+
+                    result.Append(new String(chars));
 
                     bytes_left -= READ_BUFFER_SIZE;
+		    
+		    // Now, read just the field value.
+                    /*PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
+
+                    // Read the bytes as string.
+                    result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
+
+                    bytes_left -= READ_BUFFER_SIZE;*/
                 }
 
                 // Now, read just the field value.
