@@ -27,6 +27,7 @@ my $CVS2CL="cvs2cl";
 my $targets = { "ChangeLog" => 1,
 		"src/Npgsql" => 1,
 		"src/testsuite" => 1,
+		"src/testsuite/noninteractive" => 1,
 		"admin" => 1};
 
 
@@ -36,100 +37,213 @@ my $targets = { "ChangeLog" => 1,
 # ------------------------------------------------------------------------
 # ========================================================================
 
-
+#
+# Error codes
+#
 my $ERROR_NOT_CVS_TAGGED = 1;
+my $ERROR_DOES_NOT_COMPILE = 2;
+my $ERROR_NONINTERACTIVE_TEST_DONT_PASS = 3;
 
+#
+# Check messages
+#
 my $OK="OK\n";
+my $FAILED="FAILED\n";
+
 
 # Change up to the root directory
 chdir "..";
 
 #
-# Clean up
+# Here we go, checking starts here...
 #
-print "Cleaning up ...";
-system("(cd src/Npgsql; make clean > /dev/null)");
-system("rm -f admin/*.tar.gz > /dev/null");
-system("rm -f ChangeLog* > /dev/null");
-print $OK;
+banner();         # Hello, this is a release script
+check_compiles(); # Check if npgsql compiles
+check_tests();    # Run all tests
+clean();          # Clean up the mess we made so far
+changelog();      # Create a ChangeLog
 
+# Figure out the release info and release tag
+my ($rel_version, $version, $RELEASE_TAG) = get_release_info();
 
+# Prepare the list of files to be passed to tar
+my $target_files = prepare_release_files( $targets );
 
-#
-# Create a ChangeLog
-#
-print "Creating a ChangeLog file ...";
-system("$CVS2CL 2> /dev/null");
-print $OK;
-
-
-#
-# Figure out the new version number
-#
-my $version;
-my $rel_version;
-my $rel_tag;
-$version = `grep AssemblyVersion src/Npgsql/AssemblyInfo.cs`;
-$version =~ /\"(.*)\"/;
-$version = $1;
-$rel_version = $version;
-$rel_version =~ s/\./\-/;
-$rel_tag = $version;
-$rel_tag =~ s/\./_/;
-my $RELEASE_TAG = "RELEASE-$rel_tag";
-
-#
-# Prepare $target_files to be passed to tar
-#
-my $target_files = [];
-foreach my $file (sort keys %$targets) {
-    if ( -f $file ) {
-	push @{ $target_files }, $file;
-    } elsif ( -d $file ) {
-	open( DIRFILES, "find $file -print |grep -v CVS | grep -v .#| sed 1d |");
-	while(<DIRFILES>) {
-	    $_ =~ s/\n/ /;
-	    push @{ $target_files }, $_;
-	}
-    }
-}
-
-#
 # Verify that all files are properly tagged
+verify_tagged( $RELEASE_TAG );
+
+# Create the release file
+create_release( $RELEASE_NAME, $rel_version, $version, $target_files );
+
 #
-print "Checking if all files are properly tagged as $RELEASE_TAG. NO implicit tagging will be performed ...\n";
-my $errors;
-foreach my $file ( @$target_files ) {
-    # Ignore the ChangeLog file
-    if ($file ne "ChangeLog") { 
-	my $line = `cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}'`;
-	print "$file... ";
-	if ($line ne $RELEASE_TAG) {
-	    print "not cvs tagged as $RELEASE_TAG\n";
-	    $errors = 1;
-	} else {
-	    print $OK;
-	}
+# Our job is done
+#
+exit 0;
+
+
+
+
+
+# ========================================================================
+# ------------------------------------------------------------------------
+# Helper functions
+# ------------------------------------------------------------------------
+# ========================================================================
+#
+# All these subroutines are used above
+#
+
+######################################################################
+# Print out a banner
+######################################################################
+sub banner() {
+print "-------------------------------------------------------------------------\n";
+print "This is the release script of $RELEASE_NAME. A few checks will be made...\n";
+print "-------------------------------------------------------------------------\n";
+}
+
+######################################################################
+# Make sure that npgsql compiles correctly
+######################################################################
+sub check_compiles() {
+    print "Checking if npgsql compiles correctly...";
+    if (system("(cd src/Npgsql; make 2>&1 > /dev/null)") == 0) {
+	print $OK;
+    } else {
+	failed($ERROR_DOES_NOT_COMPILE);
     }
 }
 
-if ($errors) {
-    print "Please tag the listed files first\n";
-    exit $ERROR_NOT_CVS_TAGGED;
-} else {
+######################################################################
+# Make sure that all noninteractive tests pass
+######################################################################
+sub check_tests() {
+    print "Checking if all non-interactive tests pass...";
+    if (system("(cd src/testsuite/noninteractive; make 2>&1 > /dev/null)") == 0) {
+	print $OK;
+    } else {
+	failed($ERROR_NONINTERACTIVE_TEST_DONT_PASS);
+    }
+}
+
+######################################################################
+# Clean up the mess we made so far
+######################################################################
+sub clean() {
+    print "Cleaning up ...";
+    system("(cd src/Npgsql; make clean > /dev/null)");
+    system("(cd src/testsuite/noninteractive; make clean > /dev/null)");
+    system("rm -f admin/*.tar.gz > /dev/null");
+    system("rm -f ChangeLog* > /dev/null");
     print $OK;
-    print "Everything is properly tagged as $RELEASE_TAG\n";
+}
+
+######################################################################
+# Create a ChangeLog
+######################################################################
+sub changelog() {
+    print "Creating a ChangeLog file ...";
+    system("$CVS2CL 2> /dev/null");
+    print $OK;
+}
+
+######################################################################
+# We failed somewhere; exit
+######################################################################
+sub failed() {
+    my ($error) = @_;
+
+    print $FAILED;
+    exit $error;
+}
+
+######################################################################
+# Figure out the new version number and release tag
+######################################################################
+sub get_release_info() {
+    my $version;
+    my $rel_version;
+    my $rel_tag;
+
+    $version = `grep AssemblyVersion src/Npgsql/AssemblyInfo.cs`;
+    $version =~ /\"(.*)\"/;
+    $version = $1;
+    $rel_version = $version;
+    $rel_version =~ s/\./\-/;
+    $rel_tag = $version;
+    $rel_tag =~ s/\./_/;
+
+    my $RELEASE_TAG = "RELEASE-$rel_tag";
+
+    return ( $rel_version, $version, $RELEASE_TAG );
+}
+
+######################################################################
+# Prepare $target_files to be passed to tar
+######################################################################
+sub prepare_release_files() {
+    my ( $targets ) = ( @_ );
+    my $target_files;
+
+    foreach my $file (sort keys %$targets) {
+	if ( -f $file ) {
+	    push @{ $target_files }, $file;
+	} elsif ( -d $file ) {
+	    open( DIRFILES, "find $file -print |grep -v CVS | grep -v .#| sed 1d |");
+	    while(<DIRFILES>) {
+		$_ =~ s/\n/ /;
+		push @{ $target_files }, $_;
+	    }
+	}
+    }
+
+    return $target_files;
 }
 
 
 
-#
-# Create release tar.gzs
-#
-my $rel_file=$RELEASE_NAME . "_" . $rel_version . ".tar.gz";
-print "Packaging source release ...\n";
-system("(tar -czvf $rel_file @$target_files > /dev/null; mv $rel_file admin/.)");
-print "This is release version $version, since that's what's in AssemblyInfo.cs\n";
-chdir "admin";
-system("echo $rel_file is now in `pwd`\n");
+######################################################################
+# Verify that all files are properly tagged
+######################################################################
+sub verify_tagged() {
+    my $errors;
+
+    print "Checking if all files are properly tagged as $RELEASE_TAG. NO implicit tagging will be performed ...\n";
+    foreach my $file ( @$target_files ) {
+	# Ignore the ChangeLog file
+	if ($file ne "ChangeLog") { 
+	    my $line = `cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}'`;
+	    print "$file... ";
+	    if ($line ne $RELEASE_TAG) {
+		print "not cvs tagged as $RELEASE_TAG\n";
+		$errors = 1;
+	    } else {
+		print $OK;
+	    }
+	}
+    }
+
+    if ($errors) {
+	print "Please tag the listed files first\n";
+	exit $ERROR_NOT_CVS_TAGGED;
+    } else {
+	print $OK;
+	print "Everything is properly tagged as $RELEASE_TAG\n";
+    }
+}
+
+
+######################################################################
+# Create release tar.gz
+######################################################################
+sub create_release() {
+    my ( $RELEASE_NAME, $rel_version, $version, $target_files ) = ( @_ );
+    my $rel_file=$RELEASE_NAME . "_" . $rel_version . ".tar.gz";
+
+    print "Packaging source release ...\n";
+    system("(tar -czvf $rel_file @$target_files > /dev/null; mv $rel_file admin/.)");
+    print "This is release version $version, since that's what's in AssemblyInfo.cs\n";
+    chdir "admin";
+    system("echo $rel_file is now in `pwd`\n");   
+}
 
