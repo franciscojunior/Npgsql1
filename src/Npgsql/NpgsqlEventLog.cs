@@ -294,13 +294,16 @@ namespace Npgsql {
 			string message = String.Empty;
 			switch (MethodParameters.Length){
 				case 4:
-					message = String.Format(LogResMan.GetString("Method_4P_Enter"), ClassName, MethodName, MethodParameters);
+					message = String.Format(LogResMan.GetString("Method_4P_Enter"), ClassName, MethodName, 
+					                        MethodParameters[0], MethodParameters[1], MethodParameters[2], MethodParameters[3]);
 					break;
 				case 5:
-					message = String.Format(LogResMan.GetString("Method_5P_Enter"), ClassName, MethodName, MethodParameters);
+					message = String.Format(LogResMan.GetString("Method_5P_Enter"), ClassName, MethodName, 
+					                        MethodParameters[0], MethodParameters[1], MethodParameters[2], MethodParameters[3], MethodParameters[4]);
 					break;
 				case 6:
-					message = String.Format(LogResMan.GetString("Method_6P_Enter"), ClassName, MethodName, MethodParameters);
+					message = String.Format(LogResMan.GetString("Method_6P_Enter"), ClassName, MethodName, 
+					                        MethodParameters[0], MethodParameters[1], MethodParameters[2], MethodParameters[3], MethodParameters[4], MethodParameters[5]);
 					break;
 				default:
 					// should always be true - but who knows ;-)
