@@ -417,7 +417,7 @@ namespace NpgsqlTests
 			command.CommandText = "select count(*) from tableb where field_timestamp is null";
 			command.Parameters.Clear();
 			
-			Int64 result = (Int64)command.ExecuteScalar();
+			Object result = command.ExecuteScalar();
 			
 			command.CommandText = "delete from tableb where field_serial = (select max(field_serial) from tableb) and field_serial != 3;";
 			command.ExecuteNonQuery();
@@ -427,6 +427,67 @@ namespace NpgsqlTests
 			
 			
 		}
+		
+		
+		[Test]
+		public void InsertNullInt16()
+		{
+			_conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Int16));
+			
+			command.Parameters[0].Value = DBNull.Value;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select count(*) from tableb where field_int2 is null";
+			command.Parameters.Clear();
+			
+			Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+			
+			command.CommandText = "delete from tableb where field_serial = (select max(field_serial) from tableb);";
+			command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(4, result);
+			
+			
+		}
+		
+		
+		[Test]
+		public void InsertNullInt32()
+		{
+			_conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_int4) values (:a)", _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
+			
+			command.Parameters[0].Value = DBNull.Value;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select count(*) from tablea where field_int4 is null";
+			command.Parameters.Clear();
+			
+			Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+			
+			command.CommandText = "delete from tablea where field_serial = (select max(field_serial) from tablea);";
+			command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(5, result);
+			
+		}
+		
+		[Test]
 		
 	}
 }
