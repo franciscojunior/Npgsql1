@@ -74,7 +74,7 @@ p.headnotes {
 
 <p />
 
-<p class="headnotes">Last update: 2003-05-31 12:40 by fxjr</p>
+<p class="headnotes">Last update: $Date$ by $Author$</p>
 <p class="headnotes">Category: External documentation</p>
 <p class="headnotes">Intended Audience: Npgsql Users</p>
 
@@ -118,6 +118,31 @@ public class NpgsqlUserManual
     conn.Close();
   }
 }
+</pre>
+
+<h3> Connection String parameters </h3>
+<p> When establishing a connection, NpgsqlConnection accepts many parameters which can be used to modify its behavior. Here is the list of current parameters you can tweak: (From NpgsqlConnection source) </p>
+
+<pre class="CodeBox">
+ Gets or sets the string used to connect to a PostgreSQL database.
+        /// Valid values are:
+        /// Server:                     Address/Name of Postgresql Server;
+        /// Port:                       Port to connect to;
+        /// Protocol:                   Protocol version to use, instead of automatic; Integer 2 or 3;
+        /// Database:                   Database name. Defaults to user name if not specified;
+        /// User:                       User name;
+        /// Password:                   Password for clear text authentication;
+        /// SSL:                        True or False. Controls whether to attempt a secure connection. Default = False;
+        /// Pooling:                    True or False. Controls whether connection pooling is used. Default = True;
+        /// MinPoolSize:                Min size of connection pool;
+        /// MaxPoolSize:                Max size of connection pool;
+        /// Encoding:                   Encoding to be used; 
+        /// Timeout:                    Time to wait for connection open in seconds.
+        
+        
+        Encoding can the ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
+        Min pool size when specified will make NpgsqlConnection pre allocates this number of connections with the server.
+        
 </pre>
 
 <h3> Using NpgsqlCommand to add a row in a table </h3>
@@ -715,7 +740,7 @@ public class c
         
         lo =  lbm.Open(noid,LargeObjectManager.READWRITE);
         
-        FileStream fsout = File.OpenWrite(args[0] + "banco");
+        FileStream fsout = File.OpenWrite(args[0] + "database");
         
         buf = lo.Read(lo.Size());
         
@@ -749,6 +774,81 @@ public class c
 }
 </pre>
 
+
+<p> Another example, contributed by Mirek (mirek at mascort dot com dot pl), uses the large object support to get an image from database and shows it in a form. </p>
+
+<pre class="CodeBox">
+
+using System;
+using Npgsql;
+using NpgsqlTypes;
+using System.Drawing;
+using System.IO;
+
+//metod whos take picture oid  from database
+
+public int takeOID(int id)
+
+{
+
+    //it's a metod whos connect  to database and return picture oid
+    
+    BazySQL pir = new BazySQL(Login.DaneUzera[8]);
+    
+    string pytanko = String.Format("select rysunek from k_rysunki where idtowaru = " + idtowaru.ToString());
+    
+    string[] wartosci = pir.OddajSelectArray(pytanko);
+    
+    int liczba = int.Parse(wartosci[0].ToString());
+    
+    return liczba;
+
+}
+
+//take a picture from database and convert to Image type
+
+public Image pobierzRysunek(int idtowaru)
+
+{
+
+    NpgsqlConnection Polacz = new NpgsqlConnection();
+    
+    Polacz.ConnectionString = Login.DaneUzera[8].ToString();  //its metod whos return connection string
+    
+    Polacz.Open();
+    
+    NpgsqlTransaction t = Polacz.BeginTransaction();
+    
+    LargeObjectManager lbm = new LargeObjectManager(Polacz);
+    
+    LargeObject lo = lbm.Open(takeOID(idtowaru),LargeObjectManager.READWRITE); //take picture oid from metod takeOID
+    
+    byte[] buf = new byte[lo.Size()];
+    
+    buf = lo.Read(lo.Size());
+    
+    MemoryStream ms = new MemoryStream();
+    
+    ms.Write(buf,0,lo.Size());
+    
+    lo.Close();
+    
+    t.Commit();
+    
+    Polacz.Close();
+    
+    Polacz.Dispose();
+    
+    Image zdjecie = Image.FromStream(ms);
+    
+    return zdjecie;
+
+}
+
+//next I just use this metod
+
+pictureBox1.Image = Image pobierzRysunek(1); 
+</pre>
 
 <h3> 2.1 Npgsql.dll file location </h3>
 
@@ -870,5 +970,50 @@ There is also a Dialog to edit and validate the ConnectionString
 </ol>
 As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
 </p>
+
+<h2> 3. Current Npgsql Status </h2>
+
+<h3> Supported data types </h3>
+
+<p> Npgsql supports the following data types: </p>
+
+<ul>
+   <li> Bigint </li>
+   <li> Boolean </li>
+   <li> Box </li>
+   <li> Bytea </li>
+   <li> Circle </li>
+   <li> Date </li>
+   <li> Double </li>
+   <li> Integer </li>
+   <li> Line </li>
+   <li> LSeg </li>
+   <li> Money </li>
+   <li> Numeric </li>
+   <li> Path </li>
+   <li> Point </li>
+   <li> Polygon </li>
+   <li> Real </li>
+   <li> Smallint </li>
+   <li> Text </li>
+   <li> Time </li>
+   <li> Timestamp </li>
+ </ul>
+
+<h3> Features </h3>
+
+<ul>
+  <li> You can send select, insert, delete queries </li>
+  <li> You can call functions </li>
+  <li> You can get resultset from functions </li>
+  <li> You can use parameters in your queries </li>
+  <li> Parameter names have ":" markers or "@" markers to easy migration of code. :parameter -or- @parameter </li>
+  <li> Support for transactions </li>
+  
+</ul>
+
+
+
+
 </body>
 </html>
