@@ -341,10 +341,11 @@ namespace Npgsql
 		    			// Console.WriteLine("ErrorResponse");
 		    			// An error occured.
 		    			// Copy the message and throw an exception.
-		    			num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
+		    			// num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
 		    			// Close the connection.
 		    			Close();
-		    			throw new NpgsqlException(new String(connection_encoding.GetChars(input_buffer, 0, num_bytes_read)));
+		    			String error_message = PGUtil.ReadString(ns, connection_encoding);
+		    			throw new NpgsqlException(error_message);
 		    		
 		    		case 'R':
 		    			// Console.WriteLine("AuthenticationRequest");
@@ -403,8 +404,10 @@ namespace Npgsql
 		    			// Console.WriteLine("NoticeResponse");
 		    			// [TODO] Check what to do with the NoticeResponse message. 
 		    			// For now, just ignore (ugly!!).
-		    			num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
-		    			String noticeresponse = new String(connection_encoding.GetChars(input_buffer, 0, num_bytes_read));
+		    			
+		    			// num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
+		    			// String noticeresponse = new String(connection_encoding.GetChars(input_buffer, 0, num_bytes_read));
+		    			String notice_response = PGUtil.ReadString(ns, connection_encoding);
 		    			
 		    			// Console.WriteLine("Going listen");
 		    			// Wait for ReadForQuery message
