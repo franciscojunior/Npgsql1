@@ -32,7 +32,9 @@ using System.Data;
 namespace Npgsql
 {
 	/// <summary>
+
 	/// Represents a transaction to be made in a PostgreSQL database. This class cannot be inherited.
+
 	/// </summary>
 	public sealed class NpgsqlTransaction : MarshalByRefObject, IDbTransaction
 	{
@@ -44,6 +46,7 @@ namespace Npgsql
 		private bool _disposing = false;
 		private System.Resources.ResourceManager resman;
 
+
 		
 		
 		internal NpgsqlTransaction(NpgsqlConnection conn) : this(conn, IsolationLevel.ReadCommitted)
@@ -54,6 +57,7 @@ namespace Npgsql
 		internal NpgsqlTransaction(NpgsqlConnection conn, IsolationLevel isolation)
 		{
 			resman = new System.Resources.ResourceManager(typeof(NpgsqlTransaction));
+
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 			if ((isolation != IsolationLevel.ReadCommitted) &&
 				(isolation != IsolationLevel.Serializable))
@@ -74,6 +78,7 @@ namespace Npgsql
 						
 			NpgsqlCommand command = new NpgsqlCommand(commandText.ToString(), conn);
 			command.ExecuteNonQuery();
+		  _conn.InTransaction = true;
 						
 		}
 
