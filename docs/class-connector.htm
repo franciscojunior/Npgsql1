@@ -23,31 +23,31 @@
 
 <table width=100%>
 <tr>
-<td width=33% align=left>&larr; <a href="">???</a></td>
-<td width=33% align=center><a href="index.htm">Up</a></td>
-<td width=33% align=right><a href="">???</a> &rarr;</td>
+<td width=40% align=left>&larr; <a href="class-connpool.htm">Connector Pool </a></td>
+<td width=20% align=center><a href="index.htm">Up</a></td>
+<td width=40% align=right><a href="">???</a> &rarr;</td>
 </tr>
 </table><hr>
 
 <p> </p>
 
-<p class=headnotes>Last update: 2002-06-18 01:48:00 by usp</p>
-<p class=headnotes>Category: Internal documentation</p>
-<p class=headnotes>Intended Audience: Npgsql Developers</p>
+<p class=pgstats>Last update: 2002-06-21 19:00:00 by usp &bull;
+Category: Internal documentation &bull;
+Intended Audience: Npgsql Developers</p>
 
 <p>This document describes the Npgsql Connector class.</p>
 
-<p>The connector class is used internally in Npgsql to provide access to the physical connection to the PostgreSQL server. Its main purpose is to hide the connection pool issues from the connection class. </p>
+<p>The connector class is used internally in Npgsql to provide access to the physical connection to the PostgreSQL server.  </p>
 
 <h2>Interface</h2>
 
-<h3>Pproperties</h3>
+<h3>Properties</h3>
 <dl>
 <dt>Pooled</dt>
-<dd>Controls the pooling of the physical connection: If false, then the physical connection is closed and the associcated connector destroyed in the Release() method. If true, the pyhical connection is held open and the connector is pooled by the connector pool manager.</dd>
+<dd>Controls the pooling of the physical connection: If false, then the physical connection is closed and the associcated connector destroyed in the Release() method. If true, the pyhical connection is held open and the connector is pooled. </dd>
 
 <dt>Shared</dt>
-<dd>Enables the physical connector to be shared by multiple connection objects.</dd>
+<dd>Indicates that the physical connector may be shared by multiple connection objects. Set in the RequestConnector() method of the connector pool manager, read in the connector's Release() method. Do not modify elsewhere!</dd>
 
 <dt>ConnectString</dt>
 <dd>The connection string is used to open a physical connection to the database server. The connector pool manager looks at the connection string to determine if a connector is suitable to be returned to the requesting connection object.</dd>
@@ -65,36 +65,30 @@
 <p>There are currently no events.</p>
 
 
-<h2>Concecpts</h2>
-
-
-<p></p>
-
-<h3>Life Cylcle of a Connector Object</h3>
-
-<p>The life cycle of a connector object is illustrated in figure-1.</p>
-
-<img src="connection-pooling-3.png">
-
-<p>If a client (typically a connection object) wants to obtain a connector object, it does so by calling the RequestConnector() method of the connector pool manager. </p>
-
-<p>If the requested connector is allowed to be shared, the shared connections are being searched first. If a nonshared connection is requested or an appropriate shared connection could not be found, then the pooled connectors list is searched. If that fails, too,  a new connector object is created, intialized and the physical connection is opened according to the connection string.</p>
-
-<p>Comparison criterium for the search is the matching of the the connection strings.</p>
-
-<p>Finally the connector object is returned to the caller (connection object), which then can operate on the database by means of the connector object's methods and properties.</p>
-
-<p>If the connector object isn't needed anymore, it should be released to the pool manager as early as possible by calling it's Release() method. The connector is added  then to the pooled connectors list. </p>
-
-<p>Shared connectors are treated a little bit different: As there may be other clients (connection objects), a share counter is decremented instead. A value above 0 indicates other clients working with that connector, and everything is left as is. On the contrary, a value of 0 indicates that the connector is not in use anymore, so that it is removed from the shared connectors list and moved to the pooled connectors list. </p>
-
-<p>In both cases the pyhsical connection is left open in order to get it recycled quickly by a matching following request.</p>
-
-<p>In cases where the connection must be destroyed immediately after use, the client may clear the connector.Pooled property before calling Connector.Release(). Then the physical connection is closed immediately.  Because this connector is of no use for pooling then, it is <b>not</b> added to the connector pool manager's pooled connectors list but handed over to the garbage collector instead.</p>
 
 <p><b>Note</b> Clearing the Pooled property of a shared connection has no effect (to be precice: it is rejected): As there might be a lot of connection objects spread over the whole application working with a single shared connection, it might be difficult to determine which Release() call will have the physical connection closed. In order not to introduce trouble in application programming, the described behaviour is choosen for shared connections.</p>
 
-<p><b>Note</b> Be careful using database transactions in conjunction with shared connectors: As transactions are coordinated on a connection basis, this might lead to unexpected, although correct behaviour. As a rule of thumb, the transaction should then be controlled from a single part of the application. (<b>???</b> to be confirmed)</p>
+<p><b>Note</b> Be careful using database transactions in conjunction with shared connectors: As transactions are coordinated on a connection basis, this might lead to unexpected, although correct behaviour. Some rules for working with shared connectors can be found <a href="dev-connpool-ovw.htm#sharingrules">here</a></p>
+
+
+<h2>Under the Hood</h2>
+
+<h3>Releasing a Connector</h3>
+
+<table>
+<tr style="vertical-align:top;">
+<td><img style="float=right;" src="connection-pooling-4.png">
+<p>Releasing a connection requires the following steps, described in the following sections.</p>
+<p>At first there is a distinction between shared and nonshared connections: Shared connections ignore the Pooled property setting: They are always returned to the pooled connections list for recycling.</p>
+<p>The first step is to determine if the connector is still used by other connection objects. This is done by decrementing the connector's share counter. If it is non-zero, the connection is still in use and thereby should be left alone.</p>
+<p>In the counter reaches zero, the it is safe to remove the connector from the shared connectors list and insert it in the pooled connectors list for later recycling.</p>
+<p>Non-shared connectors are treated different: Their Pooled property determines whether the connector will be returned the the pooled connectors list or if the physical connection gets closed. </p>
+<p>After this the connection pool manager does not hold any reference to the connector, so it is up to the connection object to clear it's reference to the connector, too. This will make the connector subject to the garbage collection, since the last reference to it is remove and thus the object is not reachable from the application any more.</p>
+
+</td></tr></table>
+
+
+
 
 <h3>The Code</h3>
 

@@ -26,53 +26,63 @@
 
 <table width=100%>
 <tr>
-<td width=33% align=left>&larr; <a href="">???</a></td>
-<td width=33% align=center><a href="index.htm">Up</a></td>
-<td width=33% align=right><a href="">???</a> &rarr;</td>
+<td width=40% align=left>&larr; <a href="dev-connpool-ovw.htm">Connector Pooling Overview</a></td>
+<td width=20% align=center><a href="index.htm">Up</a></td>
+<td width=40% align=right><a href="class-connector.htm">Connector</a> &rarr;</td>
 </tr>
 </table><hr>
 
 <p> </p>
 
-<p class=headnotes>Last update: 2002-06-18 01:48:00 by usp</p>
-<p class=headnotes>Category: Internal documentation</p>
-<p class=headnotes>Intended Audience: Npgsql Developers</p>
+<p class=pgstats>Last update: 2002-06-21 19:00:00 by usp &bull;
+Category: Internal documentation &bull;
+Intended Audience: Npgsql Developers</p>
 
 <p>This document describes the Npgsql Connector Pool class.</p>
 
-<p>The connector pool class implements the connector pooling logic. We use the term <i>connector</i> instead of <i>connection</i>, because the <A href="connector-class.htm">connector class</A> pulls out logic of dealing with physical connection like opening and closing out of the connection object, in order to hide the connection pooling issues from the application programmer completely. The only things that deal with the connection pooling in the connection object are the properties <i>Pooled</i> and <i>shared</i>.</p>
-
-<p>The connector pool manager is a unique, static instance of the Npgsql.ConnectionPool class. It controls requesting and release of connector objects and maintains internal lists of shared and pooled connectors. The concepts of pooled and shared connectors are describted in the following paragraphs.</p>
+<p>The connector pool manager is a unique, static instance of the Npgsql.ConnectionPool class named <em>ConnectionPoolMgr</em>. It controls requesting and release of connector objects and maintains internal lists of shared and pooled connectors.</p>
 
 
-<h3>Pooled Connections</h3>
+<h2>Interface</h2>
 
-<p>The connection pooling is enabled by default. If a connection object is created, it requests a connector object from the global connection pool manager. This connector object will have its <i>Pooled</i> property set.</p>
+<p>The ConnectionPool class interface consist of the following method:</p>
 
-<p>The pooled property comes in effect when the connection is closed by the application: The physical connection to the database is not really closed; instead it is held open by the connector object. The connection passes its connector object back to the connector pool manager, where it is inserted into the <i>pooled connectors list</i>.</p>
+<dl>
+<dt><b>RequestConnection()</b></dt>
+<dd>Returns a Connector object with an open physical connection and the Pooled property set.
+<br />Parameters: Connection string, Shared flag.
+</dd>
+</dl>
 
-<p>If the connection is reopened later or if the application needs a new connection with the same connection string, the connector pool manager returns the readily opened connector to the connection object. The fact that the connection doesn't have to be opened speeds up the interaction with the database backend greatly, because establishing a new connection is quite a costly and time consuming operation (a new backend process is forked on the server by the Postmaster).</p>
 
-<p>All resusable connector objects are held in an internal pooled connetor list inside the connector pool manager.</p>
+<h2>Internal Structure</h2>
+
+<p>There is not much to tell about the internal structure. The connector pool consist primarily of 2 lists: The pooled connectors, currently not in use by the application, and the shared connectors. Note that connectors in the shared connectors list are in use, referenced by one or more Connection objects and thus are not avaliable for requests <em>other than shared</em>. </p>
+
+<img src="connection-pooling-1.png">
 
 
-<h3>Shared Connectors</h3>
 
-<p>In order to reduce the number of connections needed by an application and save resources on the server, connectors can be shared among multiple connection objects.</p>
+<h2>Under the Hood</h2>
 
-<p>If a connection is opend with its <i>Shared</i> property set, the connector pool manager searches its internal <i>shared connectors list</i> first. If it finds a connection already open and in use, it returns a reference to that connector to the connection object. If there is no such shared connection, then the connector pool manager looks up ist unused, pooled connectors list. If it finds a suitable unused connection, it is moved into the shared connectors list and then returned to the requesting connection object. If there is no such connector, a new one is created instead and returned.</p>
+<h3>Requesting a Connector</h3>
 
-<p>Due to the fact that multiple connection objects share a single physical connection through the means of a single connector object, there may arise some courious behaviour regarding transaction processing.</p>
+<table>
+<tr style="vertical-align:top;">
+<td></td>
+<td width=50><img style="float:right;" src="connection-pooling-4.png">
+<p>The algorithm for requesting a connector is quit simple.</p>
+<p>If a shared connector is requested the pool manager starts with searching the SharedConnectors list for a connector with a matching connect string.</p>
+<p>If a suitable connector is found, its ShareCounter gets incremented to reflect the number of Connections working on this connector. Then the connector object is returned to the calling connection object.</p>
 
-<p>Transactions are controlled and coordinated by a physical connection (sometimes referred to as <i>session</i>. If an application uses transactions in various places, these trancations may interact in an unexpected way, if not carefully designed. If an application designer is not shure, he should use an exclusive connection instead of a shared one. This is the default behaviour. </p>
+<p>If a non-shared connector is requested or a shared connector was not found, the pooled connectors are beeing searched for a suitable connector. If a connector was found, it is removed from the pooled connectors list.</p>
 
-<h3>Connection Pooling Class Hierarchy</h3>
+<p>If the search fails, then an new connector is created and the physical connection is opened instead.</p>
 
-<p>The class hierarchy is show in figure-2 below.</p>
+<p>For a non-shared connector the work is done now. A shared connector request is treated different at this point: It's Shared property is set, and the connector is inserted in the shared connectors list, before it is returned to the calling connection object.</p>
 
-<img src="connection-pooling-2.png">
+</td></tr></table>
 
-<p>The connector pool object maintains two list of connector objects: The shared connectors list and the pooled unused connectors list.</p>
 
 
 <h3>See also</h3>
