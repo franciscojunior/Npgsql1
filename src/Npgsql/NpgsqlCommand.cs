@@ -26,6 +26,8 @@
 using System;
 using System.Data;
 using System.Net.Sockets;
+using System.IO;
+using System.Text;
 
 namespace Npgsql
 {
@@ -194,9 +196,104 @@ namespace Npgsql
 		{
 			// Check the connection state.
 			CheckConnectionState();
+			
+			NetworkStream network_stream = connection.tcp_connection.GetStream();
+			BufferedStream output_stream = new BufferedStream(network_stream);
+			
+			// Send the query to server.
+			// Write the byte 'Q' to identify a query message.
+			output_stream.WriteByte((byte)'Q');
+			
+			// Write the query. In this case it is the CommandText text.
+			// It is a string terminated by a C NULL character.
+			output_stream.Write(connection.encoding.GetBytes(text + '\x00') , 0, text.Length + 1);
+			
+			// Send bytes.
+			output_stream.Flush();
+			
+			// Now, enter in the loop to process the response.
+			
+			Boolean ready_for_query = false;
+			String error_message = null;			
+			
+			Int32 rows_affected = -1;
+			
+			
+			while (!ready_for_query)
+			{
+				switch (network_stream.ReadByte())
+				{
+					case 'C':
+						// This is the CompletedResponse message.
+						// Get the string returned.
+						
+						String ret_string = GetStringFromNetStream(network_stream);
+						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
+						// The number of rows affected is in the third token for insert queries
+						// and in the second token for update and delete queries.
+						// In other words, it is the last token in the 0-based array.
+												
+						rows_affected = Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
+					
+						// Now wait for ReadyForQuery message.
+						break;
+					
+					case 'P':
+						// This is the cursor response message. 
+						// It is followed by a C NULL terminated string with the name of 
+						// the cursor in a FETCH case or 'blank' otherwise.
+						// In this case it should be always 'blank'.
+						// [FIXME] Get another name for this function.
+						String cursor_name = GetStringFromNetStream(network_stream);
+						
+						// Continue wainting for ReadyForQuery message.
+						break;
+
+					case 'I':
+						// This is the EmptyQueryResponse.
+						// [FIXME] Just ignore it this way?
+						// network_stream.Read(input_buffer, 0, 1);
+						GetStringFromNetStream(network_stream);
+						break;
+					
+					case 'E':
+						// This is the ErrorResponse.
+						// Get the string error returned and throw a NpgsqlException.
+						
+						// [FIXME] The function GetStringFromNetStream should be used in NpgsqlConnection class too.
+						// So, this function is a cadidate in potential to be a static method in a util class.
+						
+						error_message = GetStringFromNetStream(network_stream);
+					
+						// Even when there is an error, the backend send the ReadyForQuery message.
+						// So, continue waiting for this message.
+						break;
+					case 'Z':
+						// This is the ReadyForQuery message.
+						// It indicates the process termination.
+						ready_for_query = true;
+						break;
+					
+					default:
+						// This is a message that we should handle and we don't.
+						// Throw a NpgsqlException saying that.
+						// [FIXME] Better exception handling. Close the connection???
+						// This is really ugly!! Right now, the message that wasn`t handled
+						// isn't specified! 
+						
+						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery.");
 				
+					
+				}
+			}
+			
 			// [TODO] Finish method implementation.
-			throw new NotImplementedException();
+			//throw new NotImplementedException();
+			
+			if (error_message != null)
+				throw new NpgsqlException(error_message);
+			
+			return rows_affected;
 		}
 		
 		public IDataReader ExecuteReader()
@@ -257,5 +354,30 @@ namespace Npgsql
 		}
 		
 		
+		///<summary>
+		/// This method gets a C NULL terminated string from the network stream.
+		/// It keeps reading a byte in each time until a NULL byte is returned.
+		/// It returns the resultant string of bytes read.
+		/// This string is sent from backend.
+		/// </summary>
+		
+		private String GetStringFromNetStream(NetworkStream network_stream)
+		{
+			// [FIXME] Is 512 enough? At least it can't be more than MTU = 1500 on ethernet.
+			Byte[] buffer = new Byte[512];
+			Byte b;
+			Int16 counter = 0;
+			
+			// [FIXME] Is this cast always safe?
+			b = (Byte)network_stream.ReadByte();
+			while(b != 0)
+			{
+				buffer[counter] = b;
+				counter++;
+				b = (Byte)network_stream.ReadByte();
+			}
+			
+			return connection.encoding.GetString(buffer, 0, counter);
+		}
 	}
 }
