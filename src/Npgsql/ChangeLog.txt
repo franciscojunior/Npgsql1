@@ -1,5 +1,21 @@
 
-
+2002-06-01
+	fxjr:
+		NpgsqlCommand.cs
+			- Fixed bug that prevented queries like 'select field, field from table' to
+			work when used in the ExecuteScalar() method. Now, when doing a query that
+			results in more than one row and/or field, only the value of the first row,
+			first column is returned.
+			- Changed implementation to use PGUtil class.
+					
+		NpgsqlConnection.cs
+			- Changed implementation to use PGUtil class
+			
+		- Initial implementation of PGUtil class.
+		- Added initial NAnt build file called Npgsql.build. Now, when build using NAnt,
+		a directory build will be created. There is a clean task that can be also used.
+		
+		
 2002-05-26
 	fxjr:
 		NpgsqlCommand.cs
