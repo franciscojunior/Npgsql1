@@ -143,7 +143,7 @@ namespace Npgsql
         protected virtual void ProcessBackendResponses( NpgsqlConnection context )
         {
             // reset any responses just before getting new ones
-            context.Mediator.ResetResponses();
+            context.Connector.Mediator.ResetResponses();
 
             try {
                 switch (context.BackendProtocolVersion) {
@@ -158,7 +158,7 @@ namespace Npgsql
                 }
             } finally {
                 // reset expectations right after getting new responses
-                context.Mediator.ResetExpectations();
+                context.Connector.Mediator.ResetExpectations();
             }
         }
 
@@ -166,8 +166,8 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Stream);
-            NpgsqlMediator mediator = context.Mediator;
+            BufferedStream 	stream = new BufferedStream(context.Connector.Stream);
+            NpgsqlMediator mediator = context.Connector.Mediator;
 
             // Often used buffer
             Byte[] inputBuffer = new Byte[ 4 ];
@@ -315,7 +315,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "AsciiRow");
 
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Connector.Mediator.LastRowDescription, context.Connector.OidToNameMapping, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.
@@ -329,7 +329,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "BinaryRow");
 
                     {
-                        NpgsqlBinaryRow binaryRow = new NpgsqlBinaryRow(context.Mediator.LastRowDescription);
+                        NpgsqlBinaryRow binaryRow = new NpgsqlBinaryRow(context.Connector.Mediator.LastRowDescription);
                         binaryRow.ReadFromStream(stream, context.Encoding);
 
                         mediator.AddBinaryRow(binaryRow);
@@ -431,8 +431,8 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Stream);
-            NpgsqlMediator mediator = context.Mediator;
+            BufferedStream 	stream = new BufferedStream(context.Connector.Stream);
+            NpgsqlMediator mediator = context.Connector.Mediator;
 
             // Often used buffers
             Byte[] inputBuffer = new Byte[ 4 ];
@@ -580,7 +580,7 @@ namespace Npgsql
                     // This is the AsciiRow message.
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "DataRow");
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Connector.Mediator.LastRowDescription, context.Connector.OidToNameMapping, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.

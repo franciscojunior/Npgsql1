@@ -70,7 +70,7 @@ namespace Npgsql
 
             NpgsqlCommand command = new NpgsqlCommand(commandText.ToString(), conn);
             command.ExecuteNonQuery();
-            _conn.InTransaction = true;
+            _conn.Connector.InTransaction = true;
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Npgsql
             if(disposing && this._conn != null)
             {
                 this._disposing = true;
-                if (_conn.InTransaction)
+                if (_conn.Connector.InTransaction)
                     this.Rollback();
             }
         }
@@ -138,7 +138,7 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Commit");
             NpgsqlCommand command = new NpgsqlCommand("COMMIT", _conn);
             command.ExecuteNonQuery();
-            _conn.InTransaction = false;
+            _conn.Connector.InTransaction = false;
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Rollback");
             NpgsqlCommand command = new NpgsqlCommand("ROLLBACK", _conn);
             command.ExecuteNonQuery();
-            _conn.InTransaction = false;
+            _conn.Connector.InTransaction = false;
         }
 
         internal bool Disposing{

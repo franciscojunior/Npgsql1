@@ -24,9 +24,11 @@
 //		0.00.0000 - 06/17/2002 - ulrich sprick - created
 
 using System;
+using System.Collections;
 using System.Net.Sockets;
 using System.IO;
 using System.Text;
+using System.Data;
 
 namespace Npgsql
 {
@@ -36,28 +38,51 @@ namespace Npgsql
     /// access the physical connection to the database, and isolate
     /// the application developer from connection pooling internals.
     /// </summary>
-    internal class Connector
+    internal class NpgsqlConnector
     {
         // Used to obtain a current key for the non-shared pool.
-        private NpgsqlConnection connection;
+        private NpgsqlConnection                 connection;
 
-        private Stream _stream;
+        // FIXME - should be private
+        internal ConnectionState                 _connection_state;
+
+        // The physical network connection to the backend.
+        private Stream                           _stream;
+
+        // Mediator which will hold data generated from backend.
+        // FIXME - should be private
+        internal NpgsqlMediator                  _mediator;
 
         private ProtocolVersion _backendProtocolVersion;
         private ServerVersion _serverVersion;
 
-        private Encoding _encoding;
+        // Values for possible CancelRequest messages.
+        // FIXME - should be private
+        internal NpgsqlBackEndKeyData            _backend_keydata;
 
-        private Boolean _isInitialized;
+        // Flag for transaction status.
+        // FIXME - should be private
+        internal Boolean                         _inTransaction = false;
 
-        private Boolean             _shared;
+        // FIXME - should be private
+        internal Boolean                         _supportsPrepare = false;
+
+        // FIXME - should be private
+        internal Hashtable                       _oidToNameMapping;
+
+        private Encoding                         _encoding;
+
+        private Boolean                          _isInitialized;
+
+        private Boolean                          _shared;
 
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="Shared">Controls whether the connector can be shared.</param>
-        public Connector(bool Shared)
+        public NpgsqlConnector(bool Shared)
         {
+            _connection_state = ConnectionState.Closed;
             _shared = Shared;
             _isInitialized = false;
         }
@@ -75,6 +100,16 @@ namespace Npgsql
             set
             {
                 connection = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current state of the connection.
+        /// </summary>
+        internal ConnectionState State {
+            get
+            {
+                return _connection_state;
             }
         }
 
@@ -161,10 +196,72 @@ namespace Npgsql
             }
         }
 
+        internal NpgsqlBackEndKeyData BackEndKeyData {
+            get
+            {
+                return _backend_keydata;
+            }
+        }
+
+        internal Hashtable OidToNameMapping {
+            get
+            {
+                return _oidToNameMapping;
+            }
+        }
+
+        /// <summary>
+        /// The connection mediator.
+        /// </summary>
+        internal NpgsqlMediator	Mediator {
+            get
+            {
+                return _mediator;
+            }
+        }
+
+        /// <summary>
+        /// Report if the connection is in a transaction.
+        /// </summary>
+        internal Boolean InTransaction {
+            get
+            {
+                return _inTransaction;
+            }
+            set
+            {
+                _inTransaction = value;
+            }
+        }
+
+        /// <summary>
+        /// Report whether the current connection can support prepare functionality.
+        /// </summary>
+        internal Boolean SupportsPrepare {
+            get
+            {
+                return _supportsPrepare;
+            }
+            set
+            {
+                _supportsPrepare = value;
+            }
+        }
+
+        /// <summary>
+        /// This method is required to set all the version dependent features flags.
+        /// SupportsPrepare means the server can use prepared query plans (7.3+)
+        /// </summary>
+        // FIXME - should be private
+        internal void ProcessServerVersion ()
+        {
+            this._supportsPrepare = (ServerVersion >= new ServerVersion(7, 3, 0));
+        }
+
         /// <value>Counts the numbers of Connections that share
         /// this Connector. Used in Release() to decide wether this
         /// connector is to be moved to the PooledConnectors list.</value>
-        internal int mShareCount;
+        // internal int mShareCount;
 
         /// <summary>
         /// Opens the physical connection to the server.

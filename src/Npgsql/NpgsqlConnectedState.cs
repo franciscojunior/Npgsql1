@@ -52,14 +52,14 @@ namespace Npgsql
         {
             NpgsqlStartupPacket startupPacket  = new NpgsqlStartupPacket(296, //Not used.
                                                   context.BackendProtocolVersion,
-                                                  context.DatabaseName,
+                                                  context.Database,
                                                   context.UserName,
                                                   "",
                                                   "",
                                                   "");
 
-            startupPacket.WriteToStream( new BufferedStream(context.Stream), context.Encoding );
-            context.Mediator.RequireReadyForQuery = false;
+            startupPacket.WriteToStream( new BufferedStream(context.Connector.Stream), context.Encoding );
+            context.Connector.Mediator.RequireReadyForQuery = false;
             ProcessBackendResponses( context );
         }
 

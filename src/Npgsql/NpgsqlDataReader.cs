@@ -281,7 +281,7 @@ namespace Npgsql
             if (! HaveResultSet())
                 return null;
             else
-                return NpgsqlTypesHelper.GetSystemTypeFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[Index].type_oid);
+                return NpgsqlTypesHelper.GetSystemTypeFromTypeOid(_connection.Connector.OidToNameMapping, _currentResultset.RowDescription[Index].type_oid);
         }
 
         /// <summary>

@@ -55,7 +55,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Authenticate");
             NpgsqlPasswordPacket pwpck = new NpgsqlPasswordPacket(password, context.BackendProtocolVersion);
-            BufferedStream stream = new BufferedStream(context.Stream);
+            BufferedStream stream = new BufferedStream(context.Connector.Stream);
             pwpck.WriteToStream(stream, context.Encoding);
             stream.Flush();
 

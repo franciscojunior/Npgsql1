@@ -205,7 +205,7 @@ namespace Npgsql
             {
                 if (this.transaction != null && this.transaction.Connection == null)
                     this.transaction = null;
-                if (this.connection != null && this.connection.InTransaction == true)
+                if (this.connection != null && this.connection.Connector.InTransaction == true)
                     throw new InvalidOperationException(resman.GetString("Exception_SetConnectionInTransaction"));
                 this.connection = value;
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Connection", value);
@@ -326,12 +326,12 @@ namespace Npgsql
             ExecuteCommand();
 
             // If nothing is returned, just return -1.
-            if(connection.Mediator.CompletedResponses.Count == 0) {
+            if(connection.Connector.Mediator.CompletedResponses.Count == 0) {
                 return -1;
             }
 
             // Check if the response is available.
-            String firstCompletedResponse = (String)connection.Mediator.CompletedResponses[0];
+            String firstCompletedResponse = (String)connection.Connector.Mediator.CompletedResponses[0];
 
             if (firstCompletedResponse == null)
                 return -1;
@@ -414,7 +414,7 @@ namespace Npgsql
             ExecuteCommand();
 
             // Get the resultsets and create a Datareader with them.
-            return new NpgsqlDataReader(connection.Mediator.ResultSets, connection.Mediator.CompletedResponses, connection, cb);
+            return new NpgsqlDataReader(connection.Connector.Mediator.ResultSets, connection.Connector.Mediator.CompletedResponses, connection, cb);
         }
 
         ///<summary>
@@ -436,7 +436,7 @@ namespace Npgsql
             }
 
             connection.Bind(bind);
-            connection.Mediator.RequireReadyForQuery = false;
+            connection.Connector.Mediator.RequireReadyForQuery = false;
             connection.Flush();
 
             connection.CheckErrorsAndNotifications();
@@ -470,7 +470,7 @@ namespace Npgsql
             // Only the first column of the first row must be returned.
 
             // Get ResultSets.
-            ArrayList resultSets = connection.Mediator.ResultSets;
+            ArrayList resultSets = connection.Connector.Mediator.ResultSets;
 
             // First data is the RowDescription object.
             // Check all resultsets as insert commands could have been sent along
@@ -501,7 +501,7 @@ namespace Npgsql
             // Check the connection state.
             CheckConnectionState();
 
-            if (! connection.SupportsPrepare) {
+            if (! connection.Connector.SupportsPrepare) {
                 return;	// Do nothing.
             }
 
@@ -519,7 +519,7 @@ namespace Npgsql
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
                 connection.Parse(parse);
-                connection.Mediator.RequireReadyForQuery = false;
+                connection.Connector.Mediator.RequireReadyForQuery = false;
                 connection.Flush();
 
                 // Check for errors and/or notifications and do the Right Thing.
@@ -592,7 +592,7 @@ namespace Npgsql
             String result = text;
 
             if (type == CommandType.StoredProcedure)
-                if (connection.SupportsPrepare)
+                if (connection.Connector.SupportsPrepare)
                     result = "select * from " + result; // This syntax is only available in 7.3+ as well SupportsPrepare.
                 else
                     result = "select " + result;				// Only a single result return supported. 7.2 and earlier.
