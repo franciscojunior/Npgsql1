@@ -1,21 +1,22 @@
 //
 // Npsql.cs
-// author: Hiroshi Saito
+// Date: 2005.02.11
+// author: Hiroshi Saito(saito@inetrt.skcapi.co.jp)
+// Description: It is used by PostgreSQL 8.0
 //
 using System;
 using System.Data;
 using Npgsql;
 
 class Npsql {
-	static string version = "0.1";
+	static string version = "0.2b";
 	public static void supsql(NpgsqlCommand command)
 	{
 		if(String.Compare(command.CommandText,0,"\\l",0,2) ==0)
 			command.CommandText = "SELECT d.datname as \"Name\",u.usename as \"Owner\",pg_catalog.pg_encoding_to_char(d.encoding) as \"Encoding\" FROM pg_catalog.pg_database d LEFT JOIN pg_catalog.pg_user u ON d.datdba = u.usesysid ORDER BY 1;";
 		else
 		if(String.Compare(command.CommandText,0,"\\d",0,2) ==0)
-			command.CommandText = "SELECT n.nspname as \"Schema\",c.relname as \"Name\",CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' END as \"Type\",u.usename as \"Owner\" FROM pg_catalog.pg_class c LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ('r','v','S','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid) ORDER BY 1,2;";
-
+			command.CommandText = "SELECT n.nspname as \"Schema\", c.relname as \"Name\",CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' END as \"Type\", u.usename as \"Owner\" FROM pg_catalog.pg_class c LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ('r','v','S','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid) ORDER BY 1,2;";
 	}
 	public static void welcommsg()
 	{
@@ -28,7 +29,7 @@ class Npsql {
 	public static void helpmsg()
 	{
 		Console.WriteLine("usage:");
-		Console.WriteLine("  Npsql HOSTNAME [[DBNAME] USERNAME]\n");
+		Console.WriteLine("  Npsql HOSTNAME [[DBNAME] USERNAME[/PASSWORD]]\n");
 		Console.WriteLine("  DBNAME    specify database name to connect to (default: template1)");
 		Console.WriteLine("  USERNAME  user name to connect to (default: postgres)");
 		Console.WriteLine("");
@@ -46,20 +47,20 @@ class Npsql {
                 url = args[0];
 		if (args.Length == 2)
 		{
-                	usr = args[1];
+			usr = args[1].Replace("/",";PWD=");
 		}
 		else
 		if (args.Length == 3)
 		{
-                	dbn = args[1];
-                	usr = args[2];
+			dbn = args[1];
+			usr = args[2].Replace("/",";PWD=");
 		}
 
 		NpgsqlConnection cnDB;
 
                 // Connect to database
                 Console.WriteLine("Connecting to ... " + url);
-		String constr = "DATABASE=" + dbn + ";SERVER=" + url + ";PORT=5432;UID=" + usr + ";PWD=;";
+		String constr = "DATABASE=" + dbn + ";SERVER=" + url + ";PORT=5432;UID=" + usr + ";";
                 cnDB = new NpgsqlConnection(constr);
 
 		try 
