@@ -14,7 +14,7 @@
 	  NpgsqlEventLog.Level = LogLevel.Debug;            // LogLevel.
 	  NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";   // LogFile.
     
-    - You can use Npgsql with Mono. It is not working perfectly. :( (Thanks Kristis Makris)
+    - You can use Npgsql with Mono (Thanks Kristis Makris). It is not working perfectly. :( 
     - There is a winforms test suite (Thanks Dave Page).
     - Clearer code in NpgsqlConnection removing *magic* numbers and constants. (Thanks Kristis Makris)
     - Better support of ODBC-like ConnectionString in NpgsqlConnection (Thanks Dave Page)
