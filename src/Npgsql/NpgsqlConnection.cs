@@ -392,20 +392,25 @@ namespace Npgsql
 
                     CurrentState.Open(this);
 
-                    // Check if there were any errors.
+                    // Check for protocol not supported.  If we have been told what protocol to use,
+                    // we will not try this step.
                     if (_mediator.Errors.Count > 0 && ! ForcedProtocolVersion)
                     {
-                        // Check if there is an error of protocol not supported...
-                        // As the message can be localized, just check the initial unlocalized part of the
-                        // message. If it is an error other than protocol error, when connecting using
-                        // version 2.0 we shall catch the error again.
-                        if (((NpgsqlError)_mediator.Errors[0]).Severity == "FATAL")
-                        {
-                            // Try using the 2.0 protocol.
-                            _mediator.ResetResponses();
-                            _connector.BackendProtocolVersion = ProtocolVersion.Version2;
-                            CurrentState = NpgsqlClosedState.Instance;
-                            CurrentState.Open(this);
+                        // If we attempted protocol version 3, it may be possible to drop back to version 2.
+                        if (BackendProtocolVersion == ProtocolVersion.Version3) {
+                            NpgsqlError       Error0 = (NpgsqlError)_mediator.Errors[0];
+
+                            // If NpgsqlError.ReadFromStream_Ver_3() encounters a version 2 error,
+                            // it will set its own protocol version to version 2.  That way, we can tell
+                            // easily if the error was a FATAL: protocol error.
+                            if (Error0.BackendProtocolVersion == ProtocolVersion.Version2)
+                            {
+                                // Try using the 2.0 protocol.
+                                _mediator.ResetResponses();
+                                _connector.BackendProtocolVersion = ProtocolVersion.Version2;
+                                CurrentState = NpgsqlClosedState.Instance;
+                                CurrentState.Open(this);
+                            }
                         }
                     }
 
@@ -449,11 +454,12 @@ namespace Npgsql
                     }
                 }
                 catch {
-                    // We do this instead of Close(), because this is a new connector
-                    // and it is in an inconsistent state, so we can't just
+                    // Force this connector to close because
+                    // it is in an inconsistent state, so we can't just
                     // release it back to the pool.
-                    _connector.Close();
+                    ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, true);
                     _connector = null;
+
                     CurrentState = NpgsqlClosedState.Instance;
                     throw;
                 }
@@ -515,7 +521,7 @@ namespace Npgsql
                 // managed resources.
                 NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Dispose", disposing);
 
-                ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
+                ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, false);
                 _connector = null;
 
                 connection_state = ConnectionState.Closed;

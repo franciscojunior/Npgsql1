@@ -64,7 +64,8 @@ namespace Npgsql
         /// next RequestConnector() call.</value>
         /// <remarks>This hashmap will be indexed by connection string.
         /// This key will hold a list of shared connectors available to be used.</remarks>
-        private Hashtable SharedConnectors;
+        // To be implemented
+        //private Hashtable SharedConnectors;
 
         /// <summary>
         /// Searches the shared and pooled connector lists for a
@@ -140,16 +141,17 @@ namespace Npgsql
         /// <summary>
         /// Releases a connector, possibly back to the pool for future use.
         /// </summary>
-        /// <comments>
+        /// <remarks>
         /// Pooled connectors will be put back into the pool if there is room.
         /// Shared connectors should just have their use count decremented
         /// since they always stay in the shared pool.
-        /// </comments>
+        /// </remarks>
         /// <param name="Connector">The connector to release.</param>
-        public void ReleaseConnector (Connector Connector)
+        /// <param name="ForceClose">Force the connector to close, even if it is pooled.</param>
+        public void ReleaseConnector (Connector Connector, bool ForceClose)
         {
             if (Connector.Connection.Pooling) {
-                ReleasePooledConnector(Connector);
+                ReleasePooledConnector(Connector, ForceClose);
             } else {
                 UngetNonPooledConnector(Connector);
             }
@@ -158,21 +160,21 @@ namespace Npgsql
         /// <summary>
         /// Release a pooled connector.  Handle locking here.
         /// </summary>
-        private void ReleasePooledConnector (Connector Connector)
+        private void ReleasePooledConnector (Connector Connector, bool ForceClose)
         {
             lock(this)
             {
-                ReleasePooledConnectorInternal(Connector);
+                ReleasePooledConnectorInternal(Connector, ForceClose);
             }
         }
 
         /// <summary>
         /// Release a pooled connector.  Handle shared/non-shared here.
         /// </summary>
-        private void ReleasePooledConnectorInternal (Connector Connector)
+        private void ReleasePooledConnectorInternal (Connector Connector, bool ForceClose)
         {
             if (! Connector.Shared) {
-                UngetPooledConnector(Connector);
+                UngetPooledConnector(Connector, ForceClose);
             } else {
                 // Connection sharing? What's that?
                 throw new NotImplementedException("Internal: Shared pooling not implemented");
@@ -247,7 +249,7 @@ namespace Npgsql
         /// Put a pooled connector into the pool queue.  Create the queue if needed.
         /// </summary>
         /// <param name="Connector">Connector to pool</param>
-        private void UngetPooledConnector(Connector Connector)
+        private void UngetPooledConnector(Connector Connector, bool ForceClose)
         {
             ConnectorQueue           Queue;
 
@@ -258,9 +260,13 @@ namespace Npgsql
                 throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
             }
 
-            Connector.Connection = null;
+            if (ForceClose) {
+                Connector.Close();
+            } else {
+                Connector.Connection = null;
+                Queue.Enqueue(Connector);
+            }
 
-            Queue.Enqueue(Connector);
             Queue.UseCount--;
         }
 

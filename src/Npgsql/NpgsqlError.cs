@@ -196,6 +196,17 @@ namespace Npgsql
 
         }
 
+        /// <summary>
+        /// Backend protocol version in use.
+        /// </summary>
+        internal ProtocolVersion BackendProtocolVersion
+        {
+            get
+            {
+                return protocol_version;
+            }
+        }
+
         internal void ReadFromStream(Stream inputStream, Encoding encoding)
         {
             switch (protocol_version) {
@@ -238,16 +249,30 @@ namespace Npgsql
 
             Int32 messageLength = PGUtil.ReadInt32(inputStream, new Byte[4]);
 
-            //[TODO] Would this be the right way to do?
+            // [TODO] Would this be the right way to do?
             // Check the messageLength value. If it is 1178686529, this would be the
             // "FATA" string, which would mean a protocol 2.0 error string.
             if (messageLength == 1178686529)
             {
-                // Read the rest of the severity code and the ':'.
-                while (PGUtil.ReadString(inputStream, encoding, 1) != ":");
-                _severity = "FATAL";
-                // Now read the message
-                _message = PGUtil.ReadString(inputStream, encoding).Trim();
+								String Raw;
+                String[] Parts;
+
+                Raw = "FATA" + PGUtil.ReadString(inputStream, encoding);
+
+                Parts = Raw.Split(new char[] {':'}, 2);
+
+                if (Parts.Length == 2)
+                {
+                    _severity = Parts[0].Trim();
+                    _message = Parts[1].Trim();
+                }
+                else
+                {
+                    _message = Parts[0].Trim();
+                }
+
+                protocol_version = ProtocolVersion.Version2;
+
                 return;
             }
 
