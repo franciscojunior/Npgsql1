@@ -314,8 +314,9 @@ namespace Npgsql
             // It's also possible to pass an array with more that FieldCount elements.
             Int32 maxColumnIndex = (Values.Length < FieldCount) ? Values.Length : FieldCount;
 
-            for (Int32 i = 0; i < maxColumnIndex; i++)
+            for (Int32 i = 0; i < maxColumnIndex; i++) {
                 Values[i] = GetValue(i);
+            }
 
             return maxColumnIndex;
 
@@ -363,7 +364,7 @@ namespace Npgsql
             // and parsing from there?
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetBoolean");
 
-            return (Boolean) GetValue(i);
+            return Convert.ToBoolean(GetValue(i));
         }
 
         /// <summary>
@@ -432,7 +433,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetInt16");
 
-            return (Int16) GetValue(i);
+            return Convert.ToInt16(GetValue(i));
         }
 
         /// <summary>
@@ -442,7 +443,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetInt32");
 
-            return (Int32) GetValue(i);
+            return Convert.ToInt32(GetValue(i));
         }
 
         /// <summary>
@@ -452,7 +453,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetInt64");
 
-            return (Int64) GetValue(i);
+            return Convert.ToInt64(GetValue(i));
         }
 
         /// <summary>
@@ -462,7 +463,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetFloat");
 
-            return (Single) GetValue(i);
+            return Convert.ToSingle(GetValue(i));
         }
 
         /// <summary>
@@ -472,7 +473,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDouble");
 
-            return (Double) GetValue(i);
+            return Convert.ToDouble(GetValue(i));
         }
 
         /// <summary>
@@ -482,7 +483,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetString");
 
-            return (String) GetValue(i);
+            return Convert.ToString(GetValue(i));
         }
 
         /// <summary>
@@ -492,7 +493,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDecimal");
 
-            return (Decimal) GetValue(i);
+            return Convert.ToDecimal(GetValue(i));
         }
 
         /// <summary>
@@ -502,7 +503,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDateTime");
 
-            return (DateTime) GetValue(i);
+            return Convert.ToDateTime(GetValue(i));
         }
 
         /// <summary>
@@ -520,7 +521,6 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "IsDBNull");
 
-            CheckHaveRow();
             return (GetValue(i) == DBNull.Value);
         }
 
