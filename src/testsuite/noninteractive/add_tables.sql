@@ -16,3 +16,10 @@ field_int4 int4,
 field_int8 int8,
 field_bool bool
 );
+
+create table tableB(
+field_serial serial,
+field_int2 int2,
+field_timestamp timestamp,
+field_numeric numeric(11,7)
+);
