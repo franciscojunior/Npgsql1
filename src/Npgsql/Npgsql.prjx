@@ -18,6 +18,9 @@
     <File name=".\NpgsqlEventLog.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlStartupPacket.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlPasswordPacket.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlRowDescription.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlBackEndKeyData.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlAsciiRow.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <Configurations active="Debug">
     <Configuration name="Debug" description="">
