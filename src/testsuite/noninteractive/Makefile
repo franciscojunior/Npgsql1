@@ -15,6 +15,8 @@ endif
 NPGSQL_PORT=5432
 NPGSQL_UID=npgsql_tests
 NPGSQL_PWD=npgsql_tests
+# This was generated with grub-md5-crypt
+NPGSQL_PWD_MD5=$1$tD4Ed/$rAfFRHoNmfne9b8KPlfMX1
 NPGSQL_TEST_STRING=-U $(NPGSQL_UID) -h $(NPGSQL_HOST) -d $(NPGSQL_DB)
 NPGSQL_TESTS_LOG=npgsql_tests.log
 NPGSQL_TESTS_SHARED_SRC=NpgsqlTests.cs
