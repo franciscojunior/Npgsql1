@@ -800,12 +800,19 @@ namespace Npgsql
                                     Param.TypeInfo.ConvertToBackend(Param.Value, false)
                                 );
                     else
-                        result += Param.TypeInfo.ConvertToBackend(Param.Value, false);
+                        result += Param.TypeInfo.ConvertToBackend(Param.Value, false) + ",";
             }
             
             
             if (addProcedureParenthesis)
+            {
+                // Remove a trailing comma added from parameter handling above. If any.
+                // Maybe there are only output parameters.
+                if (result.EndsWith(","))
+                    result = result.Remove(result.Length - 1, 1);
+                
                 result += ")";
+            }
 
             if (functionReturnsRecord)
                 result = AddFunctionReturnsRecordSupport(result);
