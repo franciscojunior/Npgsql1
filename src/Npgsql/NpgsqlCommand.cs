@@ -407,11 +407,11 @@ namespace Npgsql
 			// Now check if the parameters are there and replace them for the actual values.
 			for (Int32 i = 0; i < parameters.Count; i++)
 			{
-				parameterName = ((NpgsqlParameter)parameters[i]).ParameterName;
+				parameterName = parameters[i].ParameterName;
 				if (result.IndexOf(parameterName) <= 0)
 					throw new NpgsqlException("Parameter :" + parameterName + " wasn't found in the query.");
 				
-				result = result.Replace(":" + parameterName, ((NpgsqlParameter)parameters[i]).Value.ToString());
+				result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
 			}
 						
 			return result;
