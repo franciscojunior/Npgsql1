@@ -210,7 +210,7 @@ namespace Npgsql
 	    //throw new NotImplementedException();
 	  	//[FIXME] hack
 	  	  	
-	  	return Type.GetType(NpgsqlTypesHelper.GetNpgsqlTypeNameFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid));
+	  	return Type.GetType(NpgsqlTypesHelper.GetSystemTypeNameFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid));
 	  }
 	  
 	  public Object GetValue(Int32 i)
@@ -222,7 +222,7 @@ namespace Npgsql
 	  	
 	  	Object npgsqlValue = GetNpgsqlValue(i);
 	  	if (npgsqlValue == null)
-	  		return null;
+	  		return System.DBNull.Value;
 	  	
 	  	return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(_connection.OidToNameMapping, npgsqlValue, _currentResultset.RowDescription[i].type_oid);
 	  }
