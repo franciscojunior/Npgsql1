@@ -455,7 +455,7 @@ namespace Npgsql
         /// <returns>A new NpgsqlConnction object.</returns>
         Object ICloneable.Clone()
         {
-					return Clone();
+            return Clone();
         }
 
         /// <summary>
@@ -466,13 +466,13 @@ namespace Npgsql
         {
             CheckNotDisposed();
 
-						NpgsqlConnection C = new NpgsqlConnection(ConnectionString);
+            NpgsqlConnection C = new NpgsqlConnection(ConnectionString);
 
-						if (connector != null) {
-							C.Open();
-						}
+            if (connector != null) {
+                C.Open();
+            }
 
-						return C;
+            return C;
         }
 
         //
