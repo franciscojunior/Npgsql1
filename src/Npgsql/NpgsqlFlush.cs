@@ -1,7 +1,9 @@
-// Npgsql.NpgsqlStartupState.cs
+// created on 28/6/2003 at 23:28
+
+// Npgsql.NpgsqlFlush.cs
 // 
 // Author:
-// 	Dave Joyner <d4ljoyn@yahoo.com>
+//	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
 //	Copyright (C) 2002 The Npgsql Development Team
 //	npgsql-general@gborg.postgresql.org
@@ -21,43 +23,31 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
 using System;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
+using System.Text;
 
 namespace Npgsql
 {
 	
-	
-	internal sealed class NpgsqlStartupState : NpgsqlState
+	/// <summary>
+	/// This class represents the Parse message sent to PostgreSQL
+	/// server.
+	/// </summary>
+	/// 
+	internal sealed class NpgsqlFlush
 	{
-		private static NpgsqlStartupState _instance = null;
-        
-        private readonly String CLASSNAME = "NpgsqlStartupState";
-		
-		private NpgsqlStartupState() : base() { }
-        
-		public static NpgsqlStartupState Instance
-		{
-			get
-			{
-				if ( _instance == null )
-				{
-					_instance = new NpgsqlStartupState();
-				}
-				return _instance;	
-			}
-		}
-		public override void Authenticate( NpgsqlConnection context, string password)
-		{
-			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Authenticate");
-			NpgsqlPasswordPacket pwpck = new NpgsqlPasswordPacket(password, context.BackendProtocolVersion);
-			BufferedStream stream = new BufferedStream(context.TcpClient.GetStream());
-			pwpck.WriteToStream(stream, context.Encoding);
-			stream.Flush();
-			
-		}
+		// Logging related values
+    private static readonly String CLASSNAME = "NpgsqlFlush";
+	  
+	  public void WriteToStream(Stream outputStream, Encoding encoding)
+	  {
+	    outputStream.WriteByte((Byte)'H');
+	    
+	    PGUtil.WriteInt32(outputStream, 4);
+	    
+	  }
+	  
 	}
 }
+	  

@@ -100,4 +100,7 @@
 	<data name="Exception_WrongType">
 		<value>Can't cast {0} into NpgsqlParameter</value>
 	</data>
+    <data name="Exception_InvalidParameterName">
+        <value>Invalid parameter name: {0}</value>
+    </data>
 </root>

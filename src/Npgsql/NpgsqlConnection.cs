@@ -95,8 +95,6 @@ namespace Npgsql {
 		private readonly String CLASSNAME = "NpgsqlConnection";
   		
 		private TcpClient				connection;
-		/*private BufferedStream	output_stream;
-		private Byte[]					input_buffer;*/
 		private Encoding				connection_encoding;
   	
 		private Boolean					_supportsPrepare = false;
@@ -106,6 +104,9 @@ namespace Npgsql {
 		private Hashtable				_oidToNameMapping; 
   	
 		private System.Resources.ResourceManager resman;
+		
+		private Int32          _backendProtocolVersion;
+		
 
 		/// <summary>
 		/// Initializes a new instance of the 
@@ -128,6 +129,7 @@ namespace Npgsql {
 			connection_string = ConnectionString;
 			connection_string_values = new ListDictionary();
 			connection_encoding = Encoding.Default;
+			_backendProtocolVersion = ProtocolVersion.Version3;
     	
 			_mediator = new NpgsqlMediator();
 			_oidToNameMapping = new Hashtable();
@@ -264,8 +266,7 @@ namespace Npgsql {
 			if (_inTransaction)
 				throw new InvalidOperationException(resman.GetString("Exception_NoNestedTransactions"));
 			
-			InTransaction = true;
-			
+						
 			return new NpgsqlTransaction(this, level);
 		}
 
@@ -331,43 +332,77 @@ namespace Npgsql {
 			try {
 		    		    	
 				// Check if the connection is already open.
-				if (connection_state == ConnectionState.Open)
-					throw new NpgsqlException(resman.GetString("Exception_ConnOpen"));
-      	
-				CurrentState.Open(this);
-      	
-				// Check if there were any errors.
-				if (_mediator.Errors.Count > 0) {
-					StringWriter sw = new StringWriter();
-					sw.WriteLine(resman.GetString("Exception_OpenError"));
-					uint i = 1;
-					foreach(string error in _mediator.Errors){
-						sw.WriteLine("{0}. {1}", i++, error);
-					}
-					CurrentState = NpgsqlClosedState.Instance;
-					_mediator.Reset();
-					throw new NpgsqlException(sw.ToString());
-				}
-      	
-				backend_keydata = _mediator.GetBackEndKeyData();
-      	
-				// Change the state of connection to open.
-				connection_state = ConnectionState.Open;
-      	
-				// Get version information to enable/disable server version features.
-				NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
-				_serverVersion = (String) command.ExecuteScalar();
-				ProcessServerVersion();
-				_oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+			        if (connection_state == ConnectionState.Open)
+			          throw new NpgsqlException(resman.GetString("Exception_ConnOpen"));
+					    		    
+					   	
+			      	// Try first connect using the 3.0 protocol...
+			      	CurrentState.Open(this);
+			        
+			        
+			      	// Check if there were any errors.
+			      	if (_mediator.Errors.Count > 0)
+			      	{
+			      	  // Check if there is an error of protocol not supported...
+			      	       	  
+			      	  if (((String)_mediator.Errors[0]).StartsWith("FATAL:  unsupported frontend protocol"))
+			      	  {
+			      	    // Try using the 2.0 protocol.
+			      	    _mediator.Reset();
+			      	    CurrentState = NpgsqlClosedState.Instance;
+			      	    BackendProtocolVersion = ProtocolVersion.Version2;
+			      	    CurrentState.Open(this);
+			      	  }
+			      	  
+			      	  // Keep checking for errors...
+			      	  if(_mediator.Errors.Count > 0)
+			      	  {
+			        		StringWriter sw = new StringWriter();
+			        		sw.WriteLine(resman.GetString("Exception_OpenError"));
+			        		uint i = 1;
+			        		foreach(string error in _mediator.Errors)
+			        		{
+			        			sw.WriteLine("{0}. {1}", i++, error);
+			        		}
+			        		CurrentState = NpgsqlClosedState.Instance;
+			        		_mediator.Reset();
+			        		throw new NpgsqlException(sw.ToString());
+			      	  }
+			      	}
+			      	
+			      	backend_keydata = _mediator.GetBackEndKeyData();
+			      	
+			        // Change the state of connection to open.
+			        connection_state = ConnectionState.Open;
+			      	
+			      	// Get version information to enable/disable server version features.
+			      	// Only for protocol 2.0.
+			      	if (BackendProtocolVersion == ProtocolVersion.Version2)
+			      	{
+			      	  NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
+			      	  _serverVersion = (String) command.ExecuteScalar();
+			      	}
+			      	
+			      	     	
+			      	//NpgsqlCommand commandEncoding = new NpgsqlCommand("show client_encoding", this);
+			        //String serverEncoding = (String)commandEncoding.ExecuteScalar();
+			        
+			        //if (serverEncoding.Equals("UNICODE"))
+			        //  connection_encoding = Encoding.UTF8;
+			      	
+			      	
+			      	
+			      	ProcessServerVersion();
+			      	_oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+			      	
+			      	
+			      		    			    		
+			      }
       	
       	
       		    			    		
-			}
-			catch(SocketException e) {
-				// [TODO] Very ugly message. Needs more working.
-				throw new NpgsqlException(resman.GetString("Exception_SocketEx"), e);
-			}
-	    	
+			
+			
 			catch(IOException e) {
 				// This exception was thrown by StartupPacket handling functions.
 				// So, close the connection and throw the exception.
@@ -496,8 +531,11 @@ namespace Npgsql {
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessServerVersion");
 			
 			
-			SupportsPrepare = (_serverVersion.IndexOf("PostgreSQL 7.3") != -1) || 
-				(_serverVersion.IndexOf("PostgreSQL 7.4") != -1) ;
+			if (BackendProtocolVersion == ProtocolVersion.Version2)
+			  SupportsPrepare = (_serverVersion.IndexOf("PostgreSQL 7.3") != -1);
+		  else
+		    // 3.0+ version is set by ParameterStatus message.
+		    SupportsPrepare = (_serverVersion.IndexOf("7.4") != -1);
 			
 		}
     
@@ -510,6 +548,31 @@ namespace Npgsql {
 		}
 		internal void Startup() {
 			CurrentState.Startup( this );
+		}
+		
+		internal void Parse(NpgsqlParse parse)
+		{
+		  CurrentState.Parse(this, parse);
+		}
+		
+		internal void Flush()
+		{
+		  CurrentState.Flush(this);
+		}
+		
+		internal void Sync()
+		{
+		  CurrentState.Sync(this);
+		}
+		
+		internal void Bind(NpgsqlBind bind)
+		{
+		  CurrentState.Bind(this, bind);
+		}
+		
+		internal void Execute(NpgsqlExecute execute)
+		{
+		  CurrentState.Execute(this, execute);
 		}
 		
 		internal NpgsqlState CurrentState {
@@ -600,6 +663,10 @@ namespace Npgsql {
 			get {
 				return _serverVersion;
 			}
+			set
+			{
+			  _serverVersion = value;
+			}
 		}
 		
 		internal Hashtable OidToNameMapping {
@@ -612,7 +679,20 @@ namespace Npgsql {
 			}
 			
 		}
+		internal Int32 BackendProtocolVersion
+		{
+		  get
+		  {
+		    return _backendProtocolVersion;
+		  }
+		  
+		  set
+		  {
+		    _backendProtocolVersion = value;
+		  }
 		}
+	}
 }
+
 
 

@@ -26,6 +26,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Resources;
 
 namespace Npgsql
 {
@@ -34,10 +35,17 @@ namespace Npgsql
 	internal sealed class NpgsqlReadyState : NpgsqlState
 	{
 		private static NpgsqlReadyState _instance = null;
+        
+	  
+        // Flush and Sync messages. It doesn't need to be created every time it is called.
+        private static readonly NpgsqlFlush _flushMessage = new NpgsqlFlush();
+        
+        private static readonly NpgsqlSync _syncMessage = new NpgsqlSync();
 		
-		private NpgsqlReadyState()
-		{
-		}
+        private readonly String CLASSNAME = "NpgsqlReadyState";
+        
+		private NpgsqlReadyState() : base() { }
+        
 		public static NpgsqlReadyState Instance
 		{
 			get
@@ -54,13 +62,15 @@ namespace Npgsql
 		
 		public override void Query( NpgsqlConnection context, NpgsqlCommand command )
 		{
+        
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Query");
+            
 			String commandText = command.GetCommandText();
-			NpgsqlEventLog.LogMsg("Query sent: " + commandText, LogLevel.Debug);
-			
+            NpgsqlEventLog.LogMsg(resman, "Log_QuerySent", LogLevel.Debug, commandText);
 			
 			// Send the query request to backend.
 						
-			NpgsqlQuery query = new NpgsqlQuery(commandText);
+			NpgsqlQuery query = new NpgsqlQuery(commandText, context.BackendProtocolVersion);
 			BufferedStream stream = new BufferedStream(context.TcpClient.GetStream());
 			query.WriteToStream(stream, context.Encoding);
 			stream.Flush();
@@ -69,6 +79,48 @@ namespace Npgsql
 			
 		}
 		
+		public override void Parse(NpgsqlConnection context, NpgsqlParse parse)
+		{
+		    NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Parse");
+		    BufferedStream stream = new BufferedStream(context.TcpClient.GetStream());
+			parse.WriteToStream(stream, context.Encoding);
+			stream.Flush();
+			
+			
+		}
+		
+		
+		public override void Sync(NpgsqlConnection context)
+		{
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Sync");
+		    _syncMessage.WriteToStream(context.TcpClient.GetStream(), context.Encoding);
+		    ProcessBackendResponses(context);
+		}
+		
+		public override void Flush(NpgsqlConnection context)
+		{
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Flush");
+            _flushMessage.WriteToStream(context.TcpClient.GetStream(), context.Encoding);
+            ProcessBackendResponses(context);
+		}
+		
+		public override void Bind(NpgsqlConnection context, NpgsqlBind bind)
+		{
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Bind");
+		  BufferedStream stream = new BufferedStream(context.TcpClient.GetStream());
+			bind.WriteToStream(stream, context.Encoding);
+			stream.Flush();
+		  
+		}
+		
+		public override void Execute(NpgsqlConnection context, NpgsqlExecute execute)
+		{
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Execute");
+		  NpgsqlDescribe describe = new NpgsqlDescribe('P', execute.PortalName);
+		  describe.WriteToStream(context.TcpClient.GetStream(), context.Encoding);
+		  execute.WriteToStream(context.TcpClient.GetStream(), context.Encoding);
+		  Sync(context);
+		}
 	
 	}
 }

@@ -104,7 +104,14 @@ namespace Npgsql
 		/// <returns>The index of the new <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> object.</returns>
 		public NpgsqlParameter Add(NpgsqlParameter value){
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Add", value);
-			this.InternalList.Add(value);
+		  
+		  // Do not allow parameters without name.
+		  if ((value.ParameterName == null) ||
+		      (value.ParameterName.Trim() == String.Empty) ||
+		      (value.ParameterName.Length == 1 && value.ParameterName[0] == ':'))
+		      throw new NpgsqlException(String.Format(this.resman.GetString("Exception_InvalidParameterName"), value.ParameterName));
+		  
+		  	this.InternalList.Add(value);
 			return value;
 		}
 
@@ -387,5 +394,6 @@ namespace Npgsql
 			if(Object.GetType() != typeof(NpgsqlParameter))
 				throw new InvalidCastException(String.Format(this.resman.GetString("Exception_WrongType"), Object.GetType().ToString()));
 		}
+
 	}
 }

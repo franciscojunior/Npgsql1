@@ -21,26 +21,29 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Resources;
 
 namespace Npgsql
 {
-	using System;
-	using System.IO;
-	using System.Net;
-	using System.Net.Sockets;
+	
 	
 	internal sealed class NpgsqlClosedState : NpgsqlState
 	{
 		private static NpgsqlClosedState _instance = null;
 		
-	
-		private NpgsqlClosedState()
-		{
-		}
+        private static readonly String CLASSNAME = "NpgsqlClosedState";
+	            
+		private NpgsqlClosedState() : base() { }
+        
 		public static NpgsqlClosedState Instance
 		{
 			get
 			{
+                NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "Instance");
 				if ( _instance == null )
 				{
 					_instance = new NpgsqlClosedState();
@@ -50,6 +53,8 @@ namespace Npgsql
 		}
 		public override void Open(NpgsqlConnection context)
 		{
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
+            
 			IPEndPoint serverEndPoint;
 			// Open the connection to the backend.
 			context.TcpClient = new TcpClient();		    			    	
@@ -72,8 +77,8 @@ namespace Npgsql
 			// Connect to the server.
 
    		context.TcpClient.Connect(serverEndPoint);	
-			NpgsqlEventLog.LogMsg("Connected to: " + serverEndPoint.Address + ":" + serverEndPoint.Port, LogLevel.Normal);
-		
+            NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, serverEndPoint.Address, serverEndPoint.Port);
+					
 			ChangeState( context, NpgsqlConnectedState.Instance );
 			context.Startup();
 		}

@@ -24,17 +24,16 @@ BUILD_DIR=build
 MONO_BUILD_DIR=$(BUILD_DIR)/mono
 NUNIT_BUILD_DIR=$(BUILD_DIR)/nunittests
 
-NUNIT_PATH=/home/fxjr/Mono/mcs/nunit20/nunit-console.exe` 
-RESGENFLAGS= /compile Design/ConnectionStringEditorForm.resx,Npgsql.Design.ConnectionStringEditorForm.resources NpgsqlCommand.resx,Npgsql.NpgsqlCommand.resources NpgsqlConnection.resx,Npgsql.NpgsqlConnection.resources NpgsqlEventLog.resx,Npgsql.NpgsqlEventLog.resources NpgsqlParameter.resx,Npgsql.NpgsqlParameter.resources NpgsqlParameterCollection.resx,Npgsql.NpgsqlParameterCollection.resources NpgsqlTransaction.resx,Npgsql.NpgsqlTransaction.resources
+RESGENFLAGS= /compile Design/ConnectionStringEditorForm.resx,Npgsql.Design.ConnectionStringEditorForm.resources NpgsqlCommand.resx,Npgsql.NpgsqlCommand.resources NpgsqlConnection.resx,Npgsql.NpgsqlConnection.resources NpgsqlEventLog.resx,Npgsql.NpgsqlEventLog.resources NpgsqlParameter.resx,Npgsql.NpgsqlParameter.resources NpgsqlParameterCollection.resx,Npgsql.NpgsqlParameterCollection.resources NpgsqlTransaction.resx,Npgsql.NpgsqlTransaction.resources NpgsqlState.resx,Npgsql.NpgsqlState.resources NpgsqlConnectedState.resx,Npgsql.NpgsqlConnectedState.resources NpgsqlReadyState.resx,Npgsql.NpgsqlReadyState.resources NpgsqlClosedState.resx,Npgsql.NpgsqlClosedState.resources
 # Allow compiling under Cygwin
 ifeq ($(OS),"Windows_NT")
 	CC=csc.exe
 	RESGEN=resgen.exe
 	LDFLAGS=/r:System.Data.dll /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Design.dll /res:Npgsql.NpgsqlCommand.bmp /res:Npgsql.NpgsqlConnection.bmp /res:Npgsql.NpgsqlDataAdapter.bmp /res:Npgsql.Design.ConnectionStringEditorForm.resources /res:Npgsql.NpgsqlCommand.resources /res:Npgsql.NpgsqlConnection.resources /res:Npgsql.NpgsqlEventLog.resources /res:Npgsql.NpgsqlParameter.resources /res:Npgsql.NpgsqlParameterCollection.resources /res:Npgsql.NpgsqlTransaction.resources /target:library /out:$(NPGSQL_LIB)
 else
-	CC=mcs 
+	CC=mcs -g 
 	RESGEN=monoresgen
-	LDFLAGS=-r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -r System.Design.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources -resource:Npgsql.NpgsqlCommand.resources -resource:Npgsql.NpgsqlConnection.resources -resource:Npgsql.NpgsqlEventLog.resources -resource:Npgsql.NpgsqlParameter.resources -resource:Npgsql.NpgsqlParameterCollection.resources -resource:Npgsql.NpgsqlTransaction.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
+	LDFLAGS=-r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -r System.Design.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources -resource:Npgsql.NpgsqlCommand.resources -resource:Npgsql.NpgsqlConnection.resources -resource:Npgsql.NpgsqlEventLog.resources -resource:Npgsql.NpgsqlParameter.resources -resource:Npgsql.NpgsqlParameterCollection.resources -resource:Npgsql.NpgsqlTransaction.resources -resource:Npgsql.NpgsqlState.resources -resource:Npgsql.NpgsqlConnectedState.resources -resource:Npgsql.NpgsqlReadyState.resources -resource:Npgsql.NpgsqlClosedState.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
 OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs ./Design/*.cs)
@@ -62,4 +61,4 @@ nunittests:
 	(cd ../testsuite/noninteractive/NUnit20/ && make && cd ../../../)
 	(cp $(MONO_BUILD_DIR)/$(NPGSQL_LIB) $(NUNIT_BUILD_DIR))
 	 
-	(cd $(NUNIT_BUILD_DIR) && mono $(NUNIT_PATH) NpgsqlTests.dll && cd ../../)
+	(cd $(NUNIT_BUILD_DIR) && mono --debug `which nunit-console.exe` NpgsqlTests.dll && cd ../../)

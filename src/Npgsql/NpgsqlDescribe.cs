@@ -1,6 +1,6 @@
-// created on 12/5/2002 at 23:10
+// created on 1/7/2003 at 20:48
 
-// Npgsql.NpgsqlException.cs
+// Npgsql.NpgsqlDescribe.cs
 // 
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
@@ -24,32 +24,46 @@
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 using System;
-using System.Resources;
+using System.IO;
+using System.Text;
 
 namespace Npgsql
 {
-	public class NpgsqlException : Exception
+	
+	/// <summary>
+	/// This class represents the Parse message sent to PostgreSQL
+	/// server.
+	/// </summary>
+	/// 
+	internal sealed class NpgsqlDescribe
 	{
-        
-        // Logging related values
-        private static readonly String CLASSNAME = "NpgsqlException";
-        private static ResourceManager resman = new ResourceManager(typeof(NpgsqlException));
-        
-		public NpgsqlException()
-		{
-            NpgsqlEventLog.LogMsg(resman, "Log_ExceptionOccured", LogLevel.Normal, "<no message>");
-			
-		}
-		
-		public NpgsqlException(String message) : base(message)
-		{
-		    NpgsqlEventLog.LogMsg(resman, "Log_ExceptionOccured", LogLevel.Normal, message);
-		}
-		
-		public NpgsqlException(String message, Exception inner)
-		: base(message, inner)
-		{
-            NpgsqlEventLog.LogMsg(resman, "Log_ExceptionOccured", LogLevel.Normal, message + " (" + inner.Message + ")");
-		}
+		// Logging related values
+    private static readonly String CLASSNAME = "NpgsqlDescribe";
+	  
+	  private Char _whatToDescribe;
+	  private String _portalName;
+	  
+	  public NpgsqlDescribe(Char whatToDescribe, String portalName)
+	  {
+	    _whatToDescribe = whatToDescribe;
+	    _portalName = portalName;
+	    
+	  }
+	  
+	  public void WriteToStream(Stream outputStream, Encoding encoding)
+	  {
+	    outputStream.WriteByte((Byte)'D');
+	    
+	    PGUtil.WriteInt32(outputStream, 4 +
+	                      1 +
+	                      encoding.GetByteCount(_portalName) + 1);
+	    
+	    outputStream.WriteByte((Byte)_whatToDescribe);
+	    PGUtil.WriteString(_portalName, outputStream, encoding);
+	    
+	    
+	  }
+	  
 	}
 }
+	  

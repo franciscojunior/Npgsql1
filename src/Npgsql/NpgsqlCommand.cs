@@ -50,6 +50,11 @@ namespace Npgsql {
 		private NpgsqlParameterCollection parameters;
 		private String planName;
 		private static Int32 planIndex = 0;
+	  private static Int32              portalIndex = 0;
+	  
+	  private NpgsqlParse               parse;
+	  private NpgsqlBind                bind;
+	  
 		// Logging related values
 		private static readonly String CLASSNAME = "NpgsqlCommand";
 		private System.Resources.ResourceManager resman;
@@ -87,7 +92,7 @@ namespace Npgsql {
 			parameters = new NpgsqlParameterCollection();
 			timeout = 20;
 			type = CommandType.Text;
-			this.Transaction = transaction;
+		  this.Transaction = transaction;
 		}
 				
 		// Public properties.
@@ -106,6 +111,8 @@ namespace Npgsql {
 				NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "CommandText", value);
 				text = value;
 				planName = String.Empty;
+			  parse = null;
+			  bind = null;
 			}
 		}
 
@@ -295,13 +302,20 @@ namespace Npgsql {
 		  
 			// Check the connection state.
 			CheckConnectionState();
-			
-			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
-				connection.Query(this); 
+					  
+			/*if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+  			if (parse == null)
+    				connection.Query(this); 
+  		    else
+  		    {
+  		      BindParameters();
+  		      connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
+  		    }
 			else
 				throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));
+			*/
 			
-			
+			ExecuteCommand();
 			
 			// Check if there were any errors.
 			if (connection.Mediator.Errors.Count > 0) {
@@ -400,12 +414,20 @@ namespace Npgsql {
 		  
 			// Check the connection state.
 			CheckConnectionState();
-			
-			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
-				connection.Query(this); 
+					  
+			/*if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+			  if (parse == null)
+				  connection.Query(this); 
+		    else
+		    {
+		      BindParameters();
+		      connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
+		    }
 			else
 				throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));
+			*/
 			
+			ExecuteCommand();
 						
 			// Check if there were any errors.
 			if (connection.Mediator.Errors.Count > 0) {
@@ -424,6 +446,30 @@ namespace Npgsql {
 			// Get the resultsets and create a Datareader with them.
 			return new NpgsqlDataReader(connection.Mediator.GetResultSets(), connection.Mediator.GetCompletedResponses(), connection);
 		}
+		
+		
+		///<summary>
+		/// This method binds the parameters from parameters collection to the bind
+		/// message.
+		/// </summary>
+		private void BindParameters()
+		{
+		  
+		  if (parameters.Count != 0)
+		  {
+		    Object[] parameterValues = new Object[parameters.Count];
+		    for (Int32 i = 0; i < parameters.Count; i++)
+  			{
+  				parameterValues[i] = NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i]);
+  			}
+  			bind.ParameterValues = parameterValues;
+		  }
+		  
+		  connection.Bind(bind);
+		  connection.Flush();
+		  
+		}
+		
 
 		/// <summary>
 		/// Executes the query, and returns the first column of the first row 
@@ -433,21 +479,30 @@ namespace Npgsql {
 		/// or a null reference if the result set is empty.</returns>
 		public Object ExecuteScalar() {
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ExecuteScalar");
+
 		  
 			// Check the connection state.
 			CheckConnectionState();
-						
-			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
-				connection.Query(this); 
+					  
+			/*if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+			  if (parse == null)
+  				connection.Query(this); 
+		    else
+		    {
+		      BindParameters();
+		      connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
+		    }
 			else
 				throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));
+			*/
 			
+			ExecuteCommand();
 			
 			// Check if there were any errors.
 			// [FIXME] Just check the first error.
 			if (connection.Mediator.Errors.Count > 0) {
 				StringWriter sw = new StringWriter();
-				sw.WriteLine(String.Format(resman.GetString("Exception_MediatorErrors"), "ExecuteScalar"));
+			  sw.WriteLine(String.Format(resman.GetString("Exception_MediatorErrors"), "ExecuteScalar"));
 				uint i = 1;
 				foreach(string error in connection.Mediator.Errors){
 					sw.WriteLine("{0}. {1}", i++, error);
@@ -459,7 +514,7 @@ namespace Npgsql {
 		  
 			//ArrayList results = connection.Mediator.Data;
 			
-			Object result = null;	// Result of the ExecuteScalar().
+			//Object result = null;	// Result of the ExecuteScalar().
 			
 			
 			// Now get the results.
@@ -489,22 +544,38 @@ namespace Npgsql {
 		public void Prepare() {
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Prepare");
 			
+		  // Check the connection state.
+			CheckConnectionState();
 		  
 			if (!connection.SupportsPrepare)
 				return;	// Do nothing.
 		  	
-			// Check the connection state.
-			CheckConnectionState();
+			
 			
 			// [TODO] Finish method implementation.
 			//throw new NotImplementedException();
 			
 			//NpgsqlCommand command = new NpgsqlCommand("prepare plan1 as " + GetCommandText(), connection );
-			NpgsqlCommand command = new NpgsqlCommand(GetPrepareCommandText(), connection );						
-			command.ExecuteNonQuery();
-			
-						
-			
+		  
+		  if (connection.BackendProtocolVersion == ProtocolVersion.Version2)
+		  {
+			  NpgsqlCommand command = new NpgsqlCommand(GetPrepareCommandText(), connection );						
+			  command.ExecuteNonQuery();
+		  }
+		  else
+		  {
+		    // Use the extended query parsing...
+		    planName = "NpgsqlPlan" + System.Threading.Interlocked.Increment(ref planIndex);
+		    String portalName = "NpgsqlPortal" + System.Threading.Interlocked.Increment(ref portalIndex);
+		    
+		    parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
+		    
+		    connection.Parse(parse);
+		    connection.Flush();
+		    
+		    bind = new NpgsqlBind(portalName, planName, new Int16[] {0}, null, new Int16[] {0});
+		      
+		  }
 		}
 
 		/// <summary>
@@ -559,7 +630,9 @@ namespace Npgsql {
 					result = "select * from " + result; // This syntax is only available in 7.3+ as well SupportsPrepare.
 				else
 					result = "select " + result;				// Only a single result return supported. 7.2 and earlier.
-						
+			else if (type == CommandType.TableDirect)
+			  return "select * from " + result; // There is no parameter support on table direct.
+		  
 			if (parameters.Count == 0)
 				return result;
 						
@@ -603,8 +676,43 @@ namespace Npgsql {
 		}
 		
 		
+
+		private String GetParseCommandText()
+		{
+		  NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetParseCommandText");
+		  
+		  String parseCommand = text;
+		  
+		  if (type == CommandType.StoredProcedure) 
+				parseCommand = "select * from " + parseCommand; // This syntax is only available in 7.3+ as well SupportsPrepare.
+			else if (type == CommandType.TableDirect)	
+			  return "select * from " + parseCommand; // There is no parameter support on TableDirect.
+						
+		  if (parameters.Count > 0)
+			{
+				// The ReplaceParameterValue below, also checks if the parameter is present.
+			  
+			  String parameterName;
+				Int32 i;
+			  
+				for (i = 0; i < parameters.Count; i++)
+				{
+					//result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
+					parameterName = parameters[i].ParameterName;
+					//textCommand = textCommand.Replace(':' + parameterName, "$" + (i+1));
+				  parseCommand = ReplaceParameterValue(parseCommand, parameterName, "$" + (i+1));
+				  
+				}
+			}
+			
+			return parseCommand;
+		  
+		}
+		
+		
 		private String GetPrepareCommandText() {
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetPrepareCommandText");
+
 			
 			
 			planName = "NpgsqlPlan" + System.Threading.Interlocked.Increment(ref planIndex);
@@ -613,9 +721,10 @@ namespace Npgsql {
 			
 			String textCommand = text;
 			
-			if (type == CommandType.StoredProcedure)
+			if (type == CommandType.StoredProcedure) 
 				textCommand = "select * from " + textCommand;
-			
+			else if (type == CommandType.TableDirect)	
+			  return "select * from " + textCommand; // There is no parameter support on TableDirect.
 			
 			
 			if (parameters.Count > 0) {
@@ -690,7 +799,21 @@ namespace Npgsql {
 			return result;
 		}//ReplaceParameterValue
 		
-		
+	
+  	private void ExecuteCommand()
+  	{
+  	  //if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+  			  if (parse == null)
+    				connection.Query(this); 
+  		    else
+  		    {
+  		      BindParameters();
+  		      connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
+  		    }
+  		/*	else
+  				throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));*/
+  	  
+  	}
 		
 		
 	}
