@@ -104,7 +104,7 @@ namespace Npgsql
       set
       {
         connection_string = value;
-        NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".ConnectionString = " + value, 1);
+        NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".ConnectionString = " + value, LogLevel.Normal);
         ParseConnectionString();
       }
     }
@@ -138,25 +138,25 @@ namespace Npgsql
     		
     public IDbTransaction BeginTransaction()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LogLevel.Debug);
       throw new NotImplementedException();
     }
 	
     public IDbTransaction BeginTransaction(IsolationLevel level)
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LogLevel.Debug);
       throw new NotImplementedException();
     }
 
     public void ChangeDatabase(String dbName)
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", LogLevel.Debug);
       throw new NotImplementedException();
     }
 	
     public void Open()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Open()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Open()", LogLevel.Debug);
 	    	
       try
       {
@@ -192,7 +192,7 @@ namespace Npgsql
 		    	
         // Connect to the server.
         connection.Connect(ep_server);	
-		    NpgsqlEventLog.LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, 1);
+		    NpgsqlEventLog.LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, LogLevel.Normal);
 		    
         output_stream = new BufferedStream(connection.GetStream());
         input_buffer = new Byte[8192];
@@ -229,7 +229,7 @@ namespace Npgsql
     public void Close()
     
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Close()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Close()", LogLevel.Debug);
     
       try
       {
@@ -255,13 +255,13 @@ namespace Npgsql
 	    
     public IDbCommand CreateCommand()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LogLevel.Debug);
       throw new NotImplementedException();
     }
     // Implement the IDisposable interface.
     public void Dispose()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", LogLevel.Debug);
 	    		    	
     }
 	    
@@ -279,7 +279,7 @@ namespace Npgsql
     /// </summary>
     private void ParseConnectionString()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LogLevel.Debug);
 	    	
       // Get the key-value pairs delimited by CONN_DELIM
       String[] pairs = connection_string.Split(new char[] {CONN_DELIM});
@@ -309,7 +309,7 @@ namespace Npgsql
 	// Add the pair to the dictionary. The key is shifted to upper
 	// case for case insensitivity.
 	    	
-	NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], 1);
+	NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LogLevel.Normal);
         connection_string_values.Add(keyvalue[0], keyvalue[1]);
       }
 	    	
@@ -330,7 +330,7 @@ namespace Npgsql
 	    
     private void WriteStartupPacket()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WritestartupPacket()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WritestartupPacket()", LogLevel.Debug);
 	    	
       // Packet length = 296
       output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)296)), 0, 4);
@@ -360,7 +360,7 @@ namespace Npgsql
 	    
     private void HandleStartupPacketResponse()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".HandleStartupPacketResponse()", 2);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".HandleStartupPacketResponse()", LogLevel.Debug);
 	    	
       // The startup packet was sent.
       // Handle possible error messages or password requests.
@@ -401,7 +401,7 @@ namespace Npgsql
 		    			
             if (auth_type == AUTH_CLEARTEXT_PASSWORD)
             {
-              NpgsqlEventLog.LogMsg("Server requested cleartext password authentication.", 1);
+              NpgsqlEventLog.LogMsg("Server requested cleartext password authentication.", LogLevel.Debug);
               
               // Send the PasswordPacket.
               String password = ((String) connection_string_values[CONN_PASSWORD]);

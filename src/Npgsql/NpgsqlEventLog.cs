@@ -29,6 +29,14 @@ using System;
 
 namespace Npgsql
 {
+
+  public enum LogLevel 
+  {
+    None = 0,
+    Normal = 1,
+    Debug = 2
+  }
+  
 	/// <summary>
 	/// This class handles all the Npgsql event & debug logging
 	/// </summary>
@@ -38,7 +46,7 @@ namespace Npgsql
     // Logging related values
     private static readonly String CLASSNAME = "NpgsqlEventLog";
     private static   String    logfile;
-    private static   Int32     level;
+    private static   LogLevel     level;
 
     ///<summary>
     /// Sets/Returns the level of information to log to the logfile.
@@ -46,7 +54,7 @@ namespace Npgsql
     /// 1 - Normal
     /// 2 - Complete
     /// </summary>	
-    public static Int32 Level
+    public static LogLevel Level
     {
       get
       {
@@ -55,7 +63,7 @@ namespace Npgsql
       set
       {
         level = value;
-        LogMsg("Set " + CLASSNAME + ".Level = " + value, 1);
+        LogMsg("Set " + CLASSNAME + ".Level = " + value, LogLevel.Normal);
       }
     }
     
@@ -71,12 +79,12 @@ namespace Npgsql
       set
       {
         logfile = value;
-        LogMsg("Set " + CLASSNAME + ".LogFile = " + value, 1);
+        LogMsg("Set " + CLASSNAME + ".LogFile = " + value, LogLevel.Normal);
       }
     }
     
     // Event/Debug Logging
-    public static void LogMsg(String message, Int32 msglevel) 
+    public static void LogMsg(String message, LogLevel msglevel) 
     {
       if (msglevel > level)
         return;

@@ -34,18 +34,18 @@ namespace Npgsql
     
 		public NpgsqlException()
 		{
-			NpgsqlEventLog.LogMsg("An NpgsqlException occured: <no message>", 1);
+			NpgsqlEventLog.LogMsg("An NpgsqlException occured: <no message>", LogLevel.Normal);
 		}
 		
 		public NpgsqlException(String message) : base(message)
 		{
-		  NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message, 1);
+		  NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message, LogLevel.Normal);
 		}
 		
 		public NpgsqlException(String message, Exception inner)
 		: base(message, inner)
 		{
-			NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message + " (" + inner.Message + ")", 1);
+			NpgsqlEventLog.LogMsg("An NpgsqlException occured: " + message + " (" + inner.Message + ")", LogLevel.Normal);
 		}
 	}
 }

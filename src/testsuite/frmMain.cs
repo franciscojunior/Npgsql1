@@ -81,7 +81,7 @@ using Npgsql;
         {
           cnDB.Close();
         }
-        catch (NpgsqlException ex)
+        catch (NpgsqlException)
         {
           // Do nothing...
         }
@@ -100,7 +100,7 @@ using Npgsql;
 		  log("Connecting to PostgreSQL...");
 		  
 		  // Setup the logging
-		  NpgsqlEventLog.Level = 2;
+		  NpgsqlEventLog.Level = LogLevel.Normal;
 		  NpgsqlEventLog.LogName = "testsuite.log";
 		  
 		  if (cnDB != null)
