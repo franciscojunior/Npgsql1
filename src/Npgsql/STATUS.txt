@@ -1,5 +1,11 @@
 
 
+2002-05-26
+	- Npgsql is now capable of sending some queries like select count(*) from table
+	with NpgsqlCommand.ExecuteScalar() method. 
+	Note that this method is yet very much instable. Queries like 
+	"select field, field from table" still crashs it. :(
+
 2002-05-25
 
 	- Npgsql is now capable of sending some queries like insert, update and delete.
