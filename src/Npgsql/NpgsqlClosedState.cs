@@ -54,6 +54,7 @@ namespace Npgsql
         }
 
 
+
         /// <summary>
         /// Resolve a host name or IP address.
         /// This is needed because if you call Dns.Resolve() with an IP address, it will attempt
@@ -62,10 +63,14 @@ namespace Npgsql
         /// <param name="HostName"></param>
         private static IPAddress ResolveIPHost(String HostName)
         {
-            try {
+
+            try
+            {
                 // Is it a raw IP address?
                 return IPAddress.Parse(HostName);
-            } catch {
+            }
+            catch (FormatException)
+            {
                 // Not an IP, must be a host name...
                 return Dns.Resolve(HostName).AddressList[0];
             }
@@ -89,11 +94,11 @@ namespace Npgsql
                 if (response == 'S')
                 {
                     stream = new SslClientStream(
-                                tcpc.GetStream(),
-                                context.Host,
-                                true,
-                                Mono.Security.Protocol.Tls.SecurityProtocolType.Default
-                    );
+                                 tcpc.GetStream(),
+                                 context.Host,
+                                 true,
+                                 Mono.Security.Protocol.Tls.SecurityProtocolType.Default
+                             );
 
                     ((SslClientStream)stream).ClientCertSelectionDelegate = new CertificateSelectionCallback(context.DefaultCertificateSelectionCallback);
                     ((SslClientStream)stream).ServerCertValidationDelegate = new CertificateValidationCallback(context.DefaultCertificateValidationCallback);
