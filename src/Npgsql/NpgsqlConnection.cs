@@ -66,13 +66,8 @@ namespace Npgsql
   		private readonly Int32 AUTH_CLEARTEXT_PASSWORD = 3;
   		
   		
-	    public NpgsqlConnection()
-	    {
-	    	connection_state = ConnectionState.Closed;
-	    	connection_string = "";
-	    	connection_string_values = new ListDictionary();
-	    	connection_encoding = Encoding.Default;
-	    }
+  		public NpgsqlConnection() : this(""){}
+	    	
 	    
 	    
 	    public NpgsqlConnection(String ConnectionString)
