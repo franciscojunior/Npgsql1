@@ -173,9 +173,12 @@ namespace Npgsql
         /// Indicates if NpgsqlDatareader has rows to be read.
         /// </summary>
 
-        public Boolean HasRows()
+        public Boolean HasRows
         {
-            return _currentResultset.Count > 0;
+        	get
+        	{
+            	return _currentResultset.Count > 0;
+            }
 
         }
 
