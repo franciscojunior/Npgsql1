@@ -193,5 +193,90 @@ on how runtime probes (locates) assemblies to be loaded. There is also a section
 So, for example the application directory is called "ASPNETApplication", Npgsql.dll must be placed in the "ASPNETApplication\bin" directory.
 If don't, you will get a lot of compiling errors when trying to use Npgsql.</p>
 
+<h3> 2.2 Using Npgsql Logging support </h3>
+
+<p> Sometimes it is necessary to see messages Npgsql logs. May it to track some error or strange behavior or just to see what is happening inside the
+Npgsql. </p>
+
+<p> Npgsql can log messages to a specified file or to the console or both. Also, there is three levels of logging: <br />
+<ul>
+  <li> None </li>
+  <li> Normal </li>
+  <li> Debug </li>
+</ul>
+</p>
+
+<p> What file to use, if log to console and what level are specified through the NpgsqlEventLog static properties:
+<ul>
+  <li> Level - Can be one of the LogLevel enum values: None, Normal, Debug. </li>
+  <li> LogName - Full path of the file where write log to. </li>
+  <li> EchoMessages - Says if it is to log to console.</li>
+</ul>
+</p>
+
+<p> The example below shows how to log to console and a file using the level Debug: </p>
+
+<pre class="CodeBox">
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    // Enable logging.
+    NpgsqlEventLog.Level = LogLevel.Debug;
+    NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+    NpgsqlEventLog.EchoMessages = true;
+	  
+    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    conn.Close();
+  }
+}
+</pre>
+
+<p> Running this code gives the following output: </p>
+<pre class="CodeBox">
+Set NpgsqlEventLog.EchoMessages = True
+Entering NpgsqlConnection.NpgsqlConnection()
+Entering NpgsqlConnection.ParseConnectionString()
+Connection string option: DATABASE = joedata
+Connection string option: SERVER = 172.16.0.1
+Connection string option: USER ID = joe
+Connection string option: PASSWORD = secret
+Entering NpgsqlConnection.Open()
+Connected to: 172.16.0.1:5432
+Entering NpgsqlConnection.WritestartupPacket()
+Entering NpgsqlStartupPacket.NpgsqlStartupPacket()
+Entering NpgsqlStartupPacket.WriteToStream()
+Entering PGUtil.WriteLimString()
+Entering PGUtil.WriteLimString()
+Entering PGUtil.WriteLimString()
+Entering PGUtil.WriteLimString()
+Entering PGUtil.WriteLimString()
+Entering NpgsqlConnection.HandleStartupPacketResponse()
+AuthenticationRequest message from Server
+Server requested cleartext password authentication.
+Entering NpgsqlPasswordPacket.NpgsqlPasswordPacket()
+Entering NpgsqlPasswordPacket.WriteToStream()
+Entering PGUtil.WriteString()
+Listening for next message
+AuthenticationRequest message from Server
+Listening for next message
+BackendKeyData message from Server
+Entering NpgsqlBackEndKeyData.ReadFromStream()
+Got ProcessID. Value: 3116
+Got SecretKey. Value: -132883070
+Listening for next message
+ReadyForQuery message from Server
+Listening for next message
+Connection completed
+Entering NpgsqlConnection.Close()
+</pre>
+
+<p>I used the Debug level to show that a lot of information can be obtained. Of course, using the Normal level would be less verbose.
+Also, this same information was added to the file NpgsqlTests.LogFile.</p>
+
 </body>
 </html>
