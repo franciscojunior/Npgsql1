@@ -80,11 +80,15 @@ namespace Npgsql
         /// <returns>A connector object.</returns>
         public NpgsqlConnector RequestConnector (NpgsqlConnection Connection)
         {
+            NpgsqlConnector     Connector;
+
             if (Connection.Pooling) {
-                return RequestPooledConnector(Connection);
+                Connector = RequestPooledConnector(Connection);
             } else {
-                return GetNonPooledConnector(Connection);
+                Connector = GetNonPooledConnector(Connection);
             }
+
+            return Connector;
         }
 
         /// <summary>
@@ -151,10 +155,10 @@ namespace Npgsql
         /// </remarks>
         /// <param name="Connector">The connector to release.</param>
         /// <param name="ForceClose">Force the connector to close, even if it is pooled.</param>
-        public void ReleaseConnector (NpgsqlConnector Connector, bool ForceClose)
+        public void ReleaseConnector (NpgsqlConnector Connector)
         {
             if (Connector.Connection.Pooling) {
-                ReleasePooledConnector(Connector, ForceClose);
+                ReleasePooledConnector(Connector);
             } else {
                 UngetNonPooledConnector(Connector);
             }
@@ -163,21 +167,21 @@ namespace Npgsql
         /// <summary>
         /// Release a pooled connector.  Handle locking here.
         /// </summary>
-        private void ReleasePooledConnector (NpgsqlConnector Connector, bool ForceClose)
+        private void ReleasePooledConnector (NpgsqlConnector Connector)
         {
             lock(this)
             {
-                ReleasePooledConnectorInternal(Connector, ForceClose);
+                ReleasePooledConnectorInternal(Connector);
             }
         }
 
         /// <summary>
         /// Release a pooled connector.  Handle shared/non-shared here.
         /// </summary>
-        private void ReleasePooledConnectorInternal (NpgsqlConnector Connector, bool ForceClose)
+        private void ReleasePooledConnectorInternal (NpgsqlConnector Connector)
         {
             if (! Connector.Shared) {
-                UngetPooledConnector(Connector, ForceClose);
+                UngetPooledConnector(Connector);
             } else {
                 // Connection sharing? What's that?
                 throw new NotImplementedException("Internal: Shared pooling not implemented");
@@ -191,7 +195,7 @@ namespace Npgsql
         {
             NpgsqlConnector       Connector;
 
-            Connector = new NpgsqlConnector(false);
+            Connector = CreateConnector(Connection);
             Connector.Connection = Connection;
 
             return Connector;
@@ -220,7 +224,7 @@ namespace Npgsql
                 Queue.UseCount++;
                 Connector.Connection = Connection;
             } else if (Queue.Count + Queue.UseCount < Connection.MaxPoolSize) {
-                Connector = new NpgsqlConnector(false);
+                Connector = CreateConnector(Connection);
                 Queue.UseCount++;
                 Connector.Connection = Connection;
             }
@@ -239,6 +243,19 @@ namespace Npgsql
             return null;
         }
 
+        private NpgsqlConnector CreateConnector(NpgsqlConnection Connection)
+        {
+            return new NpgsqlConnector(
+                Connection.Host,
+                Connection.Port,
+                Connection.Database,
+                Connection.UserName,
+                Connection.Password,
+                Connection.SSL,
+                false
+            );
+        }
+
         /// <summary>
         /// Close the connector.
         /// </summary>
@@ -249,10 +266,10 @@ namespace Npgsql
         }
 
         /// <summary>
-        /// Put a pooled connector into the pool queue.  Create the queue if needed.
+        /// Put a pooled connector into the pool queue.
         /// </summary>
         /// <param name="Connector">Connector to pool</param>
-        private void UngetPooledConnector(NpgsqlConnector Connector, bool ForceClose)
+        private void UngetPooledConnector(NpgsqlConnector Connector)
         {
             ConnectorQueue           Queue;
 
@@ -263,7 +280,7 @@ namespace Npgsql
                 throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
             }
 
-            if (ForceClose) {
+            if (! Connector.IsInitialized) {
                 Connector.Close();
             } else {
                 Connector.Connection = null;

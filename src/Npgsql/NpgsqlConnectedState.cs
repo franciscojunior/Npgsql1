@@ -48,7 +48,7 @@ namespace Npgsql
             }
         }
 
-        public override void Startup(NpgsqlConnection context)
+        public override void Startup(NpgsqlConnector context)
         {
             NpgsqlStartupPacket startupPacket  = new NpgsqlStartupPacket(296, //Not used.
                                                   context.BackendProtocolVersion,
@@ -58,8 +58,8 @@ namespace Npgsql
                                                   "",
                                                   "");
 
-            startupPacket.WriteToStream( new BufferedStream(context.Connector.Stream), context.Encoding );
-            context.Connector.Mediator.RequireReadyForQuery = false;
+            startupPacket.WriteToStream( new BufferedStream(context.Stream), context.Encoding );
+            context.Mediator.RequireReadyForQuery = false;
             ProcessBackendResponses( context );
         }
 

@@ -393,7 +393,7 @@ namespace NpgsqlTypes
         /// This is needed as from one version to another, this mapping can be changed and
         /// so we avoid hardcoding them.
         /// </summary>
-        public static Hashtable LoadTypesMapping(NpgsqlConnection conn)
+        public static Hashtable LoadTypesMapping(NpgsqlConnector conn)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "LoadTypesMapping");
 

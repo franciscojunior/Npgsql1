@@ -45,47 +45,47 @@ namespace Npgsql
         private readonly String CLASSNAME = "NpgsqlState";
         protected ResourceManager resman = null;
 
-        public virtual void Open(NpgsqlConnection context)
+        public virtual void Open(NpgsqlConnector context)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Startup(NpgsqlConnection context)
+        public virtual void Startup(NpgsqlConnector context)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Authenticate(NpgsqlConnection context, string password)
+        public virtual void Authenticate(NpgsqlConnector context, string password)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Query(NpgsqlConnection context, NpgsqlCommand command)
+        public virtual void Query(NpgsqlConnector context, NpgsqlCommand command)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Ready( NpgsqlConnection context )
+        public virtual void Ready( NpgsqlConnector context )
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void FunctionCall(NpgsqlConnection context, NpgsqlCommand command)
+        public virtual void FunctionCall(NpgsqlConnector context, NpgsqlCommand command)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Parse(NpgsqlConnection context, NpgsqlParse parse)
+        public virtual void Parse(NpgsqlConnector context, NpgsqlParse parse)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Flush(NpgsqlConnection context)
+        public virtual void Flush(NpgsqlConnector context)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Sync(NpgsqlConnection context)
+        public virtual void Sync(NpgsqlConnector context)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Bind(NpgsqlConnection context, NpgsqlBind bind)
+        public virtual void Bind(NpgsqlConnector context, NpgsqlBind bind)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
-        public virtual void Execute(NpgsqlConnection context, NpgsqlExecute execute)
+        public virtual void Execute(NpgsqlConnector context, NpgsqlExecute execute)
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
@@ -95,10 +95,10 @@ namespace Npgsql
             resman = new ResourceManager(this.GetType());
         }
 
-        public virtual void Close( NpgsqlConnection context )
+        public virtual void Close( NpgsqlConnector context )
         {
             /*NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
-            if ( context.State == ConnectionState.Open )
+            if ( context.State == ConnectorState.Open )
             {
                 Stream stream = context.Stream;
                 if ( stream.CanWrite )
@@ -127,7 +127,7 @@ namespace Npgsql
         ///<summary>
         ///This method is used by the states to change the state of the context.
         /// </summary>
-        protected virtual void ChangeState(NpgsqlConnection context, NpgsqlState newState)
+        protected virtual void ChangeState(NpgsqlConnector context, NpgsqlState newState)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ChangeState");
             context.CurrentState = newState;
@@ -140,10 +140,10 @@ namespace Npgsql
         /// to handle backend requests.
         /// </summary>
         ///
-        protected virtual void ProcessBackendResponses( NpgsqlConnection context )
+        protected virtual void ProcessBackendResponses( NpgsqlConnector context )
         {
             // reset any responses just before getting new ones
-            context.Connector.Mediator.ResetResponses();
+            context.Mediator.ResetResponses();
 
             try {
                 switch (context.BackendProtocolVersion) {
@@ -158,16 +158,16 @@ namespace Npgsql
                 }
             } finally {
                 // reset expectations right after getting new responses
-                context.Connector.Mediator.ResetExpectations();
+                context.Mediator.ResetExpectations();
             }
         }
 
-        protected virtual void ProcessBackendResponses_Ver_2( NpgsqlConnection context )
+        protected virtual void ProcessBackendResponses_Ver_2( NpgsqlConnector context )
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Connector.Stream);
-            NpgsqlMediator mediator = context.Connector.Mediator;
+            BufferedStream 	stream = new BufferedStream(context.Stream);
+            NpgsqlMediator mediator = context.Mediator;
 
             // Often used buffer
             Byte[] inputBuffer = new Byte[ 4 ];
@@ -315,7 +315,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "AsciiRow");
 
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Connector.Mediator.LastRowDescription, context.Connector.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.
@@ -329,7 +329,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "BinaryRow");
 
                     {
-                        NpgsqlBinaryRow binaryRow = new NpgsqlBinaryRow(context.Connector.Mediator.LastRowDescription);
+                        NpgsqlBinaryRow binaryRow = new NpgsqlBinaryRow(context.Mediator.LastRowDescription);
                         binaryRow.ReadFromStream(stream, context.Encoding);
 
                         mediator.AddBinaryRow(binaryRow);
@@ -427,12 +427,12 @@ namespace Npgsql
             }
         }
 
-        protected virtual void ProcessBackendResponses_Ver_3( NpgsqlConnection context )
+        protected virtual void ProcessBackendResponses_Ver_3( NpgsqlConnector context )
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Connector.Stream);
-            NpgsqlMediator mediator = context.Connector.Mediator;
+            BufferedStream 	stream = new BufferedStream(context.Stream);
+            NpgsqlMediator mediator = context.Mediator;
 
             // Often used buffers
             Byte[] inputBuffer = new Byte[ 4 ];
@@ -580,7 +580,7 @@ namespace Npgsql
                     // This is the AsciiRow message.
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "DataRow");
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Connector.Mediator.LastRowDescription, context.Connector.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.

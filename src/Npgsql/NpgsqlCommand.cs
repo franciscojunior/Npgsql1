@@ -45,6 +45,7 @@ namespace Npgsql
     {
 
         private NpgsqlConnection            connection;
+        private NpgsqlConnector             connector;
         private NpgsqlTransaction           transaction;
         private String                      text;
         private Int32                       timeout;
@@ -95,10 +96,25 @@ namespace Npgsql
             planName = String.Empty;
             text = cmdText;
             this.connection = connection;
+            this.connector = connection.Connector;
             parameters = new NpgsqlParameterCollection();
             timeout = 20;
             type = CommandType.Text;
             this.Transaction = transaction;
+        }
+
+        /// <summary>
+        /// Used to execute internal commands.
+        /// </summary>
+        internal NpgsqlCommand(String cmdText, NpgsqlConnector connector)
+        {
+            resman = new System.Resources.ResourceManager(this.GetType());
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
+
+            planName = String.Empty;
+            text = cmdText;
+            this.connector = connector;
+            type = CommandType.Text;
         }
 
         /*
@@ -205,10 +221,17 @@ namespace Npgsql
             {
                 if (this.transaction != null && this.transaction.Connection == null)
                     this.transaction = null;
-                if (this.connection != null && this.connection.Connector.InTransaction == true)
+                if (this.connection != null && this.Connector.InTransaction == true)
                     throw new InvalidOperationException(resman.GetString("Exception_SetConnectionInTransaction"));
                 this.connection = value;
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Connection", value);
+            }
+        }
+
+        internal NpgsqlConnector Connector {
+            get
+            {
+                return connector;
             }
         }
 
@@ -326,12 +349,12 @@ namespace Npgsql
             ExecuteCommand();
 
             // If nothing is returned, just return -1.
-            if(connection.Connector.Mediator.CompletedResponses.Count == 0) {
+            if(Connector.Mediator.CompletedResponses.Count == 0) {
                 return -1;
             }
 
             // Check if the response is available.
-            String firstCompletedResponse = (String)connection.Connector.Mediator.CompletedResponses[0];
+            String firstCompletedResponse = (String)Connector.Mediator.CompletedResponses[0];
 
             if (firstCompletedResponse == null)
                 return -1;
@@ -414,7 +437,7 @@ namespace Npgsql
             ExecuteCommand();
 
             // Get the resultsets and create a Datareader with them.
-            return new NpgsqlDataReader(connection.Connector.Mediator.ResultSets, connection.Connector.Mediator.CompletedResponses, connection, cb);
+            return new NpgsqlDataReader(Connector.Mediator.ResultSets, Connector.Mediator.CompletedResponses, connection, cb);
         }
 
         ///<summary>
@@ -435,11 +458,11 @@ namespace Npgsql
                 bind.ParameterValues = parameterValues;
             }
 
-            connection.Bind(bind);
-            connection.Connector.Mediator.RequireReadyForQuery = false;
-            connection.Flush();
+            Connector.Bind(bind);
+            Connector.Mediator.RequireReadyForQuery = false;
+            Connector.Flush();
 
-            connection.CheckErrorsAndNotifications();
+            connector.CheckErrorsAndNotifications();
         }
 
         /// <summary>
@@ -470,7 +493,7 @@ namespace Npgsql
             // Only the first column of the first row must be returned.
 
             // Get ResultSets.
-            ArrayList resultSets = connection.Connector.Mediator.ResultSets;
+            ArrayList resultSets = Connector.Mediator.ResultSets;
 
             // First data is the RowDescription object.
             // Check all resultsets as insert commands could have been sent along
@@ -501,13 +524,13 @@ namespace Npgsql
             // Check the connection state.
             CheckConnectionState();
 
-            if (! connection.Connector.SupportsPrepare) {
+            if (! Connector.SupportsPrepare) {
                 return;	// Do nothing.
             }
 
-            if (connection.BackendProtocolVersion == ProtocolVersion.Version2)
+            if (connector.BackendProtocolVersion == ProtocolVersion.Version2)
             {
-                NpgsqlCommand command = new NpgsqlCommand(GetPrepareCommandText(), connection );
+                NpgsqlCommand command = new NpgsqlCommand(GetPrepareCommandText(), connector );
                 command.ExecuteNonQuery();
             }
             else
@@ -518,12 +541,12 @@ namespace Npgsql
 
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
-                connection.Parse(parse);
-                connection.Connector.Mediator.RequireReadyForQuery = false;
-                connection.Flush();
+                Connector.Parse(parse);
+                Connector.Mediator.RequireReadyForQuery = false;
+                Connector.Flush();
 
                 // Check for errors and/or notifications and do the Right Thing.
-                connection.CheckErrorsAndNotifications();
+                connector.CheckErrorsAndNotifications();
 
                 bind = new NpgsqlBind(portalName, planName, new Int16[] {0}, null, new Int16[] {0});
             }
@@ -560,9 +583,9 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CheckConnectionState");
 
             // Check the connection state.
-            if (connection == null)
+            if (connector == null)
                 throw new InvalidOperationException(resman.GetString("Exception_ConnectionNull"));
-            if (connection.State != ConnectionState.Open)
+            if (connector.State != ConnectionState.Open)
                 throw new InvalidOperationException(resman.GetString("Exception_ConnectionNotOpen"));
 
         }
@@ -592,14 +615,14 @@ namespace Npgsql
             String result = text;
 
             if (type == CommandType.StoredProcedure)
-                if (connection.Connector.SupportsPrepare)
+                if (Connector.SupportsPrepare)
                     result = "select * from " + result; // This syntax is only available in 7.3+ as well SupportsPrepare.
                 else
                     result = "select " + result;				// Only a single result return supported. 7.2 and earlier.
             else if (type == CommandType.TableDirect)
                 return "select * from " + result; // There is no parameter support on table direct.
 
-            if (parameters.Count == 0)
+            if (parameters == null || parameters.Count == 0)
                 return result;
 
 
@@ -785,20 +808,20 @@ namespace Npgsql
             CheckConnectionState();
 
             if (parse == null) {
-                connection.Query(this);
+                Connector.Query(this);
 
                 // Check for errors and/or notifications and do the Right Thing.
-                connection.CheckErrorsAndNotifications();
+                connector.CheckErrorsAndNotifications();
             } else {
                 BindParameters();
 
                 // Check for errors and/or notifications and do the Right Thing.
-                connection.CheckErrorsAndNotifications();
+                connector.CheckErrorsAndNotifications();
 
-                connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
+                Connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
 
                 // Check for errors and/or notifications and do the Right Thing.
-                connection.CheckErrorsAndNotifications();
+                connector.CheckErrorsAndNotifications();
             }
             /*	else
             		throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));*/

@@ -71,15 +71,15 @@ namespace Npgsql
             }
         }
 
-        public override void Open(NpgsqlConnection context)
+        public override void Open(NpgsqlConnector context)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
 
             TcpClient tcpc = new TcpClient();
-            tcpc.Connect(new IPEndPoint(ResolveIPHost(context.ServerName), context.ServerPort));
+            tcpc.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
             Stream stream = tcpc.GetStream();
 
-            // If the PostgreSQL server has SSL connections enabled Open SslClientStream if (response == 'S') {
+            // If the PostgreSQL server has SSL connectors enabled Open SslClientStream if (response == 'S') {
             if (context.SSL)
             {
                 PGUtil.WriteInt32(stream, 8);
@@ -89,7 +89,7 @@ namespace Npgsql
                 if (response == 'S')
                 {
                     stream = new SslClientStream(tcpc.GetStream(),
-                                                 context.ServerName,
+                                                 context.Host,
                                                  true,
                                                  Mono.Security.Protocol.Tls.SecurityProtocolType.Default);
                     /*stream = new SslClientStream(
@@ -109,9 +109,9 @@ namespace Npgsql
 
 
 
-            context.Connector.Stream = stream;
+            context.Stream = stream;
 
-            NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, context.ServerName, context.ServerPort);
+            NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, context.Host, context.Port);
             ChangeState(context, NpgsqlConnectedState.Instance);
             context.Startup();
         }

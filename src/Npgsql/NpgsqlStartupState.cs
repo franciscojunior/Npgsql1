@@ -51,11 +51,11 @@ namespace Npgsql
                 return _instance;
             }
         }
-        public override void Authenticate( NpgsqlConnection context, string password)
+        public override void Authenticate( NpgsqlConnector context, string password)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Authenticate");
             NpgsqlPasswordPacket pwpck = new NpgsqlPasswordPacket(password, context.BackendProtocolVersion);
-            BufferedStream stream = new BufferedStream(context.Connector.Stream);
+            BufferedStream stream = new BufferedStream(context.Stream);
             pwpck.WriteToStream(stream, context.Encoding);
             stream.Flush();
 

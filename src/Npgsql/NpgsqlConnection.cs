@@ -34,7 +34,9 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.Threading;
 using System.Security.Cryptography.X509Certificates;
+
 using Mono.Security.Protocol.Tls;
+
 using NpgsqlTypes;
 using Npgsql.Design;
 
@@ -61,24 +63,15 @@ namespace Npgsql
         /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
-        public event NotificationEventHandler   Notification;
+        public event NotificationEventHandler           Notification;
+        private NotificationEventHandler                NotificationDelegate;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
         /// </summary>
-        public CertificateValidationCallback    CertificateValidationCallback;
+        public event CertificateValidationCallback    CertificateValidationCallback;
+        public CertificateValidationCallback          CertificateValidationCallbackDelegate;
 
-        /// <summary>
-        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
-        /// </summary>
-        public CertificateSelectionCallback     CertificateSelectionCallback;
-
-        /// <summary>
-        /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
-        /// </summary>
-        public PrivateKeySelectionCallback      PrivateKeySelectionCallback;
-
-        private NpgsqlState                     state;
         private bool                            disposed = false;
 
 //        private String                          connection_string;
@@ -140,11 +133,12 @@ namespace Npgsql
             resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, ConnectionString);
 
-            state = NpgsqlClosedState.Instance;
-
             _connector = null;
 
             connection_string_values = ParseConnectionString(ConnectionString);
+
+            NotificationDelegate = new NotificationEventHandler(OnNotification);
+            CertificateValidationCallbackDelegate = new CertificateValidationCallback(DefaultCertificateValidationCallback);
         }
 
         /// <summary>
@@ -195,43 +189,6 @@ namespace Npgsql
             get
             {
                 return connection_string_values;
-            }
-        }
-
-        /// <summary>
-        /// Gets the time to wait while trying to establish a connection
-        /// before terminating the attempt and generating an error.
-        /// </summary>
-        /// <value>The time (in seconds) to wait for a connection to open. The default value is 15 seconds.</value>
-        [NpgsqlSysDescription("Description_ConnectionTimeout", typeof(NpgsqlConnection))]
-        public Int32 ConnectionTimeout {
-            get
-            {
-                return this.ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
-            }
-        }
-
-        ///<summary>
-        /// Gets the name of the current database or the database to be used after a connection is opened.
-        /// </summary>
-        /// <value>The name of the current database or the name of the database to be
-        /// used after a connection is opened. The default value is an empty string.</value>
-        [NpgsqlSysDescription("Description_Database", typeof(NpgsqlConnection))]
-        public String Database {
-            get
-            {
-                return ConnectStringValueToString(CONN_DATABASE, UserName);
-            }
-        }
-
-        /// <summary>
-        /// If true, the connection will attempt to use SSL.
-        /// </summary>
-        [Browsable(true)]
-        public Boolean SSL {
-            get
-            {
-                return ConnectStringValueToBool(CONN_SSL_ENABLED);
             }
         }
 
@@ -389,8 +346,6 @@ namespace Npgsql
                 throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
             }
 
-            ProtocolVersion      PV;
-
             // Check if there is any missing argument.
             if (connection_string_values[CONN_SERVER] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_SERVER);
@@ -402,110 +357,37 @@ namespace Npgsql
             if (Timeout < 0)
                 throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", CONN_TIMEOUT);
 
-            // If ConnectionString specifies a protocol version, we will 
-            // not try to fall back to version 2 on failure.
-            if (connection_string_values.Contains(CONN_PROTOCOL)) {
-                PV = ConnectStringValueToProtocolVersion(CONN_PROTOCOL);
-            } else {
-                PV = ProtocolVersion.Unknown;
-            }
+            // Get and possibly initialize a Connector.
+            NpgsqlConnector NewConnector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
 
-            _connector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
+            NewConnector.CertificateValidationCallback += CertificateValidationCallbackDelegate;
 
-            if (! _connector.IsInitialized)
+            if (! NewConnector.IsInitialized)
             {
-                _connector.Encoding = Encoding.Default;
-                _connector.BackendProtocolVersion = (PV == ProtocolVersion.Unknown) ? ProtocolVersion.Version3 : PV;
+                ProtocolVersion      PV;
+
+                // If Connection.ConnectionString specifies a protocol version, we will 
+                // not try to fall back to version 2 on failure.
+                if (ConnectionStringValues.Contains(CONN_PROTOCOL)) {
+                    PV = ConnectStringValueToProtocolVersion(CONN_PROTOCOL);
+                } else {
+                    PV = ProtocolVersion.Unknown;
+                }
 
                 try {
-                    // Reset state to initialize new connector in pool.
-                    CurrentState = NpgsqlClosedState.Instance;
-
-                    CurrentState.Open(this);
-
-                    // Check for protocol not supported.  If we have been told what protocol to use,
-                    // we will not try this step.
-                    if (_connector._mediator.Errors.Count > 0 && PV == ProtocolVersion.Unknown)
-                    {
-                        // If we attempted protocol version 3, it may be possible to drop back to version 2.
-                        if (BackendProtocolVersion == ProtocolVersion.Version3) {
-                            NpgsqlError       Error0 = (NpgsqlError)_connector._mediator.Errors[0];
-
-                            // If NpgsqlError.ReadFromStream_Ver_3() encounters a version 2 error,
-                            // it will set its own protocol version to version 2.  That way, we can tell
-                            // easily if the error was a FATAL: protocol error.
-                            if (Error0.BackendProtocolVersion == ProtocolVersion.Version2)
-                            {
-                                // Try using the 2.0 protocol.
-                                _connector._mediator.ResetResponses();
-                                _connector.BackendProtocolVersion = ProtocolVersion.Version2;
-                                CurrentState = NpgsqlClosedState.Instance;
-                                CurrentState.Open(this);
-                            }
-                        }
-                    }
-
-                    // Check for errors and do the Right Thing.
-                    CheckErrors();
-
-                    // Change the state of connection to open.
-                    _connector._connection_state = ConnectionState.Open;
-
-                    String       ServerVersionString = String.Empty;
-
-                    _connector._backend_keydata = _connector._mediator.BackendKeyData;
-
-                    // First try to determine backend server version using the newest method.
-                    try {
-                        ServerVersionString = ((NpgsqlParameterStatus)_connector._mediator.Parameters["__npgsql_server_version"]).ParameterValue;
-                    } catch {}
-
-                    // Fall back to the old way, SELECT VERSION().
-                    // This should not happen for protocol version 3+.
-                    if (ServerVersionString.Length == 0)
-                    {
-                        NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
-                        ServerVersionString = PGUtil.ExtractServerVersion( (String)command.ExecuteScalar() );
-                    }
-
-                    // Cook version string so we can use it for enabling/disabling things based on
-                    // backend version.
-                    _connector.ServerVersion = PGUtil.ParseServerVersion(ServerVersionString);
-
-                    // Adjust client encoding.
-
-                    //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", this);
-                    //String clientEncoding1 = (String)commandEncoding1.ExecuteScalar();
-
-                    if (ConnectStringValueToString(CONN_ENCODING, DEF_ENCODING).ToUpper() == "UNICODE")
-                    {
-                        _connector.Encoding = Encoding.UTF8;
-                        NpgsqlCommand commandEncoding = new NpgsqlCommand("SET CLIENT_ENCODING TO UNICODE", this);
-                        commandEncoding.ExecuteNonQuery();
-                    }
-
-
-                    _connector._oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
-
-                    _connector.ProcessServerVersion();
-                }
-                catch {
+                    NewConnector.Open(PV);
+                } catch {
                     // Force this connector to close because
                     // it is in an inconsistent state, so we can't just
                     // release it back to the pool.
-                    NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, true);
-                    _connector = null;
-
-                    CurrentState = NpgsqlClosedState.Instance;
+                    NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(NewConnector);
                     throw;
                 }
-
-                // The connector is now fully initialized. Beyond this point, it is
-                // safe to release it back to the pool.
-                _connector.IsInitialized = true;
             }
 
-            CurrentState = NpgsqlReadyState.Instance;
+            _connector = NewConnector;
+
+            _connector.Notification += NotificationDelegate;
         }
 
         /// <summary>
@@ -520,10 +402,11 @@ namespace Npgsql
 
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
 
-            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector, false);
-            _connector = null;
+            _connector.CertificateValidationCallback -= CertificateValidationCallbackDelegate;
+            _connector.Notification -= NotificationDelegate;
 
-            CurrentState = NpgsqlClosedState.Instance;
+            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
+            _connector = null;
         }
 
         /// <summary>
@@ -558,7 +441,7 @@ namespace Npgsql
         {
             Close();
             base.Dispose (disposing);
-						disposed = true;
+            disposed = true;
         }
 
 
@@ -573,11 +456,6 @@ namespace Npgsql
 
 
 
-        // ---------------------------------------------------------------------
-        //
-        // Private and Internal stuff below here
-        //
-        // ---------------------------------------------------------------------
 
 
         private void CheckConnection()
@@ -587,6 +465,13 @@ namespace Npgsql
             }
         }
 
+
+        internal void OnNotification(object O, NpgsqlNotificationEventArgs E)
+        {
+            if (Notification != null) {
+                Notification(this, E);
+            }
+        }
 
         /// <summary>
         /// The connector object connected to the backend.
@@ -598,83 +483,6 @@ namespace Npgsql
                 return _connector;
             }
         }
-
-        /// <summary>
-        /// Check for mediator errors (sent by backend) and throw the appropriate
-        /// exception if errors found.  This needs to be called after every interaction
-        /// with the backend.
-        /// </summary>
-        internal void CheckErrors()
-        {
-            if (_connector._mediator.Errors.Count > 0) {
-                throw new NpgsqlException(_connector._mediator.Errors);
-            }
-        }
-
-        /// <summary>
-        /// Check for notifications and fire the appropiate events.
-        /// This needs to be called after every interaction
-        /// with the backend.
-        /// </summary>
-        internal void CheckNotifications()
-        {
-            if (Notification != null) {
-                foreach (NpgsqlNotificationEventArgs E in _connector._mediator.Notifications) {
-                    Notification(this, E);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Check for errors AND notifications in one call.
-        /// </summary>
-        internal void CheckErrorsAndNotifications()
-        {
-            CheckErrors();
-            CheckNotifications();
-        }
-
-        // State
-        internal void Query (NpgsqlCommand queryCommand)
-        {
-            CurrentState.Query(this, queryCommand );
-        }
-
-        internal void Authenticate (string password)
-        {
-            CurrentState.Authenticate(this, password );
-        }
-
-        internal void Startup ()
-        {
-            CurrentState.Startup(this);
-        }
-
-        internal void Parse (NpgsqlParse parse)
-        {
-            CurrentState.Parse(this, parse);
-        }
-
-        internal void Flush ()
-        {
-            CurrentState.Flush(this);
-        }
-
-        internal void Sync ()
-        {
-            CurrentState.Sync(this);
-        }
-
-        internal void Bind (NpgsqlBind bind)
-        {
-            CurrentState.Bind(this, bind);
-        }
-
-        internal void Execute (NpgsqlExecute execute)
-        {
-            CurrentState.Execute(this, execute);
-        }
-
 
         /// <summary>
         /// Default SSL CertificateValidationCallback implementation.
@@ -690,21 +498,11 @@ namespace Npgsql
             }
         }
 
-        internal NpgsqlState CurrentState {
-            get
-            {
-                return state;
-            }
-            set
-            {
-                state = value;
-            }
-        }
-
         /// <summary>
         /// Backend server host name.
         /// </summary>
-        internal String ServerName {
+        [Browsable(true)]
+        public String Host {
             get
             {
                 return ConnectStringValueToString(CONN_SERVER);
@@ -714,10 +512,48 @@ namespace Npgsql
         /// <summary>
         /// Backend server port.
         /// </summary>
-        internal Int32 ServerPort {
+        [Browsable(true)]
+        public Int32 Port {
             get
             {
                 return ConnectStringValueToInt32(CONN_PORT, DEF_PORT);
+            }
+        }
+
+        /// <summary>
+        /// If true, the connection will attempt to use SSL.
+        /// </summary>
+        [Browsable(true)]
+        public Boolean SSL {
+            get
+            {
+                return ConnectStringValueToBool(CONN_SSL_ENABLED);
+            }
+        }
+
+        /// <summary>
+        /// Gets the time to wait while trying to establish a connection
+        /// before terminating the attempt and generating an error.
+        /// </summary>
+        /// <value>The time (in seconds) to wait for a connection to open. The default value is 15 seconds.</value>
+        [NpgsqlSysDescription("Description_ConnectionTimeout", typeof(NpgsqlConnection))]
+        public Int32 ConnectionTimeout {
+            get
+            {
+                return this.ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
+            }
+        }
+
+        ///<summary>
+        /// Gets the name of the current database or the database to be used after a connection is opened.
+        /// </summary>
+        /// <value>The name of the current database or the name of the database to be
+        /// used after a connection is opened. The default value is an empty string.</value>
+        [NpgsqlSysDescription("Description_Database", typeof(NpgsqlConnection))]
+        public String Database {
+            get
+            {
+                return ConnectStringValueToString(CONN_DATABASE, UserName);
             }
         }
 
@@ -738,17 +574,6 @@ namespace Npgsql
             get
             {
                 return ConnectStringValueToString(CONN_PASSWORD);
-            }
-        }
-
-        /// <summary>
-        /// Client encoding currently in use.
-        /// This can only be called when there is an active connection.
-        /// </summary>
-        internal Encoding Encoding {
-            get
-            {
-                return _connector.Encoding;
             }
         }
 
@@ -944,7 +769,7 @@ namespace Npgsql
         /// Throw an appropriate exception if the value is not recognized as
         /// integer 2 or 3.
         /// </summary>
-        private ProtocolVersion ConnectStringValueToProtocolVersion(String Key)
+        internal ProtocolVersion ConnectStringValueToProtocolVersion(String Key)
         {
             if (! connection_string_values.Contains(Key)) {
                 return ProtocolVersion.Version3;

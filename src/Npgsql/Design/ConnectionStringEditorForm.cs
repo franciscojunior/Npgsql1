@@ -54,15 +54,15 @@ namespace Npgsql.Design {
 			resman = new System.Resources.ResourceManager(typeof(ConnectionStringEditorForm));
 
 			this.pgconn.ConnectionString = ConnectionString;
-			this.tb_password.Text = this.pgconn.Password;
-			this.tb_port.Text = this.pgconn.ServerPort.ToString();
-			this.tb_server.Text = this.pgconn.ServerName;
-			this.tb_username.Text = this.pgconn.UserName;
+			this.tb_server.Text = this.pgconn.Host;
+			this.tb_port.Text = this.pgconn.Port.ToString();
 			this.tb_timeout.Text = this.pgconn.ConnectionTimeout.ToString();
 			if (this.pgconn.Database != "") {
 				this.cb_select_db.Items.Add(this.pgconn.Database);
 				this.cb_select_db.SelectedIndex = 0;
 			}
+			this.tb_username.Text = this.pgconn.UserName;
+			this.tb_password.Text = this.pgconn.Password;
 		}
 
 		/// <summary>

@@ -22,6 +22,7 @@
 //		Npgsql
 //	Status
 //		0.00.0000 - 06/17/2002 - ulrich sprick - created
+//		          - 06/??/2004 - Glen Parker<glenebob@nwlink.com> rewritten
 
 using System;
 using System.Collections;
@@ -29,6 +30,11 @@ using System.Net.Sockets;
 using System.IO;
 using System.Text;
 using System.Data;
+using System.Security.Cryptography.X509Certificates;
+
+using Mono.Security.Protocol.Tls;
+
+using NpgsqlTypes;
 
 namespace Npgsql
 {
@@ -41,7 +47,30 @@ namespace Npgsql
     internal class NpgsqlConnector
     {
         // Used to obtain a current key for the non-shared pool.
-        private NpgsqlConnection                 connection;
+        // FIXME - this needs to be removed from this class
+        internal NpgsqlConnection                Connection;
+
+        /// <summary>
+        /// Occurs on NotificationResponses from the PostgreSQL backend.
+        /// </summary>
+        internal event NotificationEventHandler  Notification;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
+        /// </summary>
+        internal event CertificateValidationCallback    CertificateValidationCallback;
+
+
+        // FIXME - these two need to be turned into events and handled properly
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
+        /// </summary>
+        internal CertificateSelectionCallback    CertificateSelectionCallback;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
+        /// </summary>
+        internal PrivateKeySelectionCallback     PrivateKeySelectionCallback;
 
         // FIXME - should be private
         internal ConnectionState                 _connection_state;
@@ -52,8 +81,8 @@ namespace Npgsql
         // Mediator which will hold data generated from backend.
         internal NpgsqlMediator                  _mediator;
 
-        private ProtocolVersion _backendProtocolVersion;
-        private ServerVersion _serverVersion;
+        private ProtocolVersion                   _backendProtocolVersion;
+        private ServerVersion                     _serverVersion;
 
         // Values for possible CancelRequest messages.
         // FIXME - should be private
@@ -75,33 +104,36 @@ namespace Npgsql
 
         private Boolean                          _shared;
 
+        // FIXME - should be private
+        internal NpgsqlState                      _state;
+
+        // FIXME - these all need to be properties
+        internal String                           Host;
+        internal Int32                            Port;
+        internal String                           Database;
+        internal String                           UserName;
+        internal String                           Password;
+        internal bool                             SSL;
+
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="Shared">Controls whether the connector can be shared.</param>
-        public NpgsqlConnector(bool Shared)
+        public NpgsqlConnector(String Host, Int32 Port, String Database, String UserName, String Password, bool SSL, bool Shared)
         {
             _connection_state = ConnectionState.Closed;
             _shared = Shared;
             _isInitialized = false;
+            _state = NpgsqlClosedState.Instance;
             _mediator = new NpgsqlMediator();
             _oidToNameMapping = new Hashtable();
-        }
 
-        /// <summary>
-        /// The NpgsqlConnection using this connector.  This will always return
-        /// null for shared connectors.
-        /// </summary>
-        internal NpgsqlConnection Connection
-        {
-            get
-            {
-                return connection;
-            }
-            set
-            {
-                connection = value;
-            }
+            this.Host = Host;
+            this.Port = Port;
+            this.Database = Database;
+            this.UserName = UserName;
+            this.Password = Password;
+            this.SSL = SSL;
         }
 
         /// <summary>
@@ -111,6 +143,104 @@ namespace Npgsql
             get
             {
                 return _connection_state;
+            }
+        }
+
+
+
+
+
+
+        // State
+        internal void Query (NpgsqlCommand queryCommand)
+        {
+            CurrentState.Query(this, queryCommand );
+        }
+
+        internal void Authenticate (string password)
+        {
+            CurrentState.Authenticate(this, password );
+        }
+
+        internal void Startup ()
+        {
+            CurrentState.Startup(this);
+        }
+
+        internal void Parse (NpgsqlParse parse)
+        {
+            CurrentState.Parse(this, parse);
+        }
+
+        internal void Flush ()
+        {
+            CurrentState.Flush(this);
+        }
+
+        internal void Sync ()
+        {
+            CurrentState.Sync(this);
+        }
+
+        internal void Bind (NpgsqlBind bind)
+        {
+            CurrentState.Bind(this, bind);
+        }
+
+        internal void Execute (NpgsqlExecute execute)
+        {
+            CurrentState.Execute(this, execute);
+        }
+
+
+
+
+        /// <summary>
+        /// Check for mediator errors (sent by backend) and throw the appropriate
+        /// exception if errors found.  This needs to be called after every interaction
+        /// with the backend.
+        /// </summary>
+        internal void CheckErrors()
+        {
+            if (_mediator.Errors.Count > 0) {
+                throw new NpgsqlException(_mediator.Errors);
+            }
+        }
+
+        /// <summary>
+        /// Check for notifications and fire the appropiate events.
+        /// This needs to be called after every interaction
+        /// with the backend.
+        /// </summary>
+        internal void CheckNotifications()
+        {
+            if (Notification != null) {
+                foreach (NpgsqlNotificationEventArgs E in _mediator.Notifications) {
+                    Notification(this, E);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check for errors AND notifications in one call.
+        /// </summary>
+        internal void CheckErrorsAndNotifications()
+        {
+            CheckErrors();
+            CheckNotifications();
+        }
+
+        /// <summary>
+        /// Default SSL CertificateValidationCallback implementation.
+        /// </summary>
+        internal bool DefaultCertificateValidationCallback(
+            X509Certificate       certificate,
+            int[]                 certificateErrors)
+        {
+            if (CertificateValidationCallback != null) {
+                return CertificateValidationCallback(certificate, certificateErrors);
+            } else {
+                return true;
             }
         }
 
@@ -182,6 +312,17 @@ namespace Npgsql
             set
             {
                 _isInitialized = value;
+            }
+        }
+
+        internal NpgsqlState CurrentState {
+            get
+            {
+                return _state;
+            }
+            set
+            {
+                _state = value;
             }
         }
 
@@ -269,11 +410,90 @@ namespace Npgsql
         /// </summary>
         /// <remarks>Usually called by the RequestConnector
         /// Method of the connection pool manager.</remarks>
-        internal void Open()
+        internal void Open(ProtocolVersion PV)
         {
-            //this.Socket = new Npgsql.Socket();
-            //this.Socket.Open(); // !!! to be fixed
-            //this.mOpen = true;
+            Encoding = Encoding.Default;
+            BackendProtocolVersion = (PV == ProtocolVersion.Unknown) ? ProtocolVersion.Version3 : PV;
+
+            // Reset state to initialize new connector in pool.
+            CurrentState = NpgsqlClosedState.Instance;
+
+            CurrentState.Open(this);
+
+            // Check for protocol not supported.  If we have been told what protocol to use,
+            // we will not try this step.
+            if (_mediator.Errors.Count > 0 && PV == ProtocolVersion.Unknown)
+            {
+                // If we attempted protocol version 3, it may be possible to drop back to version 2.
+                if (BackendProtocolVersion == ProtocolVersion.Version3) {
+                    NpgsqlError       Error0 = (NpgsqlError)_mediator.Errors[0];
+
+                    // If NpgsqlError.ReadFromStream_Ver_3() encounters a version 2 error,
+                    // it will set its own protocol version to version 2.  That way, we can tell
+                    // easily if the error was a FATAL: protocol error.
+                    if (Error0.BackendProtocolVersion == ProtocolVersion.Version2)
+                    {
+                        // Try using the 2.0 protocol.
+                        _mediator.ResetResponses();
+                        BackendProtocolVersion = ProtocolVersion.Version2;
+                        CurrentState = NpgsqlClosedState.Instance;
+                        CurrentState.Open(this);
+                    }
+                }
+            }
+
+            // Check for errors and do the Right Thing.
+            // FIXME - CheckErrors needs to be moved to Connector
+            CheckErrors();
+
+            _backend_keydata = _mediator.BackendKeyData;
+
+            // Change the state of connection to open.
+            _connection_state = ConnectionState.Open;
+
+            String       ServerVersionString = String.Empty;
+
+            // First try to determine backend server version using the newest method.
+            try {
+                ServerVersionString = ((NpgsqlParameterStatus)_mediator.Parameters["__npgsql_server_version"]).ParameterValue;
+            } catch {}
+
+            // Fall back to the old way, SELECT VERSION().
+            // This should not happen for protocol version 3+.
+            if (ServerVersionString.Length == 0)
+            {
+                NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
+                ServerVersionString = PGUtil.ExtractServerVersion( (String)command.ExecuteScalar() );
+            }
+
+            // Cook version string so we can use it for enabling/disabling things based on
+            // backend version.
+            ServerVersion = PGUtil.ParseServerVersion(ServerVersionString);
+
+            // Adjust client encoding.
+
+            //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", _connector);
+            //String clientEncoding1 = (String)commandEncoding1.ExecuteScalar();
+
+            // FIXME - need to remove dependency on Connection
+
+            if (Connection.ConnectStringValueToString(NpgsqlConnection.CONN_ENCODING, NpgsqlConnection.DEF_ENCODING).ToUpper() == "UNICODE")
+            {
+                Encoding = Encoding.UTF8;
+                NpgsqlCommand commandEncoding = new NpgsqlCommand("SET CLIENT_ENCODING TO UNICODE", this);
+                commandEncoding.ExecuteNonQuery();
+            }
+
+
+            _oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+
+            ProcessServerVersion();
+
+            CurrentState = NpgsqlReadyState.Instance;
+
+            // The connector is now fully initialized. Beyond this point, it is
+            // safe to release it back to the pool.
+            IsInitialized = true;
         }
 
 
@@ -288,51 +508,5 @@ namespace Npgsql
                 Stream.Close();
             } catch {}
         }
-
-        /*
-        /// <summary>
-        /// Releases a connector back to the pool manager's garding. Or to the
-        /// garbage collection.
-        /// </summary>
-        /// <remarks>The Shared and Pooled properties are no longer needed after
-        /// evaluation inside this method, so they are left in their current state.
-        ///	They get new meaning again when the connector is requested from the
-        /// pool manager later. </remarks>
-        public void Release()
-        {
-            if ( this.mShared )
-            {
-                // A shared connector is returned to the pooled connectors
-                // list only if it is not used by any Connection object.
-                // Otherwise the job is done by simply decrementing the
-                // usage counter:
-                if ( --this.mShareCount == 0 )
-                {
-                    Npgsql.ConnectorPool.ConnectorPoolMgr.CutOutConnector( this );
-                    // Shared connectors are *always* pooled after usage.
-                    // Depending on the Pooled property at this point
-                    // might introduce a lot of trouble into an application...
-                    Npgsql.ConnectorPool.ConnectorPoolMgr.InsertPooledConnector( this );
-                }
-            }
-            else // it is a nonshared connector
-            {
-                if ( this.Pooled )
-                {
-                    // Pooled connectors are simply put in the
-                    // PooledConnectors list for later recycling
-                    Npgsql.ConnectorPool.ConnectorPoolMgr.InsertPooledConnector( this );
-                }
-                else
-                {
-                    // Unpooled private connectors get the physical
-                    // connection closed, they are *not* recyled later.
-                    // Instead they are (implicitly) handed over to the
-                    // garbage collection.
-                    // !!! to be fixed
-                    //this.Socket.Close();
-                }
-            }
-        }*/
     }
 }
