@@ -56,7 +56,7 @@ namespace Npgsql
         private String				    name;
         private String				    source_column = String.Empty;
         private DataRowVersion		    source_version = DataRowVersion.Current;
-        private Object				    value;
+        private Object				    value = DBNull.Value;
         private System.Resources.ResourceManager resman;
 
         /// <summary>
@@ -96,10 +96,10 @@ namespace Npgsql
             this.ParameterName = parameterName;
             this.value = value;
 
-            if ((value == null) || (value == DBNull.Value) )
+            if ((this.value == null) || (this.value == DBNull.Value) )
             {
                 // don't really know what to do - leave default and do further exploration
-                value = DBNull.Value;
+                this.value = DBNull.Value;
                 db_type = DbType.String;
                 type_info = NpgsqlTypesHelper.GetNativeTypeInfo(db_type);
                 return;
@@ -194,6 +194,10 @@ namespace Npgsql
             this.Scale = scale;
             this.SourceVersion = sourceVersion;
             this.Value = value;
+
+            if (this.value == null) {
+                this.value = DBNull.Value;
+            }
         }
 
         // Implementation of IDbDataParameter
@@ -426,6 +430,9 @@ namespace Npgsql
             {
                 NpgsqlEventLog.LogPropertySet(LogLevel.Normal, CLASSNAME, "Value", value);
                 this.value = value;
+                if (this.value == null) {
+                    this.value = DBNull.Value;
+                }
             }
         }
 

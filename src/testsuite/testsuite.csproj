@@ -85,7 +85,7 @@
                 <Reference
                     Name = "Npgsql"
                     AssemblyName = "Npgsql"
-                    HintPath = "..\Npgsql\bin\Debug\Npgsql.dll"
+                    HintPath = "..\Npgsql\build\ms\Npgsql.dll"
                 />
             </References>
         </Build>

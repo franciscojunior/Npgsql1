@@ -614,18 +614,21 @@ namespace Npgsql
 
             //CheckParameters();
 
-            String parameterName;
-
             for (Int32 i = 0; i < parameters.Count; i++)
             {
-                parameterName = parameters[i].ParameterName;
+                NpgsqlParameter Param = parameters[i];
 
-//                result = ReplaceParameterValue(result, parameterName, NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i], true));
-                result = ReplaceParameterValue(result, parameterName, parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, false));
+                // FIXME DEBUG ONLY
+                // adding the '::<datatype>' on the end of a parameter is a highly
+                // questionable practice, but it is great for debugging!
+                result = ReplaceParameterValue(
+                            result,
+                            Param.ParameterName,
+                            Param.TypeInfo.ConvertToBackend(Param.Value, false) + "::" + Param.TypeInfo.Name
+                         );
             }
 
             return result;
-
         }
 
 

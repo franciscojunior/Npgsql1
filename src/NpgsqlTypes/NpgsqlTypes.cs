@@ -34,7 +34,7 @@ using System.IO;
 using System.Resources;
 using System.Drawing;
 
-namespace Npgsql
+namespace NpgsqlTypes
 {
     /// <summary>
     /// Represents a PostgreSQL Line Segment type.
