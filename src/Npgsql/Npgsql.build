@@ -8,6 +8,7 @@
 	<property name="ms.res.dir" value="${build.dir}/res/ms"/>
 	<property name="mono.build.dir" value="${build.dir}/mono"/>
 	<property name="nunit2tests.build.dir" value="${build.dir}/nunit2tests"/>
+	<property name="tls.lib" value="${nant.project.basedir}/../../lib/System.Security.Tls.dll" />
 	<property name="assemblyname" value="Npgsql"/>
 	<property name="debug" value="true"/>
 	<property name="mono.home" value="C:\Programme\mono-0.25"/>
@@ -82,11 +83,12 @@
 				<includes name="System.Windows.Forms.dll" />
 				<includes name="System.Drawing.dll" />
 				<includes name="System.Design.dll" />
+				<includes name="${tls.lib}" />
 			</references>
 			<resources prefix="${assemblyname}.Design">
 				<includes name="${ms.res.dir}/Design/*.resources"/>
 			</resources>
-            <resources prefix="${assemblyname}.NpgsqlTypes">
+            <resources prefix="NpgsqlTypes">
 				<includes name="${ms.res.dir}/NpgsqlTypes/*.resources"/>
 			</resources>
 			<resources prefix="${assemblyname}">
@@ -99,6 +101,8 @@
 				<includes name="./Design/*.cs"/>
 			</sources>
 		</csc>
+		
+		<copy file="${tls.lib}" todir="${ms.build.dir}"/>
 	</target>
 
 	<!--
@@ -179,6 +183,7 @@
 	<target name="tests" depends="build">
 		<nant buildfile="./../testsuite/noninteractive/NUnit20/NpgsqlTests.build" inheritall="true"/>
 		<copy file="${ms.build.dir}/Npgsql.dll" todir="${nunit2tests.build.dir}"/>
+		<copy file="${tls.lib}" todir="${nunit2tests.build.dir}"/>
 		<nunit2>
 			<test assemblyname="${nunit2tests.build.dir}/NpgsqlTests.dll"/>
 		</nunit2>
