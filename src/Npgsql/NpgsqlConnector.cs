@@ -50,7 +50,6 @@ namespace Npgsql
         private Stream                           _stream;
 
         // Mediator which will hold data generated from backend.
-        // FIXME - should be private
         internal NpgsqlMediator                  _mediator;
 
         private ProtocolVersion _backendProtocolVersion;
@@ -85,6 +84,8 @@ namespace Npgsql
             _connection_state = ConnectionState.Closed;
             _shared = Shared;
             _isInitialized = false;
+            _mediator = new NpgsqlMediator();
+            _oidToNameMapping = new Hashtable();
         }
 
         /// <summary>
