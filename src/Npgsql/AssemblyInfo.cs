@@ -27,7 +27,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System;
 
-[assembly:CLSCompliant(True)]
+[assembly:CLSCompliant(true)]
 
 // Information about this assembly is defined by the following
 // attributes.
