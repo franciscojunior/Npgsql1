@@ -42,11 +42,26 @@ namespace Npgsql
 		private DbType				type;
 		private ParameterDirection	direction;
 		private Boolean				is_nullable;
-		private String				parameter_name;
+		private String				name;
 		private String				source_column;
 		private DataRowVersion		source_version;
 		private Object				value;
 		
+		
+		
+		// Constructors
+		// [TODO] Implement other constructors.
+		
+		public NpgsqlParameter()
+		{
+			
+		}
+		
+		public NpgsqlParameter(String ParameterName, DbType ParameterType)
+		{
+			name = ParameterName;
+			type = ParameterType;
+		}
 		
 		// Implementation of IDbDataParameter
 		
@@ -96,6 +111,7 @@ namespace Npgsql
 				return type;
 			}
 			
+			// [TODO] Validate data type.
 			set
 			{
 				type = value;
@@ -132,12 +148,12 @@ namespace Npgsql
 		{
 			get
 			{
-				return parameter_name;
+				return name;
 			}
 			
 			set
 			{
-				parameter_name = value;
+				name = value;
 			}
 		}
 		
@@ -174,10 +190,12 @@ namespace Npgsql
 				return value;
 			}
 			
+			// [TODO] Check and validate data type.
 			set
 			{
 				this.value = value;
 			}
 		}
+				
 	}
 }
