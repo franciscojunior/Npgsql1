@@ -149,6 +149,8 @@ namespace Npgsql
                         return Connector;
                     }
                 }*/
+                
+                return null;
             }
             else
             {
@@ -168,50 +170,27 @@ namespace Npgsql
                 
                 // Now look for an available connector.
                 
+                
                 foreach (Connector c in connectorPool)
                 {
                     if (!c.InUse)
                         return c;
                 }
                 
-                
-                /*for ( Connector = Npgsql.ConnectorPool.ConnectorPoolMgr.PooledConnectors;
-                        Connector != null; Connector = Connector.Next )
-                {
-                    if ( Connector.ConnectString == connectionString )
-                    {	// Bingo!
-                        // Remove the Connector from the pooled connectors list.
-                        this.CutOutConnector( Connector );
-                    }
-                    Connector.Shared = Shared;
-                    if ( Shared )
-                    {
-                        // Shared Connectors are then put in the shared
-                        // connectors list in order to be used by
-                        // additional clients.
-                        this.InsertSharedConnector( Connector );
-                        Connector.mShareCount++;
-                    }
-                    // done...
-                    return Connector;
-                }*/
-            }
+                // No suitable connector could be found, so create new one
+                connector = new Npgsql.Connector( connectionString, Shared );
 
-            // No suitable connector could be found, so create new one
-            connector = new Npgsql.Connector( connectionString, Shared );
-
-            // Shared connections are added to the shared connectors list
-            /*if ( Shared )
-            {
-                this.InsertSharedConnector( Connector );
-                Connector.mShareCount++;
-            }*/
-            
             connectorPool.Add(connector);
             
 
             // and then returned to the caller
             return connector;
+                
+                
+                
+            }
+
+            
         }
     }
 }
