@@ -33,16 +33,22 @@ namespace NpgsqlTypes
 		// http://www2.hursley.ibm.com/decimal/dcspec.html
 		
 		private Decimal _value;
+		private Byte 		_precision;
+		private Byte		_scale;
 		
 		private Boolean _isNotNull;
 		
 		public static readonly NpgsqlDecimal Null;
 		
-		public NpgsqlDecimal(Decimal value)
+		public NpgsqlDecimal(Decimal value) : this(value, 0, 0){}
+		
+		internal NpgsqlDecimal(Decimal value, Byte precision, Byte scale)
 		{
-			_value = value;
 			_isNotNull = true;
-
+			_value = value;
+			_precision = precision;
+			_scale = scale;
+			
 		}
 		
 		public Boolean IsNull
@@ -54,6 +60,21 @@ namespace NpgsqlTypes
 			
 		}
 		
+		public Byte Precision
+		{
+			get
+			{
+				return _precision;
+			}
+		}
+		
+		public Byte Scale
+		{
+			get
+			{
+				return _scale;
+			}
+		}
 		
 		public Decimal Value 
 		{ 
