@@ -59,6 +59,13 @@ namespace Npgsql
             this.errors = errors;
 
         }
+        
+        
+        internal NpgsqlException(String message) : base (message)
+        {}
+        
+        internal NpgsqlException(String message, Exception innerException) : base (message, innerException)
+        {}
 
         /// <summary>
         /// Provide access to the entire list of errors provided by the PostgreSQL backend.
@@ -199,21 +206,27 @@ namespace Npgsql
         /// </summary>
         public override String ToString()
         {
-            StringWriter    S = new StringWriter();
-
-            S.WriteLine("{0}:", this.GetType().FullName);
-
-            foreach (NpgsqlError PgError in Errors)
+        
+            if (Errors != null)
             {
-                AppendString(S, "{0}", PgError.Message);
-                AppendString(S, "Severity: {0}", PgError.Severity);
-                AppendString(S, "Code: {0}", PgError.Code);
-                AppendString(S, "Hint: {0}", PgError.Hint);
+                StringWriter    S = new StringWriter();
+    
+                S.WriteLine("{0}:", this.GetType().FullName);
+    
+                foreach (NpgsqlError PgError in Errors)
+                {
+                    AppendString(S, "{0}", PgError.Message);
+                    AppendString(S, "Severity: {0}", PgError.Severity);
+                    AppendString(S, "Code: {0}", PgError.Code);
+                    AppendString(S, "Hint: {0}", PgError.Hint);
+                }
+    
+                S.Write(StackTrace);
+    
+                return S.ToString();
             }
-
-            S.Write(StackTrace);
-
-            return S.ToString();
+            
+            return base.ToString();
 
         }
 
