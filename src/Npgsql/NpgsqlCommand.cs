@@ -357,9 +357,13 @@ namespace Npgsql
 			Boolean ready_for_query = false;
 			String error_message = null;			
 			
-			Int16 num_fields;
+			Int16 num_fields = 0;
 			
 			Object result = null;
+			
+			// [FIXME] Change from Int32 to NpgsqlDbType enum when ready.
+			Int32 result_type = 0;
+			
 			
 			Int32 message;
 			
@@ -375,21 +379,8 @@ namespace Npgsql
 						String ret_string = GetStringFromNetStream(network_stream);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
 						
-						/*
-						// Check if the command was insert, delete or update.
-						// Only theses commands return rows affected.
-						// [FIXME] Is there a better way to check this??
-						if ((String.Compare(ret_string_tokens[0], "INSERT", true) == 0) ||
-						    (String.Compare(ret_string_tokens[0], "UPDATE", true) == 0) ||
-						    (String.Compare(ret_string_tokens[0], "DELETE", true) == 0))
-						    
-							// The number of rows affected is in the third token for insert queries
-							// and in the second token for update and delete queries.
-							// In other words, it is the last token in the 0-based array.
-													
-							rows_affected = Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
-					
-						*/
+						// [FIXME] Just ignore the command string returned?
+						
 						// Now wait for ReadyForQuery message.
 						break;
 					
@@ -417,18 +408,30 @@ namespace Npgsql
 						Int32 field_type_oid;
 						Int16 field_type_size;
 						Int32 field_type_modifier;
-						// Get the data about each field.
-						for (Int16 i = 0; i < num_fields; i++)
+						
+						field_name = GetStringFromNetStream(network_stream);
+							
+						network_stream.Read(input_buffer, 0, 4 + 2 + 4);
+						
+						field_type_oid = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
+						field_type_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(input_buffer, 4));
+						field_type_modifier = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 6));
+					
+						// Cache the result type of 
+						result_type = field_type_oid;
+					
+						// Ignore other fields.
+						// [FIXME] Change to a single Read method ??
+						// Note that we are starting from the second field if it exists.
+						for (Int16 i = 1; i < num_fields; i++)
 						{
+							Console.WriteLine("hi");
 							field_name = GetStringFromNetStream(network_stream);
 							
 							network_stream.Read(input_buffer, 0, 4 + 2 + 4);
 						}
 						
-						field_type_oid = BitConverter.ToInt32(input_buffer, 0);
-						field_type_size = BitConverter.ToInt16(input_buffer, 4);
-						field_type_modifier = BitConverter.ToInt32(input_buffer, 6);
-					
+						
 						
 						// Now wait for the AsciiRow messages.
 						break;
@@ -437,9 +440,14 @@ namespace Npgsql
 						// This is the AsciiRow message.
 						
 						// Read the bitmap of null fields of the row.
-						// [FIXME] It is hardcoded for just one field.
 						
-						network_stream.Read(input_buffer, 0, 1);
+						// The expression gets the number of bytes necessary to
+						// hold the number of num_fields as a number of bits.
+						// In reality, this should be almost always 1, because it
+						// is the only field that must be processed.
+						
+						
+						network_stream.Read(input_buffer, 0, (num_fields + 7)/8 );
 												
 						// [FIXME] For now, ignore the field mask. Read the first data
 						// of the first row.
@@ -447,8 +455,26 @@ namespace Npgsql
 						Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
 						network_stream.Read(input_buffer, 0, field_value_size - 4);
 					
-						// [FIXME] Assume a string for now.
-						result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
+						// Get only the first value.
+						if (result == null)
+							
+							// Read the bytes as string.
+							result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
+							
+							// Now convert the string to the field type.
+							// [FIXME] Hardcoded values for int types and string.
+							// Change to NpgsqlDbType.
+							// For while only int4 and string are strong typed.
+							// Any other type will be returned as string.
+							switch (result_type)
+							{
+								case 23:	// int4, integer.
+									result = Convert.ToInt32(result);
+									break;
+								
+							}
+							
+					
 					
 						// Now wait for CompletedResponse message.
 						break;
@@ -482,10 +508,8 @@ namespace Npgsql
 						// This is a message that we should handle and we don't.
 						// Throw a NpgsqlException saying that.
 						// [FIXME] Better exception handling. Close the connection???
-						// This is really ugly!! Right now, the message that wasn`t handled
-						// isn't specified! 
-						
-						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery." + (Char)message);
+												
+						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery. Message as Int32 = " + message);
 				
 					
 				}
