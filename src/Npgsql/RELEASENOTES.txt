@@ -1,4 +1,24 @@
 
+
+2005-02-08
+
+    Npgsql 0.7beta5 development release
+    
+    Features added:
+        
+        Added support for updating output parameters when calling ExecuteReader(). Thanks Mike Griffin (mike dot griffin at mygenerationsoftware dot com) for heads up.
+    
+    Bug fixes:
+    
+        Fixed datetime precision when sending values to backend. It was sending just the first 3 decimal values of time. Now it sends all the 6 digits. Thanks Martin Susil (spam at susil dot net) for heads up.
+        
+        gborg 1150: Readded CLSCompliant(true) attribute back to AssemblyInfo.cs. Thanks Neil for heads up.
+        
+        Fixed problem when setting a new connection and a running transaction existed. Now, the transaction can be removed and later the connection can be replaced. Thanks Mike Griffin (mike.griffin at mygenerationsoftware dot com) for heads up.
+        
+        gborg 1140: Fixed rounding problem of float values. Now they are sent with 15 decimal precision. Thanks cestmir for testcase and regmaster ( regmaster at gmx dot li ) for fix.
+
+
 2005-01-23
     
     Npgsql 0.7beta4 development release
@@ -33,7 +53,7 @@
         
         gborg 1110: Fixed problem when calling stored procedures with implicit parameter support. Parameters weren't being comma separated.
         
-        gborg 1121: Applied patch. Thanksregmaster (regmaster at gmx dot li) and torben (torben-spam-npsql at nehmer dotnet) for patch.
+        gborg 1121: Applied patch. Thanks regmaster (regmaster at gmx dot li) and torben (torben-spam-npsql at nehmer dotnet) for patch.
         
         
 2004-11-21
