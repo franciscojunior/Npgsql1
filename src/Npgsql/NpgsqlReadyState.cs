@@ -127,6 +127,7 @@ namespace Npgsql
 
         public override void Close( NpgsqlConnector context )
         {
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");   
             Stream stream = context.Stream;
             stream.WriteByte((Byte)'X');
             if (context.BackendProtocolVersion >= ProtocolVersion.Version3)
@@ -134,7 +135,7 @@ namespace Npgsql
             stream.Flush();
 
             try {
-                context.Stream.Close();
+                stream.Close();
             } catch {}
 
             context.Stream = null;
