@@ -441,7 +441,7 @@ namespace Npgsql
                 for (Int32 i = 0; i < parameters.Count; i++)
                 {
                     // Do not quote strings, or escape existing quotes - this will be handled by the backend.
-                    parameterValues[i] = NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i], false);
+                    parameterValues[i] = parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, true);
                 }
                 bind.ParameterValues = parameterValues;
             }
@@ -620,8 +620,8 @@ namespace Npgsql
             {
                 parameterName = parameters[i].ParameterName;
 
-                result = ReplaceParameterValue(result, parameterName, NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i], true));
-
+//                result = ReplaceParameterValue(result, parameterName, NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i], true));
+                result = ReplaceParameterValue(result, parameterName, parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, false));
             }
 
             return result;
@@ -643,7 +643,7 @@ namespace Npgsql
 
             for (Int32 i = 0; i < parameters.Count; i++)
             {
-                result.Append(NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i], false) + ',');
+                result.Append(parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, true) + ',');
             }
 
             result = result.Remove(result.Length - 1, 1);
@@ -731,7 +731,8 @@ namespace Npgsql
 
                 for (i = 0; i < parameters.Count; i++)
                 {
-                    command.Append(NpgsqlTypesHelper.GetDefaultTypeInfo(parameters[i].DbType));
+//                    command.Append(NpgsqlTypesHelper.GetDefaultTypeInfo(parameters[i].DbType));
+                    command.Append(parameters[i].TypeInfo.Name);
 
                     command.Append(',');
                 }

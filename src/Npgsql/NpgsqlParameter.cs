@@ -44,25 +44,20 @@ namespace Npgsql
         private static readonly String CLASSNAME = "NpgsqlParameter";
 
         // Fields to implement IDbDataParameter interface.
-        private byte 				precision = 0;
-        private byte 				scale = 0;
-        private Int32				size = 0;
+        private byte 				    precision = 0;
+        private byte 				    scale = 0;
+        private Int32				    size = 0;
 
         // Fields to implement IDataParameter
-        private DbType				db_type = DbType.String;
-        private ParameterDirection	direction = ParameterDirection.Input;
-        private Boolean				is_nullable = false;
-        private String				name;
-        private String				source_column = String.Empty;
-        private DataRowVersion		source_version = DataRowVersion.Current;
-        private Object				value;
+        private DbType				    db_type = DbType.String;
+        private NpgsqlNativeTypeInfo	type_info;
+        private ParameterDirection	    direction = ParameterDirection.Input;
+        private Boolean				    is_nullable = false;
+        private String				    name;
+        private String				    source_column = String.Empty;
+        private DataRowVersion		    source_version = DataRowVersion.Current;
+        private Object				    value;
         private System.Resources.ResourceManager resman;
-
-
-
-
-
-#region Constructors
 
         /// <summary>
 
@@ -98,102 +93,23 @@ namespace Npgsql
             resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, parameterName, value);
 
-
+            this.ParameterName = parameterName;
             this.value = value;
 
-            this.ParameterName = parameterName;
-
-
-            // Set db_type according to:
-            // http://msdn.microsoft.com/library/en-us/cpguide/html/cpconusingparameterswithdataadapters.asp
-            // Should this be in this.Value.set{}?
-            //I don't really know so I leave it here where it will not hurt.
             if ((value == null) || (value == DBNull.Value) )
             {
                 // don't really know what to do - leave default and do further exploration
+                value = DBNull.Value;
+                db_type = DbType.String;
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(db_type);
                 return;
+            } else {
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(value.GetType());
+                if (type_info == null) {
+    				throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value.GetType()));
+                }
+                db_type = type_info.DBType;
             }
-            Type type = value.GetType();
-            if (type == typeof(bool))
-            {
-                db_type = DbType.Boolean;
-            }
-            else if (type == typeof(byte))
-            {
-                db_type = DbType.Byte;
-            }
-            else if (type == typeof(byte[]))
-            {
-                db_type = DbType.Binary;
-            }
-            else if (type == typeof(char))
-            {
-                // There is no DbType.Char
-                db_type = DbType.String;
-            }
-            else if (type == typeof(DateTime))
-            {
-                db_type = DbType.DateTime;
-            }
-            else if (type == typeof(decimal))
-            {
-                db_type = DbType.Decimal;
-            }
-            else if (type == typeof(double))
-            {
-                db_type = DbType.Double;
-            }
-            else if (type == typeof(float))
-            {
-                db_type = DbType.Single;
-            }
-            else if (type == typeof(Guid))
-            {
-                db_type = DbType.Guid;
-            }
-            else if (type == typeof(Int16))
-            {
-                db_type = DbType.Int16;
-            }
-            else if (type == typeof(Int32))
-            {
-                db_type = DbType.Int32;
-            }
-            else if (type == typeof(Int64))
-            {
-                db_type = DbType.Int64;
-            }
-            else if (type == typeof(string))
-            {
-                db_type = DbType.String;
-            }
-            else if (type == typeof(TimeSpan))
-            {
-                db_type = DbType.Time;
-            }
-            else if (type == typeof(UInt16))
-            {
-                db_type = DbType.UInt16;
-            }
-            else if (type == typeof(UInt32))
-            {
-                db_type = DbType.UInt32;
-            }
-            else if (type == typeof(UInt64))
-            {
-                db_type = DbType.UInt64;
-            }
-            else if (type == typeof(object))
-            {
-                db_type = DbType.Object;
-            }
-            else
-            {
-                throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), type.ToString()));
-            }
-
-
-
         }
 
         /// <summary>
@@ -233,6 +149,10 @@ namespace Npgsql
 
             this.ParameterName = parameterName;
             db_type = parameterType;
+            type_info = NpgsqlTypesHelper.GetNativeTypeInfo(parameterType);
+            if (type_info == null) {
+    			throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), parameterType));
+            }
             this.size = size;
             source_column = sourceColumn;
         }
@@ -275,8 +195,6 @@ namespace Npgsql
             this.SourceVersion = sourceVersion;
             this.Value = value;
         }
-
-#endregion
 
         // Implementation of IDbDataParameter
         /// <summary>
@@ -364,6 +282,18 @@ namespace Npgsql
             {
                 NpgsqlEventLog.LogPropertySet(LogLevel.Normal, CLASSNAME, "DbType", value);
                 db_type = value;
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(value);
+                if (type_info == null) {
+    				throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value));
+                }
+            }
+        }
+
+        internal NpgsqlNativeTypeInfo TypeInfo
+        {
+            get
+            {
+                return type_info;
             }
         }
 
