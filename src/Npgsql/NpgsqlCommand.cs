@@ -337,8 +337,13 @@ namespace Npgsql {
 		  
 			if(connection.Mediator.GetCompletedResponses().Count == 0)
 				return -1;
-		  		  
-			String[] ret_string_tokens = ((String)connection.Mediator.GetCompletedResponses()[0]).Split(null);	// whitespace separator.
+
+            // Check if the response is available.
+            String firstCompletedResponse = (String)connection.Mediator.GetCompletedResponses()[0];
+            if (firstCompletedResponse == null)
+                return -1;
+                
+			String[] ret_string_tokens = firstCompletedResponse.Split(null);	// whitespace separator.
 						
 			// Check if the command was insert, delete or update.
 			// Only theses commands return rows affected.
