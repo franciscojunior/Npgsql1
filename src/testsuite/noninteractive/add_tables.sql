@@ -23,3 +23,9 @@ field_int2 int2,
 field_timestamp timestamp,
 field_numeric numeric(11,7)
 );
+
+create table tableC(
+field_serial serial,
+field_date date,
+field_time time
+);

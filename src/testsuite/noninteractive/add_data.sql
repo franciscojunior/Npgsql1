@@ -20,3 +20,7 @@ insert into tableB(field_timestamp) values ('2002-02-02 09:00:23.345');
 insert into tableB(field_numeric) values (4.23);
 insert into tableB(field_numeric) values (-4.3);
 
+insert into tableC(field_date) values ('2002-03-04');
+insert into tableC(field_time) values ('10:03:45.345');
+
+
