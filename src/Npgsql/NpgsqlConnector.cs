@@ -550,9 +550,9 @@ namespace Npgsql
             String       ServerVersionString = String.Empty;
 
             // First try to determine backend server version using the newest method.
-            try {
-                ServerVersionString = ((NpgsqlParameterStatus)_mediator.Parameters["__npgsql_server_version"]).ParameterValue;
-            } catch {}
+            if (((NpgsqlParameterStatus)_mediator.Parameters["__npgsql_server_version"]) != null)
+                ServerVersionString = ((NpgsqlParameterStatus)_mediator.Parameters["__npgsql_server_version"]).ParameterValue; 
+            
 
             // Fall back to the old way, SELECT VERSION().
             // This should not happen for protocol version 3+.
