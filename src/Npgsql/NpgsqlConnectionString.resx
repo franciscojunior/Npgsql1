@@ -106,6 +106,12 @@
 	<data name="Exception_InvalidIntegerKeyVal">
 		<value>expecting {0}=[Numeric] value in ConnectionString</value>
 	</data>
+	<data name="Exception_IntegerKeyValMax">
+		<value>numeric value {0} in ConnectionString exceeds maximum value {1}</value>
+	</data>
+	<data name="Exception_IntegerKeyValMin">
+		<value>numeric value {0} in ConnectionString is below minimum value {1}</value>
+	</data>
 	<data name="Exception_InvalidProtocolVersionKeyVal">
 		<value>expecting {0}=[Protocol Version] value in ConnectionString</value>
 	</data>

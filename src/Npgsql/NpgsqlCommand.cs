@@ -36,7 +36,8 @@ using Npgsql.Design;
 namespace Npgsql
 {
     /// <summary>
-    /// Represents a SQL statement or function (stored procedure) to execute against a PostgreSQL database. This class cannot be inherited.
+    /// Represents a SQL statement or function (stored procedure) to execute
+    /// against a PostgreSQL database. This class cannot be inherited.
     /// </summary>
     [System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlCommand)), ToolboxItem(true)]
     public sealed class NpgsqlCommand : Component, IDbCommand
@@ -208,7 +209,7 @@ namespace Npgsql
             {
                 if (this.transaction != null && this.transaction.Connection == null)
                     this.transaction = null;
-                if (this.connection != null && this.Connector.InTransaction == true)
+                if (this.connection != null && this.Connector.Transaction != null)
                     throw new InvalidOperationException(resman.GetString("Exception_SetConnectionInTransaction"));
                 this.connection = value;
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Connection", value);

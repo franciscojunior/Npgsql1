@@ -125,5 +125,20 @@ namespace Npgsql
             Sync(context);
         }
 
+        public override void Close( NpgsqlConnector context )
+        {
+            Stream stream = context.Stream;
+            stream.WriteByte((Byte)'X');
+            if (context.BackendProtocolVersion >= ProtocolVersion.Version3)
+                PGUtil.WriteInt32(stream, 4);
+            stream.Flush();
+
+            try {
+                context.Stream.Close();
+            } catch {}
+
+            context.Stream = null;
+            ChangeState( context, NpgsqlClosedState.Instance );
+        }
     }
 }

@@ -96,7 +96,7 @@ namespace Npgsql
         private NpgsqlConnector RequestPooledConnector (NpgsqlConnection Connection)
         {
             NpgsqlConnector     Connector;
-            Int32								timeoutMilliseconds = Connection.Timeout * 1000;
+            Int32               timeoutMilliseconds = Connection.Timeout * 1000;
 
             lock(this)
             {
@@ -117,7 +117,11 @@ namespace Npgsql
             }
 
             if (Connector == null) {
-                throw new Exception("Timeout while getting a connection from pool.");
+                if (Connection.Timeout > 0) {
+                    throw new Exception("Timeout while getting a connection from pool.");
+                } else {
+                    throw new Exception("Connection pool exceeds maximum size.");
+                }
             }
 
             return Connector;
@@ -154,33 +158,33 @@ namespace Npgsql
         /// </remarks>
         /// <param name="Connector">The connector to release.</param>
         /// <param name="ForceClose">Force the connector to close, even if it is pooled.</param>
-        public void ReleaseConnector (NpgsqlConnector Connector)
+        public void ReleaseConnector (NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
             if (Connector.Pooled) {
-                ReleasePooledConnector(Connector);
+                ReleasePooledConnector(Connection, Connector);
             } else {
-                UngetNonPooledConnector(Connector);
+                UngetNonPooledConnector(Connection, Connector);
             }
         }
 
         /// <summary>
         /// Release a pooled connector.  Handle locking here.
         /// </summary>
-        private void ReleasePooledConnector (NpgsqlConnector Connector)
+        private void ReleasePooledConnector (NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
             lock(this)
             {
-                ReleasePooledConnectorInternal(Connector);
+                ReleasePooledConnectorInternal(Connection, Connector);
             }
         }
 
         /// <summary>
         /// Release a pooled connector.  Handle shared/non-shared here.
         /// </summary>
-        private void ReleasePooledConnectorInternal (NpgsqlConnector Connector)
+        private void ReleasePooledConnectorInternal (NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
             if (! Connector.Shared) {
-                UngetPooledConnector(Connector);
+                UngetPooledConnector(Connection, Connector);
             } else {
                 // Connection sharing? What's that?
                 throw new NotImplementedException("Internal: Shared pooling not implemented");
@@ -195,6 +199,12 @@ namespace Npgsql
             NpgsqlConnector       Connector;
 
             Connector = CreateConnector(Connection);
+
+            Connector.CertificateSelectionCallback += Connection.CertificateSelectionCallbackDelegate;
+            Connector.CertificateValidationCallback += Connection.CertificateValidationCallbackDelegate;
+            Connector.PrivateKeySelectionCallback += Connection.PrivateKeySelectionCallbackDelegate;
+
+            Connector.Open();
 
             return Connector;
         }
@@ -220,9 +230,46 @@ namespace Npgsql
                 // Found a queue with connectors.  Grab the top one.
                 Connector = (NpgsqlConnector)Queue.Dequeue();
                 Queue.UseCount++;
+
+                // We should do some sort of check here to see if this connector is still OK?
             } else if (Queue.Count + Queue.UseCount < Connection.MaxPoolSize) {
                 Connector = CreateConnector(Connection);
+
+                Connector.CertificateSelectionCallback += Connection.CertificateSelectionCallbackDelegate;
+                Connector.CertificateValidationCallback += Connection.CertificateValidationCallbackDelegate;
+                Connector.PrivateKeySelectionCallback += Connection.PrivateKeySelectionCallbackDelegate;
+
+                try {
+                    Connector.Open();
+                } catch {
+                    try {
+                        Connector.Close();
+                    } catch {}
+
+                    throw;
+                }
+            
+
                 Queue.UseCount++;
+            }
+
+            // Meet the MinPoolSize requirement if needed.
+            if (Connection.MinPoolSize > 0) {
+                while (Queue.Count + Queue.UseCount < Connection.MinPoolSize) {
+                    NpgsqlConnector Spare = CreateConnector(Connection);
+
+                    Spare.CertificateSelectionCallback += Connection.CertificateSelectionCallbackDelegate;
+                    Spare.CertificateValidationCallback += Connection.CertificateValidationCallbackDelegate;
+                    Spare.PrivateKeySelectionCallback += Connection.PrivateKeySelectionCallbackDelegate;
+
+                    Spare.Open();
+
+                    Spare.CertificateSelectionCallback -= Connection.CertificateSelectionCallbackDelegate;
+                    Spare.CertificateValidationCallback -= Connection.CertificateValidationCallbackDelegate;
+                    Spare.PrivateKeySelectionCallback -= Connection.PrivateKeySelectionCallbackDelegate;
+
+                    Queue.Enqueue(Connector);
+                }
             }
 
             return Connector;
@@ -252,8 +299,16 @@ namespace Npgsql
         /// Close the connector.
         /// </summary>
         /// <param name="Connector">Connector to release</param>
-        private void UngetNonPooledConnector(NpgsqlConnector Connector)
+        private void UngetNonPooledConnector(NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
+            Connector.CertificateSelectionCallback -= Connection.CertificateSelectionCallbackDelegate;
+            Connector.CertificateValidationCallback -= Connection.CertificateValidationCallbackDelegate;
+            Connector.PrivateKeySelectionCallback -= Connection.PrivateKeySelectionCallbackDelegate;
+
+            if (Connector.Transaction != null) {
+                Connector.Transaction.Cancel();
+            }
+
             Connector.Close();
         }
 
@@ -261,7 +316,7 @@ namespace Npgsql
         /// Put a pooled connector into the pool queue.
         /// </summary>
         /// <param name="Connector">Connector to pool</param>
-        private void UngetPooledConnector(NpgsqlConnector Connector)
+        private void UngetPooledConnector(NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
             ConnectorQueue           Queue;
 
@@ -272,20 +327,38 @@ namespace Npgsql
                 throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
             }
 
-            if (! Connector.IsInitialized) {
-                Connector.Close();
-            } else {
-                Queue.Enqueue(Connector);
-            }
+            Connector.CertificateSelectionCallback -= Connection.CertificateSelectionCallbackDelegate;
+            Connector.CertificateValidationCallback -= Connection.CertificateValidationCallbackDelegate;
+            Connector.PrivateKeySelectionCallback -= Connection.PrivateKeySelectionCallbackDelegate;
 
             Queue.UseCount--;
+
+            if (! Connector.IsInitialized) {
+                if (Connector.Transaction != null) {
+                    Connector.Transaction.Cancel();
+                }
+
+                Connector.Close();
+            } else {
+                if (Connector.Transaction != null) {
+                    try {
+                        Connector.Transaction.Rollback();
+                    } catch {
+                        Connector.Close();
+                    }
+                }
+            }
+
+            if (Connector.State == System.Data.ConnectionState.Open) {
+                Queue.Enqueue(Connector);
+            }
         }
 
         /// <summary>
         /// Stop sharing a shared connector.
         /// </summary>
         /// <param name="Connector">Connector to unshare</param>
-        private void UngetSharedConnector(NpgsqlConnector Connector)
+        private void UngetSharedConnector(NpgsqlConnection Connection, NpgsqlConnector Connector)
         {
             // To be implemented
         }

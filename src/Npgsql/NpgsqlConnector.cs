@@ -70,31 +70,27 @@ namespace Npgsql
         /// </summary>
         internal event PrivateKeySelectionCallback     PrivateKeySelectionCallback;
 
-        // FIXME - should be private
-        internal ConnectionState                 _connection_state;
+        private ConnectionState                  _connection_state;
 
         // The physical network connection to the backend.
         private Stream                           _stream;
 
         // Mediator which will hold data generated from backend.
-        internal NpgsqlMediator                  _mediator;
+        private NpgsqlMediator                   _mediator;
 
         private ProtocolVersion                  _backendProtocolVersion;
         private ServerVersion                    _serverVersion;
 
         // Values for possible CancelRequest messages.
-        // FIXME - should be private
-        internal NpgsqlBackEndKeyData            _backend_keydata;
+        private NpgsqlBackEndKeyData             _backend_keydata;
 
         // Flag for transaction status.
-        // FIXME - should be private
-        internal Boolean                         _inTransaction = false;
+//        private Boolean                         _inTransaction = false;
+        private NpgsqlTransaction               _transaction = null;
 
-        // FIXME - should be private
-        internal Boolean                         _supportsPrepare = false;
+        private Boolean                          _supportsPrepare = false;
 
-        // FIXME - should be private
-        internal Hashtable                       _oidToNameMapping;
+        private Hashtable                        _oidToNameMapping;
 
         private Encoding                         _encoding;
 
@@ -103,8 +99,9 @@ namespace Npgsql
         private Boolean                          _pooled;
         private Boolean                          _shared;
 
-        // FIXME - should be private
-        internal NpgsqlState                      _state;
+        private NpgsqlState                      _state;
+
+
 
         /// <summary>
         /// Constructor.
@@ -426,14 +423,14 @@ namespace Npgsql
         /// <summary>
         /// Report if the connection is in a transaction.
         /// </summary>
-        internal Boolean InTransaction {
+        internal NpgsqlTransaction Transaction {
             get
             {
-                return _inTransaction;
+                return _transaction;
             }
             set
             {
-                _inTransaction = value;
+                _transaction = value;
             }
         }
 
@@ -491,7 +488,7 @@ namespace Npgsql
 
             // Get a raw connection, possibly SSL...
             CurrentState.Open(this);
-            // Establish protocol communication and authenticate...
+            // Establish protocol communication and handle authentication...
             CurrentState.Startup(this);
 
             // Check for protocol not supported.  If we have been told what protocol to use,
@@ -514,7 +511,7 @@ namespace Npgsql
 
                         // Get a raw connection, possibly SSL...
                         CurrentState.Open(this);
-                        // Establish protocol communication and authenticate...
+                        // Establish protocol communication and handle authentication...
                         CurrentState.Startup(this);
                     }
                 }
@@ -554,8 +551,6 @@ namespace Npgsql
             //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", _connector);
             //String clientEncoding1 = (String)commandEncoding1.ExecuteScalar();
 
-            // FIXME - need to remove dependency on Connection
-
             if (ConnectionString.ToString(ConnectionStringKeys.Encoding, ConnectionStringDefaults.Encoding).ToUpper() == "UNICODE")
             {
                 Encoding = Encoding.UTF8;
@@ -579,10 +574,8 @@ namespace Npgsql
         /// </summary>
         internal void Close()
         {
-            // HACK HACK
-            // There needs to be a cleaner way to close this thing...
             try {
-                Stream.Close();
+                this.CurrentState.Close(this);
             } catch {}
         }
     }

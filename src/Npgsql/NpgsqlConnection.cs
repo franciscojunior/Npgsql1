@@ -61,25 +61,25 @@ namespace Npgsql
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
         public event NotificationEventHandler          Notification;
-        private NotificationEventHandler               NotificationDelegate;
+        internal NotificationEventHandler              NotificationDelegate;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
         /// </summary>
         public event CertificateSelectionCallback      CertificateSelectionCallback;
-        private CertificateSelectionCallback           CertificateSelectionCallbackDelegate;
+        internal CertificateSelectionCallback          CertificateSelectionCallbackDelegate;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
         /// </summary>
         public event CertificateValidationCallback     CertificateValidationCallback;
-        private CertificateValidationCallback          CertificateValidationCallbackDelegate;
+        internal CertificateValidationCallback         CertificateValidationCallbackDelegate;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
         /// </summary>
         public event PrivateKeySelectionCallback       PrivateKeySelectionCallback;
-        private PrivateKeySelectionCallback            PrivateKeySelectionCallbackDelegate;
+        internal PrivateKeySelectionCallback           PrivateKeySelectionCallbackDelegate;
 
         // Set this when disposed is called.
         private bool                                   disposed = false;
@@ -130,7 +130,7 @@ namespace Npgsql
         /// SSL:           True or False. Controls whether to attempt a secure connection. Default = False;
         /// Pooling:       True or False. Controls whether connection pooling is used. Default = True;
         /// MinPoolSize:   Min size of connection pool;
-        /// (NOT USED AT THIS TIME) MaxPoolSize:   Max size of connection pool;
+        /// MaxPoolSize:   Max size of connection pool;
         /// Encoding:      Encoding to be used;
         /// Timeout:       Time to wait for connection open in seconds.
         /// </summary>
@@ -322,7 +322,7 @@ namespace Npgsql
 
             CheckConnectionOpen();
 
-            if (connector._inTransaction) {
+            if (connector.Transaction != null) {
                 throw new InvalidOperationException(resman.GetString("Exception_NoNestedTransactions"));
             }
 
@@ -345,34 +345,10 @@ namespace Npgsql
             if (! connection_string.Contains(ConnectionStringKeys.UserName))
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), ConnectionStringKeys.UserName);
 
-            if (MaxPoolSize < 0)
-                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", ConnectionStringKeys.MaxPoolSize);
-            if (Timeout < 0)
-                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", ConnectionStringKeys.Timeout);
+            // Get a Connector.  The connector returned is guaranteed to be connected and ready to go.
+            connector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
 
-            // Get and possibly initialize a Connector.
-            NpgsqlConnector NewConnector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
-
-            NewConnector.CertificateSelectionCallback += this.CertificateSelectionCallbackDelegate;
-            NewConnector.CertificateValidationCallback += this.CertificateValidationCallbackDelegate;
-            NewConnector.PrivateKeySelectionCallback += this.PrivateKeySelectionCallbackDelegate;
-
-            if (! NewConnector.IsInitialized)
-            {
-                try {
-                    NewConnector.Open();
-                } catch {
-                    // Force this connector to close because
-                    // it is in an inconsistent state, so we can't just
-                    // release it back to the pool.
-                    NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(NewConnector);
-                    throw;
-                }
-            }
-
-            NewConnector.Notification += NotificationDelegate;
-
-            connector = NewConnector;
+            connector.Notification += NotificationDelegate;
         }
 
         /// <summary>
@@ -415,13 +391,9 @@ namespace Npgsql
 
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
 
-            connector.CertificateSelectionCallback += this.CertificateSelectionCallbackDelegate;
-            connector.CertificateValidationCallback += this.CertificateValidationCallbackDelegate;
-            connector.PrivateKeySelectionCallback += this.PrivateKeySelectionCallbackDelegate;
-
             connector.Notification -= NotificationDelegate;
 
-            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(connector);
+            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(this, connector);
             connector = null;
         }
 
@@ -545,21 +517,21 @@ namespace Npgsql
         internal Int32 MinPoolSize {
             get
             {
-                return connection_string.ToInt32(ConnectionStringKeys.MinPoolSize, ConnectionStringDefaults.MinPoolSize);
+                return connection_string.ToInt32(ConnectionStringKeys.MinPoolSize, 0, MaxPoolSize, ConnectionStringDefaults.MinPoolSize);
             }
         }
 
         internal Int32 MaxPoolSize {
             get
             {
-                return connection_string.ToInt32(ConnectionStringKeys.MaxPoolSize, ConnectionStringDefaults.MaxPoolSize);
+                return connection_string.ToInt32(ConnectionStringKeys.MaxPoolSize, 0, 1024, ConnectionStringDefaults.MaxPoolSize);
             }
         }
 
         internal Int32 Timeout {
             get
             {
-                return connection_string.ToInt32(ConnectionStringKeys.Timeout, ConnectionStringDefaults.Timeout);
+                return connection_string.ToInt32(ConnectionStringKeys.Timeout, 0, 1024, ConnectionStringDefaults.Timeout);
             }
         }
 

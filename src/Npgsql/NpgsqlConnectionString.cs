@@ -229,7 +229,17 @@ namespace Npgsql
 
         /// <summary>
         /// Return an integer value from the current connection string, even if the
-        /// given key is not in the string.
+        /// given key is not in the string or if the value is null.
+        /// Throw an appropriate exception if the value cannot be coerced to an integer.
+        /// </summary>
+        public Int32 ToInt32(String Key, Int32 Min, Int32 Max)
+        {
+            return ToInt32(Key, Min, Max, 0);
+        }
+
+        /// <summary>
+        /// Return an integer value from the current connection string, even if the
+        /// given key is not in the string or if the value is null.
         /// Throw an appropriate exception if the value cannot be coerced to an integer.
         /// </summary>
         public Int32 ToInt32(String Key, Int32 Default)
@@ -243,6 +253,27 @@ namespace Npgsql
             } catch (Exception E) {
                 throw new ArgumentException(String.Format(resman.GetString("Exception_InvalidIntegerKeyVal"), Key), Key, E);
             }
+        }
+
+        /// <summary>
+        /// Return an integer value from the current connection string, even if the
+        /// given key is not in the string.
+        /// Throw an appropriate exception if the value cannot be coerced to an integer.
+        /// </summary>
+        public Int32 ToInt32(String Key, Int32 Min, Int32 Max, Int32 Default)
+        {
+            Int32   V;
+
+            V = ToInt32(Key, Default);
+
+            if (V < Min) {
+                throw new ArgumentException(String.Format(resman.GetString("Exception_IntegerKeyValMin"), Key, Min), Key);
+            }
+            if (V > Max) {
+                throw new ArgumentException(String.Format(resman.GetString("Exception_IntegerKeyValMax"), Key, Max), Key);
+            }
+
+            return V;
         }
 
         /// <summary>

@@ -92,31 +92,14 @@ namespace Npgsql
 
         public virtual void Close( NpgsqlConnector context )
         {
-            /*NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
-            if ( context.State == ConnectorState.Open )
-            {
-                Stream stream = context.Stream;
-                if ( stream.CanWrite )
-                {
-                    stream.WriteByte((Byte)'X');
-                    if (context.BackendProtocolVersion >= ProtocolVersion.Version3)
-                        PGUtil.WriteInt32(stream, 4);
-                    stream.Flush();
-                }
-            }*/
+            if (this != NpgsqlClosedState.Instance) {
+                try {
+                    context.Stream.Close();
+                } catch {}
 
-            // CHECKME!!!
-            // The close logic is pretty messed up I think.  Needs lots of work.
-/*
-            if (! context.Connector.Shared) {
-                if (context.Connector.Stream != null) {
-                    try {
-                        context.Connector.Stream.Close();
-                    } catch {}
-                }
+                context.Stream = null;
+                ChangeState( context, NpgsqlClosedState.Instance );
             }
-*/
-            //ChangeState( context, NpgsqlClosedState.Instance );
         }
 
         ///<summary>
