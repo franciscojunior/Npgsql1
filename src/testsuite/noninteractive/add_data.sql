@@ -14,6 +14,7 @@ insert into tableA(field_int4) values (4);
 insert into tableA(field_int8) values (8);
 insert into tableA(field_bool) values (true);
 insert into tableA(field_text) values ('Text with \' single quote');
+insert into tableA(field_text) values ('Unicode test ã ó ê ñ ò ü');
 
 insert into tableB(field_int2) values (2);
 insert into tableB(field_timestamp) values ('2002-02-02 09:00:23.345');

@@ -37,14 +37,14 @@ namespace NpgsqlTests
 	{
 		
 		private NpgsqlConnection 	_conn = null;
-		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests";
+		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;maxpoolsize=5;";
 		
 		[SetUp]
 		protected void SetUp()
 		{
 			//NpgsqlEventLog.Level = LogLevel.None;
-			NpgsqlEventLog.Level = LogLevel.Debug;
-			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.Debug;
+			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		
@@ -144,7 +144,7 @@ namespace NpgsqlTests
 			Decimal result = dr.GetDecimal(3);
 			
 						
-			Assertion.AssertEquals(4.23M, result);
+			Assertion.AssertEquals(4.2300000M, result);
 			
 		}
 	
@@ -317,7 +317,7 @@ namespace NpgsqlTests
 		}
 		
 		[Test]
-		[ExpectedException(typeof(NpgsqlException))]
+		[ExpectedException(typeof(IndexOutOfRangeException))]
 		public void TestNonExistentParameterName()
 		{
 		  _conn.Open();
@@ -452,6 +452,50 @@ namespace NpgsqlTests
 			
 		}
 		
+        
+        [Test]
+        [ExpectedException(typeof(InvalidOperationException))]
+		public void ReadPastDataReaderEnd()
+		{
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea;", _conn);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+            
+            while (dr.Read());
+            
+            Object o = dr[0];
+            
+        }
+        
+        [Test]
+        public void IsDBNull()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select field_text from tablea;", _conn);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+            
+            dr.Read();
+            Assertion.AssertEquals(false, dr.IsDBNull(0));
+            dr.Read();
+            Assertion.AssertEquals(true, dr.IsDBNull(0));
+            
+                
+        }
+        
+        [Test]
+        public void IsDBNullFromScalar()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select max(field_serial) from tablea;", _conn);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+            
+            dr.Read();
+            Assertion.AssertEquals(false, dr.IsDBNull(0));
+            
+        }
 		
 		
 		

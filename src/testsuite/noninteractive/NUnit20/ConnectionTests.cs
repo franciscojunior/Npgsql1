@@ -36,14 +36,14 @@ namespace NpgsqlTests
 	public class ConnectionTests
 	{
 		private NpgsqlConnection 	_conn = null;
-		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests";
+		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;maxpoolsize=5;";
 		
 		[SetUp]
 		protected void SetUp()
 		{
 			//NpgsqlEventLog.Level = LogLevel.None;
-			NpgsqlEventLog.Level = LogLevel.Debug;
-			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.Debug;
+			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		
@@ -89,9 +89,21 @@ namespace NpgsqlTests
 		{
 			_conn.Open();
 			
-			NpgsqlTransaction t = _conn.BeginTransaction();
+            NpgsqlTransaction t = null;
+            try
+            {
+			    t = _conn.BeginTransaction();
 			
-			t = _conn.BeginTransaction();
+			    t = _conn.BeginTransaction();
+            }
+            catch(Exception e)
+            {
+                // Catch exception so we call rollback the transaction initiated.
+                // This way, the connection pool doesn't get a connection with a transaction
+                // started.
+                t.Rollback();
+                throw e;
+            }            
 			
 		}
 		

@@ -40,14 +40,14 @@ namespace NpgsqlTests
 	{
 		
 		private NpgsqlConnection 	_conn = null;
-		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests";
+		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;maxpoolsize=5;";
 		
 		[SetUp]
 		protected void SetUp()
 		{
 			//NpgsqlEventLog.Level = LogLevel.None;
-			NpgsqlEventLog.Level = LogLevel.Debug;
-			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.Debug;
+			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		
@@ -109,11 +109,12 @@ namespace NpgsqlTests
 			NpgsqlDataReader dr2 = new NpgsqlCommand("select * from tableb where field_serial > 4", _conn).ExecuteReader();
 			dr2.Read();
 			
-			Assertion.AssertEquals(4, dr2[1]);
-			Assertion.AssertEquals(7.3M, dr2[3]);
 			
+			Assertion.AssertEquals(4, dr2[1]);
+			Assertion.AssertEquals(7.3000000M, dr2[3]);
 			
 			new NpgsqlCommand("delete from tableb where field_serial > 4", _conn).ExecuteNonQuery();
+			
 			
 						
 		}

@@ -26,6 +26,7 @@ using Npgsql;
 using NUnit.Framework;
 using NUnit.Core;
 using System.Data;
+using System.Globalization;
 using NpgsqlTypes;
 
 namespace NpgsqlTests
@@ -35,14 +36,14 @@ namespace NpgsqlTests
 	public class CommandTests
 	{
 		private NpgsqlConnection 	_conn = null;
-		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;SSL=yes";
+		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;SSL=yes;maxpoolsize=5;";
 		
 		[SetUp]
 		protected void SetUp()
 		{
 			//NpgsqlEventLog.Level = LogLevel.None;
-			NpgsqlEventLog.Level = LogLevel.Debug;
-			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.Debug;
+			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		
@@ -90,7 +91,7 @@ namespace NpgsqlTests
 			
 		}
 		[Test]
-		[ExpectedException(typeof(NpgsqlException))]
+		[ExpectedException(typeof(ArgumentNullException))]
 		public void NoNameParameterAdd()
 		{
 			NpgsqlCommand command = new NpgsqlCommand();
@@ -349,6 +350,15 @@ namespace NpgsqlTests
 			
 			Assertion.AssertEquals("2002-02-02 09:00:23Z", d.ToString("u"));
 			
+			DateTimeFormatInfo culture = new DateTimeFormatInfo();
+			culture.TimeSeparator = ":";
+			DateTime dt = System.DateTime.Parse("2004-06-04 09:48:00", culture);
+
+			command.CommandText = "insert into tableb(field_timestamp) values (:a);delete from tableb where field_serial > 4;";
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.DateTime));
+			command.Parameters[0].Value = dt;
+			
+			command.ExecuteScalar();
 			
 		}
 		
@@ -409,7 +419,7 @@ namespace NpgsqlTests
 			command.ExecuteNonQuery();
 			
 			
-			Assertion.AssertEquals(7.4M, result);
+			Assertion.AssertEquals(7.4000000M, result);
 			
 			
 			
@@ -496,7 +506,7 @@ namespace NpgsqlTests
 			
 			Decimal result = dr.GetDecimal(3);
 			
-			Assertion.AssertEquals(-4.3M, result);
+			Assertion.AssertEquals(-4.3000000M, result);
 			
 		}
 		
@@ -514,7 +524,7 @@ namespace NpgsqlTests
 			
 			Decimal result = dr.GetDecimal(3);
 			
-			Assertion.AssertEquals(-4.3M, (Decimal)result);
+			Assertion.AssertEquals(-4.3000000M, (Decimal)result);
 			//Assertion.AssertEquals(11, result.Precision);
 			//Assertion.AssertEquals(7, result.Scale);
 			
@@ -722,6 +732,115 @@ namespace NpgsqlTests
 		}
 		
 		
+        [Test]
+		public void MultipleQueriesFirstResultsetEmpty()
+		{
+			_conn.Open();
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values ('a'); select count(*) from tablea;", _conn);
+            
+            Object result = command.ExecuteScalar();
+                        
+            
+            command.CommandText = "delete from tablea where field_serial > 5";
+            command.ExecuteNonQuery();
+            
+            command.CommandText = "select * from tablea where field_serial = 0";
+            command.ExecuteScalar();
+            
+            
+            Assertion.AssertEquals(6, result);
+            
+            
+		}
+        
+        [Test]
+        [ExpectedException(typeof(NpgsqlException))]
+        public void ConnectionStringWithInvalidParameters()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User Id=npgsql_tests;Password=j");
+            
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea", conn);
+            
+            command.Connection.Open();
+            command.ExecuteReader();
+            command.Connection.Close();
+            
+            
+        }
+        
+		[Test]
+        [ExpectedException(typeof(NpgsqlException))]
+        public void InvalidConnectionString()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User Id=npgsql_tests");
+            
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea", conn);
+            
+            command.Connection.Open();
+            command.ExecuteReader();
+            command.Connection.Close();
+            
+            
+        }
+        
+        
+        [Test]
+        public void AmbiguousFunctionParameterType()
+        {
+            NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User Id=npgsql_tests;Password=npgsql_tests");
+            
+            
+            NpgsqlCommand command = new NpgsqlCommand("ambiguousParameterType(:a, :b, :c, :d, :e, :f)", conn);
+            command.CommandType = CommandType.StoredProcedure;
+            NpgsqlParameter p = new NpgsqlParameter("a", DbType.Int16);
+            p.Value = 2;
+            command.Parameters.Add(p);
+            p = new NpgsqlParameter("b", DbType.Int32);
+            p.Value = 2;
+            command.Parameters.Add(p);
+            p = new NpgsqlParameter("c", DbType.Int64);
+            p.Value = 2;
+            command.Parameters.Add(p);
+            p = new NpgsqlParameter("d", DbType.String);
+            p.Value = "a";
+            command.Parameters.Add(p);
+            p = new NpgsqlParameter("e", DbType.String);
+            p.Value = "a";
+            command.Parameters.Add(p);
+            p = new NpgsqlParameter("f", DbType.String);
+            p.Value = "a";
+            command.Parameters.Add(p);
+            
+            
+            command.Connection.Open();
+            command.Prepare();
+            command.ExecuteScalar();
+            command.Connection.Close();
+            
+            
+        }
+        
+        
+        [Test]
+		public void TestParameterReplace()
+		{
+			_conn.Open();
+			
+			String sql = @"select * from tablea where 
+			field_serial = :a
+			";
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
+			
+			command.Parameters[0].Value = 2;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+		}
 		
 		
 	}
