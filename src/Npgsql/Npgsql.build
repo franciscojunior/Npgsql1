@@ -15,7 +15,7 @@
 	<!-- monoresgen doesn't work on my Windows-Computer no Problem with Linux - see Makefile Brar-->
 	<property name="monoresgen.bat" value="resgen"/>
 	<property name="testfiles.dir" value="..\testsuite\noninteractive\nunit20"/>
-	<property name="locales" value="de"/>
+	<property name="locales" value="de,fi"/>
 
 	<target name="clean" description="cleans the build directory">
 		<delete dir="${build.dir}" verbose="true" failonerror="true"/>
