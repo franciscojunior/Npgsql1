@@ -26,3 +26,15 @@ insert into tableC(field_time) values ('10:03:45.345');
 
 insert into tableD(field_float4) values (.123456);
 insert into tableD(field_float8) values (.123456789012345);
+
+
+insert into tableE(field_point) values ( '(4, 3)' );
+insert into tableE(field_box) values ( '(4, 3), (5, 4)'::box );
+insert into tableE(field_lseg) values ( '(4, 3), (5, 4)'::lseg );
+insert into tableE(field_path) values ( '((4, 3), (5, 4))'::path );
+insert into tableE(field_path) values ( '[(4, 3), (5, 4)]'::path );
+insert into tableE(field_polygon) values ( '((4, 3), (5, 4))'::polygon );
+insert into tableE(field_circle) values ( '< (4, 3), 5 >'::circle );
+
+	
+

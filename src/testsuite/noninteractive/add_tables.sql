@@ -35,3 +35,15 @@ field_serial serial,
 field_float4 float4,
 field_float8 float8
 );
+
+
+create table tableE(
+field_serial serial,
+field_point point, 
+field_box box, 
+field_lseg lseg, 
+field_path path, 
+field_polygon polygon, 
+field_circle circle
+);
+
