@@ -1,4 +1,9 @@
 
+2002-05-23
+	
+	- Finish draft NpgsqlCommand class implementation so that it compiles without errors :)
+          No functionality yet!
+
 2002-05-21
 	
 	- Started draft NpgsqlCommand class implementation.
