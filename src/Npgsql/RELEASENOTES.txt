@@ -1,5 +1,39 @@
 
 
+2004-09-22
+    
+    Npgsql 0.7beta2 development release
+    
+    Features added:
+    
+        Added support for DbType.Byte type. Thanks Martijn Boland (martijn at boland dot org)
+        
+        
+        
+    Bug Fixes:
+    
+        gborg 952: Added missing handling of NoData message.
+        
+        Fixed a NullReferenceException when passing a null connnection string to NpgsqlConnection.
+        
+        gborg 941, 955: Fixed null values handling when using NpgsqlCommand.Prepare(). Thanks Martijn Boland (martijn at boland dot org) for helping with test case.
+        
+        Fixed an infinite loop when trying to use a parameter whose name is equals to same type name. i.e.: parameter name :text which would conflict with :text 
+        parameter name which was being added in the replacement string.
+        
+        Fixed handling of strings with backslashes. Now they are properly escaped.
+        
+        Improved portal and plan name creation to use an unique number from NpgsqlConnector instead of using an static field in NpgsqlCommand. Thanks Martin ( martijn at boland dot org) for the heads up.
+        
+        Improved implementation of NpgsqlConnection.Dispose. Also added warning logging for NpgsqlConnection leakings.
+        
+        Fixed code to allow calling NpgsqlConnection.Close() many times even when being disposed.
+        
+        Added support for case insensitive fields index lookup in NpgsqlDataReader. Thanks Martin ( martijn at boland dot org)
+    
+    
+    Note: Still missing generated html api docs.
+
 2004-08-31
 
 	Npgsql 0.7beta1 development release
