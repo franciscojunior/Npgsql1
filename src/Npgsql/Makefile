@@ -26,7 +26,7 @@ ifeq ($(OS),"Windows_NT")
 	LDFLAGS=/r:System.Data.dll /target:library /out:$(NPGSQL_LIB)
 else
 	CC=mcs
-	LDFLAGS=-r /usr/lib/System.Data.dll --target library -o $(NPGSQL_LIB)
+	LDFLAGS=-r System.Data.dll --target library -o $(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
 OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs)
