@@ -25,6 +25,7 @@
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Data;
 using Npgsql;
 
 
@@ -58,11 +59,15 @@ namespace NpgsqlTypes
 	{
 		
 		private static Hashtable _oidToNameMappings = new Hashtable();
-				
+		
+		// Logging related values
+    private static readonly String CLASSNAME = "NpgsqlDataReader";
 		
 		
 		public static String GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType npgsqlDbType)
 		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBackendTypeNameFromNpgsqlDbType(NpgsqlDbType)", LogLevel.Debug);
+			
 			switch (npgsqlDbType)
 			{
 				case NpgsqlDbType.Boolean:
@@ -88,6 +93,7 @@ namespace NpgsqlTypes
 		
 		public static String ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter parameter)
 		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlParameterToBackendStringValue(NpgsqlParameter)", LogLevel.Debug);
 			
 			switch(parameter.NpgsqlDbType)
 			{
@@ -104,21 +110,33 @@ namespace NpgsqlTypes
 				
 				case NpgsqlDbType.Text:
 				{
+					
+					if (parameter.Value is String)
+						return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
+					
 					NpgsqlString value = (NpgsqlString) parameter.Value;
+					
 					if (value.IsNull)
 						return "Null";
 					else
 						// Escape all single quotes in the string.
-						return "'" + parameter.Value.ToString().Replace("'", "\'") + "'";
+						return "'" + value.Value.Replace("'", "\\'") + "'";
+						
 				}
 				
 				case NpgsqlDbType.Timestamp:
 				{
+					// Value of parameter should be DateTime or NpgsqlDateTime.
+					
+					if (parameter.Value is DateTime)
+						return "'" + ((DateTime)parameter.Value).ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff") + "'";
+					
 					NpgsqlDateTime value = (NpgsqlDateTime) parameter.Value;
+					
 					if (value.IsNull)
 						return "Null";
 					else
-					return "'" + ((NpgsqlDateTime)parameter.Value).ToISOString() + "'";
+					return "'" + value.Value.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff") + "'";
 				}
 				default:
 					// This should not happen!
@@ -131,12 +149,62 @@ namespace NpgsqlTypes
 		
 		
 		
+		public static NpgsqlDbType GetNpgsqlDbTypeFromDbType(DbType dbType)
+		{
+			switch (dbType)
+			{
+				case DbType.Boolean:
+					return NpgsqlDbType.Boolean;
+				case DbType.DateTime:
+					return NpgsqlDbType.Timestamp;
+				case DbType.Int16:
+					return NpgsqlDbType.Smallint;
+				case DbType.Int32:
+					return NpgsqlDbType.Integer;
+				case DbType.Int64:
+					return NpgsqlDbType.Bigint;
+				case DbType.Decimal:
+					return NpgsqlDbType.Numeric;
+				case DbType.String:
+				case DbType.AnsiString:
+					return NpgsqlDbType.Text;
+				default:
+					return NpgsqlDbType.Text;
+			}
+		}
+		
+		public static DbType GetDbTypeFromNpgsqlDbType(NpgsqlDbType npgsqlDbType)
+		{
+			switch (npgsqlDbType)
+			{
+				case NpgsqlDbType.Bigint:
+					return DbType.Int64;
+				case NpgsqlDbType.Boolean:
+					return DbType.Boolean;
+				case NpgsqlDbType.Integer:
+					return DbType.Int32;
+				case NpgsqlDbType.Numeric:
+					return DbType.Decimal;
+				case NpgsqlDbType.Smallint:
+					return DbType.Int16;
+				case NpgsqlDbType.Text:
+					return DbType.AnsiString;
+				case NpgsqlDbType.Timestamp:
+					return DbType.DateTime;
+				default:
+					return DbType.AnsiString;
+				
+			}
+		}
+		
 		/// <summary>
 		/// This method is responsible to convert a given NpgsqlType to its corresponding system type.
 		/// 
 		/// </summary>
 		public static Object ConvertNpgsqlTypeToSystemType(Hashtable oidToNameMapping, Object data, Int32 typeOid)
 		{
+		
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertNpgsqlTypeToSystemType(Hashtable, Object, Int32)", LogLevel.Debug);
 			
 			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
@@ -180,6 +248,7 @@ namespace NpgsqlTypes
 		/// 
 		public static Object ConvertBackendStringToNpgsqlType(Hashtable oidToNameMapping, String data, Int32 typeOid, Int32 typeModifier)
 		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ConvertBackendStringToNpgsqlType(Hashtable, String, Int32)", LogLevel.Debug);
 			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
@@ -227,6 +296,7 @@ namespace NpgsqlTypes
 		
 		public static String GetNpgsqlTypeNameFromTypeOidold(Hashtable oidToNameMapping, Int32 typeOid)
     {
+    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetNpgsqlTypeNameFromTypeOidold(Hashtable, Int32)", LogLevel.Debug);
     	// This method gets a db type identifier and return the equivalent
     	// system type name.
     	
@@ -261,6 +331,7 @@ namespace NpgsqlTypes
 		
 		public static String GetSystemTypeNameFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
     {
+    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetSystemTypeNameFromTypeOid(Hashtable, Int32)", LogLevel.Debug);
     	// This method gets a db type identifier and return the equivalent
     	// system type name.
     	
@@ -303,6 +374,8 @@ namespace NpgsqlTypes
 		/// </summary>
 		public static Hashtable LoadTypesMapping(NpgsqlConnection conn)
 		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".LoadTypesMapping(NpgsqlConnection)", LogLevel.Debug);
+			
 			// [TODO] Verify another way to get higher concurrency.
 			lock(typeof(NpgsqlTypesHelper))
 			{
