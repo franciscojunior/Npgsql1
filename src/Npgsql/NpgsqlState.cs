@@ -98,6 +98,7 @@ namespace Npgsql
 			mediator.Reset();
 			
 			Int16 rowDescNumFields = 0;
+			NpgsqlRowDescription rd = null;
 						
 			Byte[] inputBuffer = new Byte[ 500 ];
 			
@@ -182,7 +183,7 @@ namespace Npgsql
 					case NpgsqlMessageTypes.RowDescription:
 						// This is the RowDescription message.
 						
-						NpgsqlRowDescription rd = new NpgsqlRowDescription();
+						rd = new NpgsqlRowDescription();
 						rd.ReadFromStream(stream, context.Encoding);
 						
 						// Initialize the array list which will contain the data from this rowdescription.
@@ -199,7 +200,7 @@ namespace Npgsql
 					
 						// This is the AsciiRow message.
 						
-						NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(rowDescNumFields);
+						NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(rd, context.OidToNameMapping);
 						asciiRow.ReadFromStream(stream, context.Encoding);
 						
 						
@@ -210,7 +211,16 @@ namespace Npgsql
 						// Now wait for CompletedResponse message.
 						break;
 					
-										
+					case NpgsqlMessageTypes.BinaryRow:
+						
+						NpgsqlEventLog.LogMsg("BinaryRow message from Server", LogLevel.Debug);
+						NpgsqlBinaryRow binaryRow = new NpgsqlBinaryRow(rd);
+						binaryRow.ReadFromStream(stream, context.Encoding);
+					
+						mediator.AddBinaryRow(binaryRow);
+					
+						break;
+					
 					case NpgsqlMessageTypes.ReadyForQuery :
 
 						NpgsqlEventLog.LogMsg("ReadyForQuery message from Server", LogLevel.Debug);
@@ -266,7 +276,7 @@ namespace Npgsql
 						// the cursor in a FETCH case or 'blank' otherwise.
 						// In this case it should be always 'blank'.
 						// [FIXME] Get another name for this function.
-						
+						NpgsqlEventLog.LogMsg("CursorResponse message from Server: ", LogLevel.Debug);
 						//String cursor_name = GetStringFromNetStream(networkStream);
 						String cursorName = PGUtil.ReadString(stream, context.Encoding);
 						// Continue wainting for ReadyForQuery message.
