@@ -30,6 +30,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections;
+using System.Text;
 
 
 namespace Npgsql
@@ -163,16 +164,53 @@ namespace Npgsql
 							// for this the Password has to be:
 							// 1. md5-hashed with the username as salt
 							// 2. md5-hashed again with the salt we get from the backend
-							string prehash =	MD5.EncryptMD5(
-								context.Encoding.GetBytes(context.ServerPassword),
-							    context.Encoding.GetBytes(context.UserName)
-							    );
-							byte[] Salt = new byte[4];
-							stream.Read(Salt, 0, 4);
+							
+							
+							MD5 md5 = MD5.Create();
+							
+							
+							// 1.
+							byte[] passwd = context.Encoding.GetBytes(context.ServerPassword);
+							byte[] saltUserName = context.Encoding.GetBytes(context.UserName);
+							
+							byte[] crypt_buf = new byte[passwd.Length + saltUserName.Length];
+							
+							passwd.CopyTo(crypt_buf, 0);
+							saltUserName.CopyTo(crypt_buf, passwd.Length);							
+							
+							
+							
+							StringBuilder sb = new StringBuilder ();
+							byte[] hashResult = md5.ComputeHash(crypt_buf);
+							foreach (byte b in hashResult)
+								sb.Append (b.ToString ("x2"));
+							
+							
+							String prehash = sb.ToString();
+							
+							byte[] prehashbytes = context.Encoding.GetBytes(prehash);
+							
+							
+							
+							byte[] saltServer = new byte[4];
+							stream.Read(saltServer, 0, 4);
 							// Send the PasswordPacket.
 							ChangeState( context, NpgsqlStartupState.Instance );
-							// the prehash.Substring(3) is used as we need the prehash-password without prefixed "md5"
-							context.Authenticate(MD5.EncryptMD5(context.Encoding.GetBytes(prehash.Substring(3)), Salt));
+							
+							
+							// 2.
+							
+							crypt_buf = new byte[prehashbytes.Length + saltServer.Length];
+							prehashbytes.CopyTo(crypt_buf, 0);
+							saltServer.CopyTo(crypt_buf, prehashbytes.Length);
+							
+							sb = new StringBuilder ("md5"); // This is needed as the backend expects md5 result starts with "md5"
+							hashResult = md5.ComputeHash(crypt_buf);
+							foreach (byte b in hashResult)
+								sb.Append (b.ToString ("x2"));
+							
+							context.Authenticate(sb.ToString ());
+							
 					  	break;
 						}
 
