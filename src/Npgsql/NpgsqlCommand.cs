@@ -23,15 +23,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
 using System;
 using System.Data;
-using System.Net;
-using System.Net.Sockets;
-using System.IO;
 using System.Text;
+using System.Resources;
 using System.ComponentModel;
 using System.Collections;
+
 using NpgsqlTypes;
 using Npgsql.Design;
 
@@ -43,6 +41,9 @@ namespace Npgsql
     [System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlCommand)), ToolboxItem(true)]
     public sealed class NpgsqlCommand : Component, IDbCommand
     {
+        // Logging related values
+        private static readonly String CLASSNAME = "NpgsqlCommand";
+        private static ResourceManager resman = new ResourceManager(typeof(NpgsqlCommand));
 
         private NpgsqlConnection            connection;
         private NpgsqlConnector             connector;
@@ -57,10 +58,6 @@ namespace Npgsql
 
         private NpgsqlParse                 parse;
         private NpgsqlBind                  bind;
-
-        // Logging related values
-        private static readonly String CLASSNAME = "NpgsqlCommand";
-        private System.Resources.ResourceManager resman;
 
         // Constructors
 
@@ -90,7 +87,6 @@ namespace Npgsql
         /// <param name="transaction">The <see cref="Npgsql.NpgsqlTransaction">NpgsqlTransaction</see> in which the <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see> executes.</param>
         public NpgsqlCommand(String cmdText, NpgsqlConnection connection, NpgsqlTransaction transaction)
         {
-            resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 
             planName = String.Empty;
@@ -116,15 +112,6 @@ namespace Npgsql
             this.connector = connector;
             type = CommandType.Text;
         }
-
-        /*
-        /// <summary>
-        /// Finalizer for <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see>.
-        /// </summary>
-        ~NpgsqlCommand ()
-        {
-            Dispose(false);
-        }*/
 
         // Public properties.
         /// <summary>
@@ -583,11 +570,9 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CheckConnectionState");
 
             // Check the connection state.
-            if (connector == null)
-                throw new InvalidOperationException(resman.GetString("Exception_ConnectionNull"));
-            if (connector.State != ConnectionState.Open)
+            if (connector == null || connector.State != ConnectionState.Open) {
                 throw new InvalidOperationException(resman.GetString("Exception_ConnectionNotOpen"));
-
+            }
         }
 
         /// <summary>
@@ -818,7 +803,7 @@ namespace Npgsql
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();
 
-                Connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
+                connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
 
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();

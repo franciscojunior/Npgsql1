@@ -26,10 +26,11 @@
 
 using System;
 using System.Collections;
-using System.Net.Sockets;
 using System.IO;
 using System.Text;
 using System.Data;
+using System.Security;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 using Mono.Security.Protocol.Tls;
@@ -46,31 +47,28 @@ namespace Npgsql
     /// </summary>
     internal class NpgsqlConnector
     {
-        // Used to obtain a current key for the non-shared pool.
-        // FIXME - this needs to be removed from this class
-        internal NpgsqlConnection                Connection;
+        // Immutable.
+        internal NpgsqlConnectionString                ConnectionString;
 
         /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
-        internal event NotificationEventHandler  Notification;
+        internal event NotificationEventHandler        Notification;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
+        /// </summary>
+        internal event CertificateSelectionCallback    CertificateSelectionCallback;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
         /// </summary>
-        internal event CertificateValidationCallback    CertificateValidationCallback;
-
-
-        // FIXME - these two need to be turned into events and handled properly
-        /// <summary>
-        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
-        /// </summary>
-        internal CertificateSelectionCallback    CertificateSelectionCallback;
+        internal event CertificateValidationCallback   CertificateValidationCallback;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
         /// </summary>
-        internal PrivateKeySelectionCallback     PrivateKeySelectionCallback;
+        internal event PrivateKeySelectionCallback     PrivateKeySelectionCallback;
 
         // FIXME - should be private
         internal ConnectionState                 _connection_state;
@@ -81,8 +79,8 @@ namespace Npgsql
         // Mediator which will hold data generated from backend.
         internal NpgsqlMediator                  _mediator;
 
-        private ProtocolVersion                   _backendProtocolVersion;
-        private ServerVersion                     _serverVersion;
+        private ProtocolVersion                  _backendProtocolVersion;
+        private ServerVersion                    _serverVersion;
 
         // Values for possible CancelRequest messages.
         // FIXME - should be private
@@ -102,38 +100,75 @@ namespace Npgsql
 
         private Boolean                          _isInitialized;
 
+        private Boolean                          _pooled;
         private Boolean                          _shared;
 
         // FIXME - should be private
         internal NpgsqlState                      _state;
 
-        // FIXME - these all need to be properties
-        internal String                           Host;
-        internal Int32                            Port;
-        internal String                           Database;
-        internal String                           UserName;
-        internal String                           Password;
-        internal bool                             SSL;
-
         /// <summary>
         /// Constructor.
         /// </summary>
         /// <param name="Shared">Controls whether the connector can be shared.</param>
-        public NpgsqlConnector(String Host, Int32 Port, String Database, String UserName, String Password, bool SSL, bool Shared)
+        public NpgsqlConnector(NpgsqlConnectionString ConnectionString, bool Pooled, bool Shared)
         {
+            this.ConnectionString = ConnectionString;
             _connection_state = ConnectionState.Closed;
+            _pooled = Pooled;
             _shared = Shared;
             _isInitialized = false;
             _state = NpgsqlClosedState.Instance;
             _mediator = new NpgsqlMediator();
             _oidToNameMapping = new Hashtable();
+        }
 
-            this.Host = Host;
-            this.Port = Port;
-            this.Database = Database;
-            this.UserName = UserName;
-            this.Password = Password;
-            this.SSL = SSL;
+
+        internal String Host
+        {
+            get
+            {
+                return ConnectionString.ToString(ConnectionStringKeys.Host);
+            }
+        }
+
+        internal Int32 Port
+        {
+            get
+            {
+                return ConnectionString.ToInt32(ConnectionStringKeys.Port, ConnectionStringDefaults.Port);
+            }
+        }
+
+        internal String Database
+        {
+            get
+            {
+                return ConnectionString.ToString(ConnectionStringKeys.Database, UserName);
+            }
+        }
+
+        internal String UserName
+        {
+            get
+            {
+                return ConnectionString.ToString(ConnectionStringKeys.UserName);
+            }
+        }
+
+        internal String Password
+        {
+            get
+            {
+                return ConnectionString.ToString(ConnectionStringKeys.Password);
+            }
+        }
+
+        internal Boolean SSL
+        {
+            get
+            {
+                return ConnectionString.ToBool(ConnectionStringKeys.SSL);
+            }
         }
 
         /// <summary>
@@ -147,10 +182,6 @@ namespace Npgsql
         }
 
 
-
-
-
-
         // State
         internal void Query (NpgsqlCommand queryCommand)
         {
@@ -160,11 +191,6 @@ namespace Npgsql
         internal void Authenticate (string password)
         {
             CurrentState.Authenticate(this, password );
-        }
-
-        internal void Startup ()
-        {
-            CurrentState.Startup(this);
         }
 
         internal void Parse (NpgsqlParse parse)
@@ -231,6 +257,22 @@ namespace Npgsql
         }
 
         /// <summary>
+        /// Default SSL CertificateSelectionCallback implementation.
+        /// </summary>
+        internal X509Certificate DefaultCertificateSelectionCallback(
+            X509CertificateCollection      clientCertificates,
+            X509Certificate                serverCertificate,
+            string                         targetHost,
+            X509CertificateCollection      serverRequestedCertificates)
+        {
+            if (CertificateSelectionCallback != null) {
+                return CertificateSelectionCallback(clientCertificates, serverCertificate, targetHost, serverRequestedCertificates);
+            } else {
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Default SSL CertificateValidationCallback implementation.
         /// </summary>
         internal bool DefaultCertificateValidationCallback(
@@ -241,6 +283,20 @@ namespace Npgsql
                 return CertificateValidationCallback(certificate, certificateErrors);
             } else {
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Default SSL PrivateKeySelectionCallback implementation.
+        /// </summary>
+        internal AsymmetricAlgorithm DefaultPrivateKeySelectionCallback(
+            X509Certificate                certificate,
+            string                         targetHost)
+        {
+            if (PrivateKeySelectionCallback != null) {
+                return PrivateKeySelectionCallback(certificate, targetHost);
+            } else {
+                return null;
             }
         }
 
@@ -327,9 +383,14 @@ namespace Npgsql
         }
 
 
-        /// <value>Reports whether this connector can be shared.</value>
-        /// <remarks>Set true if this connector is shared among multiple
-        /// connections.</remarks>
+        internal bool Pooled
+        {
+            get
+            {
+                return _pooled;
+            }
+        }
+
         internal bool Shared
         {
             get
@@ -410,15 +471,28 @@ namespace Npgsql
         /// </summary>
         /// <remarks>Usually called by the RequestConnector
         /// Method of the connection pool manager.</remarks>
-        internal void Open(ProtocolVersion PV)
+        internal void Open()
         {
-            Encoding = Encoding.Default;
-            BackendProtocolVersion = (PV == ProtocolVersion.Unknown) ? ProtocolVersion.Version3 : PV;
+            ProtocolVersion      PV;
+
+            // If Connection.ConnectionString specifies a protocol version, we will 
+            // not try to fall back to version 2 on failure.
+            if (ConnectionString.Contains(ConnectionStringKeys.Protocol)) {
+                PV = ConnectionString.ToProtocolVersion(ConnectionStringKeys.Protocol);
+            } else {
+                PV = ProtocolVersion.Unknown;
+            }
+
+            _backendProtocolVersion = (PV == ProtocolVersion.Unknown) ? ProtocolVersion.Version3 : PV;
 
             // Reset state to initialize new connector in pool.
+            Encoding = Encoding.Default;
             CurrentState = NpgsqlClosedState.Instance;
 
+            // Get a raw connection, possibly SSL...
             CurrentState.Open(this);
+            // Establish protocol communication and authenticate...
+            CurrentState.Startup(this);
 
             // Check for protocol not supported.  If we have been told what protocol to use,
             // we will not try this step.
@@ -437,7 +511,11 @@ namespace Npgsql
                         _mediator.ResetResponses();
                         BackendProtocolVersion = ProtocolVersion.Version2;
                         CurrentState = NpgsqlClosedState.Instance;
+
+                        // Get a raw connection, possibly SSL...
                         CurrentState.Open(this);
+                        // Establish protocol communication and authenticate...
+                        CurrentState.Startup(this);
                     }
                 }
             }
@@ -448,8 +526,9 @@ namespace Npgsql
 
             _backend_keydata = _mediator.BackendKeyData;
 
-            // Change the state of connection to open.
+            // Change the state of connection to open and ready.
             _connection_state = ConnectionState.Open;
+            CurrentState = NpgsqlReadyState.Instance;
 
             String       ServerVersionString = String.Empty;
 
@@ -477,7 +556,7 @@ namespace Npgsql
 
             // FIXME - need to remove dependency on Connection
 
-            if (Connection.ConnectStringValueToString(NpgsqlConnection.CONN_ENCODING, NpgsqlConnection.DEF_ENCODING).ToUpper() == "UNICODE")
+            if (ConnectionString.ToString(ConnectionStringKeys.Encoding, ConnectionStringDefaults.Encoding).ToUpper() == "UNICODE")
             {
                 Encoding = Encoding.UTF8;
                 NpgsqlCommand commandEncoding = new NpgsqlCommand("SET CLIENT_ENCODING TO UNICODE", this);
@@ -488,8 +567,6 @@ namespace Npgsql
             _oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
 
             ProcessServerVersion();
-
-            CurrentState = NpgsqlReadyState.Instance;
 
             // The connector is now fully initialized. Beyond this point, it is
             // safe to release it back to the pool.

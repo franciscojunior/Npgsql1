@@ -25,8 +25,8 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Resources;
 using System.Collections;
+
 using Mono.Security.Protocol.Tls;
 
 namespace Npgsql
@@ -88,32 +88,23 @@ namespace Npgsql
                 Char response = (Char)stream.ReadByte();
                 if (response == 'S')
                 {
-                    stream = new SslClientStream(tcpc.GetStream(),
-                                                 context.Host,
-                                                 true,
-                                                 Mono.Security.Protocol.Tls.SecurityProtocolType.Default);
-                    /*stream = new SslClientStream(
-                        tcpc.GetStream(),
-                        context.ServerName,
-                        true,
-                        Tls.SecurityProtocolType.Tls|
-                        Tls.SecurityProtocolType.Ssl3);*/
+                    stream = new SslClientStream(
+                                tcpc.GetStream(),
+                                context.Host,
+                                true,
+                                Mono.Security.Protocol.Tls.SecurityProtocolType.Default
+                    );
 
-
+                    ((SslClientStream)stream).ClientCertSelectionDelegate = new CertificateSelectionCallback(context.DefaultCertificateSelectionCallback);
                     ((SslClientStream)stream).ServerCertValidationDelegate = new CertificateValidationCallback(context.DefaultCertificateValidationCallback);
-                    ((SslClientStream)stream).ClientCertSelectionDelegate = context.CertificateSelectionCallback;
-                    ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = context.PrivateKeySelectionCallback;
-
+                    ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = new PrivateKeySelectionCallback(context.DefaultPrivateKeySelectionCallback);
                 }
             }
-
-
 
             context.Stream = stream;
 
             NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, context.Host, context.Port);
             ChangeState(context, NpgsqlConnectedState.Instance);
-            context.Startup();
         }
 
     }

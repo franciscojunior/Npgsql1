@@ -43,7 +43,7 @@ namespace Npgsql
     internal abstract class NpgsqlState
     {
         private readonly String CLASSNAME = "NpgsqlState";
-        protected ResourceManager resman = null;
+        protected static ResourceManager resman = new ResourceManager(typeof(NpgsqlState));
 
         public virtual void Open(NpgsqlConnector context)
         {
@@ -88,11 +88,6 @@ namespace Npgsql
         public virtual void Execute(NpgsqlConnector context, NpgsqlExecute execute)
         {
             throw new InvalidOperationException("Internal Error! " + this);
-        }
-
-        public NpgsqlState()
-        {
-            resman = new ResourceManager(this.GetType());
         }
 
         public virtual void Close( NpgsqlConnector context )

@@ -25,7 +25,6 @@
 
 using System;
 using System.Collections;
-using Npgsql;
 using System.Threading;
 
 namespace Npgsql
@@ -157,7 +156,7 @@ namespace Npgsql
         /// <param name="ForceClose">Force the connector to close, even if it is pooled.</param>
         public void ReleaseConnector (NpgsqlConnector Connector)
         {
-            if (Connector.Connection.Pooling) {
+            if (Connector.Pooled) {
                 ReleasePooledConnector(Connector);
             } else {
                 UngetNonPooledConnector(Connector);
@@ -196,7 +195,6 @@ namespace Npgsql
             NpgsqlConnector       Connector;
 
             Connector = CreateConnector(Connection);
-            Connector.Connection = Connection;
 
             return Connector;
         }
@@ -211,22 +209,20 @@ namespace Npgsql
             NpgsqlConnector       Connector = null;
 
             // Try to find a queue.
-            Queue = (ConnectorQueue)PooledConnectors[Connection.ConnectionString];
+            Queue = (ConnectorQueue)PooledConnectors[Connection.ConnectionString.ToString()];
 
             if (Queue == null) {
                 Queue = new ConnectorQueue();
-                PooledConnectors[Connection.ConnectionString] = Queue;
+                PooledConnectors[Connection.ConnectionString.ToString()] = Queue;
             }
 
             if (Queue.Count > 0) {
                 // Found a queue with connectors.  Grab the top one.
                 Connector = (NpgsqlConnector)Queue.Dequeue();
                 Queue.UseCount++;
-                Connector.Connection = Connection;
             } else if (Queue.Count + Queue.UseCount < Connection.MaxPoolSize) {
                 Connector = CreateConnector(Connection);
                 Queue.UseCount++;
-                Connector.Connection = Connection;
             }
 
             return Connector;
@@ -246,12 +242,8 @@ namespace Npgsql
         private NpgsqlConnector CreateConnector(NpgsqlConnection Connection)
         {
             return new NpgsqlConnector(
-                Connection.Host,
-                Connection.Port,
-                Connection.Database,
-                Connection.UserName,
-                Connection.Password,
-                Connection.SSL,
+                Connection.ConnectionStringValues.Clone(),
+                Connection.Pooling,
                 false
             );
         }
@@ -274,7 +266,7 @@ namespace Npgsql
             ConnectorQueue           Queue;
 
             // Find the queue.
-            Queue = (ConnectorQueue)PooledConnectors[Connector.Connection.ConnectionString];
+            Queue = (ConnectorQueue)PooledConnectors[Connector.ConnectionString.ToString()];
 
             if (Queue == null) {
                 throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
@@ -283,7 +275,6 @@ namespace Npgsql
             if (! Connector.IsInitialized) {
                 Connector.Close();
             } else {
-                Connector.Connection = null;
                 Queue.Enqueue(Connector);
             }
 

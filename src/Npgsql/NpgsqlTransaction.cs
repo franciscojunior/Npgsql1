@@ -26,6 +26,7 @@
 
 using System;
 using System.Text;
+using System.Resources;
 using System.Data;
 
 
@@ -37,11 +38,11 @@ namespace Npgsql
     public sealed class NpgsqlTransaction : MarshalByRefObject, IDbTransaction
     {
         private static readonly String CLASSNAME = "NpgsqlTransaction";
+        private static ResourceManager resman = new ResourceManager(typeof(NpgsqlTransaction));
 
         private NpgsqlConnection	_conn				= null;
         private IsolationLevel		_isolation	= IsolationLevel.ReadCommitted;
         private bool _disposing = false;
-        private System.Resources.ResourceManager resman;
 
         internal NpgsqlTransaction(NpgsqlConnection conn) : this(conn, IsolationLevel.ReadCommitted)
         {}

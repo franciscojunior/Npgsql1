@@ -26,20 +26,16 @@
 using System;
 using System.ComponentModel;
 using System.Data;
-using System.Net;
-using System.Net.Sockets;
-using System.IO;
 using System.Text;
 using System.Collections;
-using System.Collections.Specialized;
-using System.Threading;
+using System.Resources;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 using Mono.Security.Protocol.Tls;
 
 using NpgsqlTypes;
 using Npgsql.Design;
-
 
 namespace Npgsql
 {
@@ -59,61 +55,41 @@ namespace Npgsql
     {
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlConnection";
+        private static ResourceManager resman = new System.Resources.ResourceManager(typeof(NpgsqlConnection));
 
         /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
-        public event NotificationEventHandler           Notification;
-        private NotificationEventHandler                NotificationDelegate;
+        public event NotificationEventHandler          Notification;
+        private NotificationEventHandler               NotificationDelegate;
+
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.CertificateSelectionCallback delegate.
+        /// </summary>
+        public event CertificateSelectionCallback      CertificateSelectionCallback;
+        private CertificateSelectionCallback           CertificateSelectionCallbackDelegate;
 
         /// <summary>
         /// Mono.Security.Protocol.Tls.CertificateValidationCallback delegate.
         /// </summary>
-        public event CertificateValidationCallback    CertificateValidationCallback;
-        public CertificateValidationCallback          CertificateValidationCallbackDelegate;
+        public event CertificateValidationCallback     CertificateValidationCallback;
+        private CertificateValidationCallback          CertificateValidationCallbackDelegate;
 
-        private bool                            disposed = false;
+        /// <summary>
+        /// Mono.Security.Protocol.Tls.PrivateKeySelectionCallback delegate.
+        /// </summary>
+        public event PrivateKeySelectionCallback       PrivateKeySelectionCallback;
+        private PrivateKeySelectionCallback            PrivateKeySelectionCallbackDelegate;
 
-//        private String                          connection_string;
-        private ListDictionary                  connection_string_values;
-        // some of the following constants are needed
-        // for designtime support so I made them 'internal'
-        // as I didn't want to add another interface for internal access
-        // --brar
-        // In the connection string
-        internal static readonly Char CONN_DELIM	= ';';  // Delimeter
-        internal static readonly Char CONN_ASSIGN	= '=';
-        internal static readonly String CONN_SERVER 	= "SERVER";
-        internal static readonly String CONN_PORT 	= "PORT";
-        internal static readonly String CONN_PROTOCOL 	= "PROTOCOL";
-        internal static readonly String CONN_DATABASE	= "DATABASE";
-        internal static readonly String CONN_USERID 	= "USER ID";
-        internal static readonly String CONN_PASSWORD	= "PASSWORD";
-        internal static readonly String CONN_SSL_ENABLED	= "SSL";
-        internal static readonly String CONN_ENCODING = "ENCODING";
-        internal static readonly String CONN_TIMEOUT = "TIMEOUT";
+        // Set this when disposed is called.
+        private bool                                   disposed = false;
 
-        // These are for ODBC connection string compatibility
-        internal static readonly String ODBC_USERID 	= "UID";
-        internal static readonly String ODBC_PASSWORD = "PWD";
-
-        // These are for the connection pool
-        internal static readonly String POOLING       = "POOLING";
-        internal static readonly String MIN_POOL_SIZE = "MINPOOLSIZE";
-        internal static readonly String MAX_POOL_SIZE = "MAXPOOLSIZE";
-
-        // Connection string defaults
-        internal static readonly Int32 DEF_PORT = 5432;
-        internal static readonly String DEF_ENCODING = "SQL_ASCII";
-        internal static readonly Int32 DEF_MIN_POOL_SIZE = 1;
-        internal static readonly Int32 DEF_MAX_POOL_SIZE = 20;
-        internal static readonly Int32 DEF_TIMEOUT = 15;
-
+        // Connection string values.
+        private NpgsqlConnectionString                 connection_string;
 
         // Connector being used for the active connection.
-        private NpgsqlConnector                  _connector;
+        private NpgsqlConnector                        connector = null;
 
-        private System.Resources.ResourceManager resman;
 
         /// <summary>
         /// Initializes a new instance of the
@@ -130,15 +106,16 @@ namespace Npgsql
         /// <param name="ConnectionString">The connection used to open the PostgreSQL database.</param>
         public NpgsqlConnection(String ConnectionString)
         {
-            resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, ConnectionString);
 
-            _connector = null;
-
-            connection_string_values = ParseConnectionString(ConnectionString);
+            connection_string = NpgsqlConnectionString.ParseConnectionString(ConnectionString);
+            LogConnectionString();
 
             NotificationDelegate = new NotificationEventHandler(OnNotification);
+
             CertificateValidationCallbackDelegate = new CertificateValidationCallback(DefaultCertificateValidationCallback);
+            CertificateSelectionCallbackDelegate = new CertificateSelectionCallback(DefaultCertificateSelectionCallback);
+            PrivateKeySelectionCallbackDelegate = new PrivateKeySelectionCallback(DefaultPrivateKeySelectionCallback);
         }
 
         /// <summary>
@@ -150,7 +127,8 @@ namespace Npgsql
         /// Database:      Database name. Defaults to user name if not specified;
         /// User:          User name;
         /// Password:      Password for clear text authentication;
-        /// Pooling:       True or False. Controls whether connection pooling is used.  Default = True;
+        /// SSL:           True or False. Controls whether to attempt a secure connection. Default = False;
+        /// Pooling:       True or False. Controls whether connection pooling is used. Default = True;
         /// MinPoolSize:   Min size of connection pool;
         /// (NOT USED AT THIS TIME) MaxPoolSize:   Max size of connection pool;
         /// Encoding:      Encoding to be used;
@@ -166,29 +144,75 @@ namespace Npgsql
         public String ConnectionString {
             get
             {
-                StringBuilder      S = new StringBuilder();
-
-                foreach (DictionaryEntry DE in connection_string_values) {
-                    S.AppendFormat("{0}={1};", DE.Key, DE.Value);
-                }
-
-                return S.ToString();
-//                return connection_string;
+                return connection_string.ToString();
             }
             set
             {
+                // Connection string is used as the key to the connector.  Because of this,
+                // we cannot change it while we own a connector.
+                CheckConnectionClosed();
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "ConnectionString", value);
-                connection_string_values = ParseConnectionString(value);
+                connection_string = NpgsqlConnectionString.ParseConnectionString(value);
+                LogConnectionString();
             }
         }
 
         /// <summary>
-        /// Gets the ListDictionary containing the parsed connection string values.
+        /// Backend server host name.
         /// </summary>
-        internal ListDictionary ConnectionStringValues {
+        [Browsable(true)]
+        public String Host {
             get
             {
-                return connection_string_values;
+                return connection_string.ToString(ConnectionStringKeys.Host);
+            }
+        }
+
+        /// <summary>
+        /// Backend server port.
+        /// </summary>
+        [Browsable(true)]
+        public Int32 Port {
+            get
+            {
+                return connection_string.ToInt32(ConnectionStringKeys.Port, ConnectionStringDefaults.Port);
+            }
+        }
+
+        /// <summary>
+        /// If true, the connection will attempt to use SSL.
+        /// </summary>
+        [Browsable(true)]
+        public Boolean SSL {
+            get
+            {
+                return connection_string.ToBool(ConnectionStringKeys.SSL);
+            }
+        }
+
+        /// <summary>
+        /// Gets the time to wait while trying to establish a connection
+        /// before terminating the attempt and generating an error.
+        /// </summary>
+        /// <value>The time (in seconds) to wait for a connection to open. The default value is 15 seconds.</value>
+        [NpgsqlSysDescription("Description_ConnectionTimeout", typeof(NpgsqlConnection))]
+        public Int32 ConnectionTimeout {
+            get
+            {
+                return connection_string.ToInt32(ConnectionStringKeys.Timeout, ConnectionStringDefaults.Timeout);
+            }
+        }
+
+        ///<summary>
+        /// Gets the name of the current database or the database to be used after a connection is opened.
+        /// </summary>
+        /// <value>The name of the current database or the name of the database to be
+        /// used after a connection is opened. The default value is the empty string.</value>
+        [NpgsqlSysDescription("Description_Database", typeof(NpgsqlConnection))]
+        public String Database {
+            get
+            {
+                return connection_string.ToString(ConnectionStringKeys.Database);
             }
         }
 
@@ -200,8 +224,10 @@ namespace Npgsql
         public ConnectionState State {
             get
             {
-                if (_connector != null) {
-                    return _connector.State;
+                CheckNotDisposed();
+
+                if (connector != null) {
+                    return connector.State;
                 } else {
                     return ConnectionState.Closed;
                 }
@@ -216,8 +242,8 @@ namespace Npgsql
         public ServerVersion ServerVersion {
             get
             {
-                CheckConnection();
-                return _connector.ServerVersion;
+                CheckConnectionOpen();
+                return connector.ServerVersion;
             }
         }
 
@@ -229,8 +255,8 @@ namespace Npgsql
         public ProtocolVersion BackendProtocolVersion {
             get
             {
-                CheckConnection();
-                return _connector.BackendProtocolVersion;
+                CheckConnectionOpen();
+                return connector.BackendProtocolVersion;
             }
         }
 
@@ -294,13 +320,59 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "BeginTransaction", level);
 
-            CheckConnection();
+            CheckConnectionOpen();
 
-            if (_connector._inTransaction) {
+            if (connector._inTransaction) {
                 throw new InvalidOperationException(resman.GetString("Exception_NoNestedTransactions"));
             }
 
             return new NpgsqlTransaction(this, level);
+        }
+
+        /// <summary>
+        /// Opens a database connection with the property settings specified by the
+        /// <see cref="Npgsql.NpgsqlConnection.ConnectionString">ConnectionString</see>.
+        /// </summary>
+        public void Open()
+        {
+            CheckConnectionClosed();
+
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
+
+            // Check if there is any missing argument.
+            if (! connection_string.Contains(ConnectionStringKeys.Host))
+                throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), ConnectionStringKeys.Host);
+            if (! connection_string.Contains(ConnectionStringKeys.UserName))
+                throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), ConnectionStringKeys.UserName);
+
+            if (MaxPoolSize < 0)
+                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", ConnectionStringKeys.MaxPoolSize);
+            if (Timeout < 0)
+                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", ConnectionStringKeys.Timeout);
+
+            // Get and possibly initialize a Connector.
+            NpgsqlConnector NewConnector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
+
+            NewConnector.CertificateSelectionCallback += this.CertificateSelectionCallbackDelegate;
+            NewConnector.CertificateValidationCallback += this.CertificateValidationCallbackDelegate;
+            NewConnector.PrivateKeySelectionCallback += this.PrivateKeySelectionCallbackDelegate;
+
+            if (! NewConnector.IsInitialized)
+            {
+                try {
+                    NewConnector.Open();
+                } catch {
+                    // Force this connector to close because
+                    // it is in an inconsistent state, so we can't just
+                    // release it back to the pool.
+                    NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(NewConnector);
+                    throw;
+                }
+            }
+
+            NewConnector.Notification += NotificationDelegate;
+
+            connector = NewConnector;
         }
 
         /// <summary>
@@ -310,9 +382,9 @@ namespace Npgsql
         /// <param name="dbName">The name of the database to use in place of the current database.</param>
         public void ChangeDatabase(String dbName)
         {
-            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ChangeDatabase", dbName);
+            CheckNotDisposed();
 
-            CheckConnection();
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ChangeDatabase", dbName);
 
             if (dbName == null)
                 throw new ArgumentNullException("dbName");
@@ -324,70 +396,9 @@ namespace Npgsql
 
             Close();
 
-            connection_string_values[CONN_DATABASE] = dbName;            
+            connection_string[ConnectionStringKeys.Database] = dbName;            
 
             Open();
-        }
-
-        /// <summary>
-        /// Opens a database connection with the property settings specified by the
-        /// <see cref="Npgsql.NpgsqlConnection.ConnectionString">ConnectionString</see>.
-        /// </summary>
-        public void Open()
-        {
-            if (disposed) {
-                throw new ObjectDisposedException(CLASSNAME);
-            }
-
-            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
-
-            // Check if the connection is already open.
-            if (_connector != null) {
-                throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
-            }
-
-            // Check if there is any missing argument.
-            if (connection_string_values[CONN_SERVER] == null)
-                throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_SERVER);
-            if (connection_string_values[CONN_USERID] == null)
-                throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_USERID);
-
-            if (MaxPoolSize < 0)
-                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", MAX_POOL_SIZE);
-            if (Timeout < 0)
-                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", CONN_TIMEOUT);
-
-            // Get and possibly initialize a Connector.
-            NpgsqlConnector NewConnector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
-
-            NewConnector.CertificateValidationCallback += CertificateValidationCallbackDelegate;
-
-            if (! NewConnector.IsInitialized)
-            {
-                ProtocolVersion      PV;
-
-                // If Connection.ConnectionString specifies a protocol version, we will 
-                // not try to fall back to version 2 on failure.
-                if (ConnectionStringValues.Contains(CONN_PROTOCOL)) {
-                    PV = ConnectStringValueToProtocolVersion(CONN_PROTOCOL);
-                } else {
-                    PV = ProtocolVersion.Unknown;
-                }
-
-                try {
-                    NewConnector.Open(PV);
-                } catch {
-                    // Force this connector to close because
-                    // it is in an inconsistent state, so we can't just
-                    // release it back to the pool.
-                    NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(NewConnector);
-                    throw;
-                }
-            }
-
-            _connector = NewConnector;
-
-            _connector.Notification += NotificationDelegate;
         }
 
         /// <summary>
@@ -396,17 +407,22 @@ namespace Npgsql
         /// </summary>
         public void Close()
         {
-            if (_connector == null) {
+            CheckNotDisposed();
+
+            if (connector == null) {
                 return;
             }
 
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
 
-            _connector.CertificateValidationCallback -= CertificateValidationCallbackDelegate;
-            _connector.Notification -= NotificationDelegate;
+            connector.CertificateSelectionCallback += this.CertificateSelectionCallbackDelegate;
+            connector.CertificateValidationCallback += this.CertificateValidationCallbackDelegate;
+            connector.PrivateKeySelectionCallback += this.PrivateKeySelectionCallbackDelegate;
 
-            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
-            _connector = null;
+            connector.Notification -= NotificationDelegate;
+
+            NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(connector);
+            connector = null;
         }
 
         /// <summary>
@@ -427,6 +443,8 @@ namespace Npgsql
         /// <returns>A <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see> object.</returns>
         public NpgsqlCommand CreateCommand()
         {
+            CheckNotDisposed();
+
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CreateCommand");
             return new NpgsqlCommand("", this);
         }
@@ -444,27 +462,24 @@ namespace Npgsql
             disposed = true;
         }
 
-
+/* CHECKME - this isn't an ICloneable...
         /// <summary>
         /// Create a new (unconnected) connection based on this one.
         /// </summary>
         /// <returns>A new NpgsqlConnction object.</returns>
         public Object Clone()
         {
+            CheckNotDisposed();
+
             return new NpgsqlConnection(ConnectionString);
         }
 
+*/
 
 
-
-
-        private void CheckConnection()
-        {
-            if (_connector == null) {
-                throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
-            }
-        }
-
+        //
+        // Internal methods and properties
+        //
 
         internal void OnNotification(object O, NpgsqlNotificationEventArgs E)
         {
@@ -480,7 +495,93 @@ namespace Npgsql
         {
             get
             {
-                return _connector;
+                return connector;
+            }
+        }
+
+        /// <summary>
+        /// Gets the NpgsqlConnectionString containing the parsed connection string values.
+        /// </summary>
+        internal NpgsqlConnectionString ConnectionStringValues {
+            get
+            {
+                return connection_string;
+            }
+        }
+
+        /// <summary>
+        /// User name.
+        /// </summary>
+        internal String UserName {
+            get
+            {
+                return connection_string.ToString(ConnectionStringKeys.UserName);
+            }
+        }
+
+        /// <summary>
+        /// Password.
+        /// </summary>
+        internal String Password {
+            get
+            {
+                return connection_string.ToString(ConnectionStringKeys.Password);
+            }
+        }
+
+        /// <summary>
+        /// Determine if connection pooling will be used for this connection.
+        /// </summary>
+        internal Boolean Pooling {
+            get
+            {
+                return (
+                    connection_string.ToBool(ConnectionStringKeys.Pooling, ConnectionStringDefaults.Pooling) &&
+                    connection_string.ToInt32(ConnectionStringKeys.MaxPoolSize, ConnectionStringDefaults.MaxPoolSize) > 0
+                );
+            }
+        }
+
+        internal Int32 MinPoolSize {
+            get
+            {
+                return connection_string.ToInt32(ConnectionStringKeys.MinPoolSize, ConnectionStringDefaults.MinPoolSize);
+            }
+        }
+
+        internal Int32 MaxPoolSize {
+            get
+            {
+                return connection_string.ToInt32(ConnectionStringKeys.MaxPoolSize, ConnectionStringDefaults.MaxPoolSize);
+            }
+        }
+
+        internal Int32 Timeout {
+            get
+            {
+                return connection_string.ToInt32(ConnectionStringKeys.Timeout, ConnectionStringDefaults.Timeout);
+            }
+        }
+
+
+
+        //
+        // Event handlers
+        //
+
+        /// <summary>
+        /// Default SSL CertificateSelectionCallback implementation.
+        /// </summary>
+        internal X509Certificate DefaultCertificateSelectionCallback(
+            X509CertificateCollection      clientCertificates,
+            X509Certificate                serverCertificate,
+            string                         targetHost,
+            X509CertificateCollection      serverRequestedCertificates)
+        {
+            if (CertificateSelectionCallback != null) {
+                return CertificateSelectionCallback(clientCertificates, serverCertificate, targetHost, serverRequestedCertificates);
+            } else {
+                return null;
             }
         }
 
@@ -499,293 +600,67 @@ namespace Npgsql
         }
 
         /// <summary>
-        /// Backend server host name.
+        /// Default SSL PrivateKeySelectionCallback implementation.
         /// </summary>
-        [Browsable(true)]
-        public String Host {
-            get
-            {
-                return ConnectStringValueToString(CONN_SERVER);
-            }
-        }
-
-        /// <summary>
-        /// Backend server port.
-        /// </summary>
-        [Browsable(true)]
-        public Int32 Port {
-            get
-            {
-                return ConnectStringValueToInt32(CONN_PORT, DEF_PORT);
-            }
-        }
-
-        /// <summary>
-        /// If true, the connection will attempt to use SSL.
-        /// </summary>
-        [Browsable(true)]
-        public Boolean SSL {
-            get
-            {
-                return ConnectStringValueToBool(CONN_SSL_ENABLED);
-            }
-        }
-
-        /// <summary>
-        /// Gets the time to wait while trying to establish a connection
-        /// before terminating the attempt and generating an error.
-        /// </summary>
-        /// <value>The time (in seconds) to wait for a connection to open. The default value is 15 seconds.</value>
-        [NpgsqlSysDescription("Description_ConnectionTimeout", typeof(NpgsqlConnection))]
-        public Int32 ConnectionTimeout {
-            get
-            {
-                return this.ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
-            }
-        }
-
-        ///<summary>
-        /// Gets the name of the current database or the database to be used after a connection is opened.
-        /// </summary>
-        /// <value>The name of the current database or the name of the database to be
-        /// used after a connection is opened. The default value is an empty string.</value>
-        [NpgsqlSysDescription("Description_Database", typeof(NpgsqlConnection))]
-        public String Database {
-            get
-            {
-                return ConnectStringValueToString(CONN_DATABASE, UserName);
-            }
-        }
-
-        /// <summary>
-        /// User name.
-        /// </summary>
-        internal String UserName {
-            get
-            {
-                return ConnectStringValueToString(CONN_USERID);
-            }
-        }
-
-        /// <summary>
-        /// Password.
-        /// </summary>
-        internal String Password {
-            get
-            {
-                return ConnectStringValueToString(CONN_PASSWORD);
-            }
-        }
-
-        internal Boolean Pooling {
-            get
-            {
-                return this.ConnectStringValueToBool(POOLING, true);
-            }
-        }
-
-        internal Int32 MinPoolSize {
-            get
-            {
-                return ConnectStringValueToInt32(MIN_POOL_SIZE, DEF_MIN_POOL_SIZE);
-            }
-        }
-
-        internal Int32 MaxPoolSize {
-            get
-            {
-                return ConnectStringValueToInt32(MAX_POOL_SIZE, DEF_MAX_POOL_SIZE);
-            }
-        }
-
-        internal Int32 Timeout {
-            get
-            {
-                return ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
-            }
-        }
-
-        /// <summary>
-        /// This method parses a connection string.
-        /// It translates it to a list of key-value pairs.
-        /// </summary>
-        private ListDictionary ParseConnectionString(String CS)
+        internal AsymmetricAlgorithm DefaultPrivateKeySelectionCallback(
+            X509Certificate                certificate,
+            string                         targetHost)
         {
-            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ParseConnectionString");
-
-            ListDictionary new_values = new ListDictionary(CaseInsensitiveComparer.Default);
-            String[] pairs;
-            String[] keyvalue;
-
-            // Get the key-value pairs delimited by CONN_DELIM
-            pairs = CS.Split(new Char[] {CONN_DELIM});
-
-            // Now, for each pair, get its key-value.
-            foreach(String sraw in pairs)
-            {
-                String s = sraw.Trim();
-                String Key = "", Value = "";
-
-                // This happens when there are trailing/empty CONN_DELIMs
-                // Just ignore them.
-                if (s == "") {
-                    continue;
-                }
-
-                // Split this chunk on the first CONN_ASSIGN only.
-                keyvalue = s.Split(new Char[] {CONN_ASSIGN}, 2);
-
-                // Keys always get trimmed and uppercased.
-                Key = keyvalue[0].Trim().ToUpper();
-
-                // Make sure the key is even there...
-                if (Key.Length == 0) {
-                    throw new ArgumentException(resman.GetString("Exception_WrongKeyVal"), "<BLANK>");
-                }
-
-                // We don't expect keys this long, and it might be about to be put
-                // in an error message, so makes sure it is a sane length.
-                if (Key.Length > 20) {
-                    Key = Key.Substring(0, 20);
-                }
-
-                // Check if there is a key-value pair.
-                if (keyvalue.Length != 2) {
-                    throw new ArgumentException(resman.GetString("Exception_WrongKeyVal"), Key);
-                }
-
-                // Values always get trimmed.
-                Value = keyvalue[1].Trim();
-
-                // Do some ODBC related substitions
-                if (Key == ODBC_USERID) {
-                    Key = CONN_USERID;
-                } else if (Key == ODBC_PASSWORD) {
-                    Key = CONN_PASSWORD;
-                }
-
-                NpgsqlEventLog.LogMsg(resman, "Log_ConnectionStringValues", LogLevel.Debug, Key, Value);
-
-                // Add the pair to the dictionary..
-                new_values.Add(Key, Value);
+            if (PrivateKeySelectionCallback != null) {
+                return PrivateKeySelectionCallback(certificate, targetHost);
+            } else {
+                return null;
             }
-
-            return new_values;
         }
+
+
+
+        //
+        // Private methods and properties
+        //
+       
 
         /// <summary>
-        /// Return a string value from the current connection string, even if the
-        /// given key is not in the string or if the value is null.
+        /// Write each key/value pair in the connection string to the log.
         /// </summary>
-        internal String ConnectStringValueToString(String Key)
+        private void LogConnectionString()
         {
-            return ConnectStringValueToString(Key, "");
-        }
-
-        /// <summary>
-        /// Return a string value from the current connection string, even if the
-        /// given key is not in the string or if the value is null.
-        /// </summary>
-        internal String ConnectStringValueToString(String Key, String Default)
-        {
-            if (! connection_string_values.Contains(Key)) {
-                return Default;
-            }
-
-            return Convert.ToString(connection_string_values[Key]);
-        }
-
-        /// <summary>
-        /// Return an integer value from the current connection string, even if the
-        /// given key is not in the string or if the value is null.
-        /// Throw an appropriate exception if the value cannot be coerced to an integer.
-        /// </summary>
-        internal Int32 ConnectStringValueToInt32(String Key)
-        {
-            return ConnectStringValueToInt32(Key, 0);
-        }
-
-        /// <summary>
-        /// Return an integer value from the current connection string, even if the
-        /// given key is not in the string.
-        /// Throw an appropriate exception if the value cannot be coerced to an integer.
-        /// </summary>
-        internal Int32 ConnectStringValueToInt32(String Key, Int32 Default)
-        {
-            if (! connection_string_values.Contains(Key)) {
-                return Default;
-            }
-
-            try {
-                return Convert.ToInt32(connection_string_values[Key]);
-            } catch (Exception E) {
-                throw new ArgumentException(resman.GetString("Exception_InvalidIntegerKeyVal"), Key, E);
+            foreach (DictionaryEntry DE in connection_string) {
+                NpgsqlEventLog.LogMsg(resman, "Log_ConnectionStringValues", LogLevel.Debug, DE.Key, DE.Value);
             }
         }
 
-        /// <summary>
-        /// Return a boolean value from the current connection string, even if the
-        /// given key is not in the string.
-        /// Throw an appropriate exception if the value is not recognized as a boolean.
-        /// </summary>
-        internal Boolean ConnectStringValueToBool(String Key)
+        private void CheckConnectionOpen()
         {
-            return ConnectStringValueToBool(Key, false);
-        }
-
-        /// <summary>
-        /// Return a boolean value from the current connection string, even if the
-        /// given key is not in the string.
-        /// Throw an appropriate exception if the value is not recognized as a boolean.
-        /// </summary>
-        internal Boolean ConnectStringValueToBool(String Key, Boolean Default)
-        {
-            if (! connection_string_values.Contains(Key)) {
-                return Default;
+            if (disposed) {
+                throw new ObjectDisposedException(CLASSNAME);
             }
 
-            switch (connection_string_values[Key].ToString().ToLower()) {
-            case "t" :
-            case "true" :
-            case "y" :
-            case "yes" :
-                return true;
-
-            case "f" :
-            case "false" :
-            case "n" :
-            case "no" :
-                return false;
-
-            default :
-                throw new ArgumentException(resman.GetString("Exception_InvalidBooleanKeyVal"), Key);
-
+            if (connector == null) {
+                throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
             }
         }
 
-        /// <summary>
-        /// Return a ProtocolVersion from the current connection string, even if the
-        /// given key is not in the string.
-        /// Throw an appropriate exception if the value is not recognized as
-        /// integer 2 or 3.
-        /// </summary>
-        internal ProtocolVersion ConnectStringValueToProtocolVersion(String Key)
+        private void CheckConnectionClosed()
         {
-            if (! connection_string_values.Contains(Key)) {
-                return ProtocolVersion.Version3;
+            if (disposed) {
+                throw new ObjectDisposedException(CLASSNAME);
             }
 
-            switch (ConnectStringValueToInt32(Key)) {
-            case 2 :
-                return ProtocolVersion.Version2;
-
-            case 3 :
-                return ProtocolVersion.Version3;
-
-            default :
-                throw new ArgumentException("Invalid protocol version specified in ConnectionString", Key);
-
+            if (connector != null) {
+                throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
             }
         }
+
+        private void CheckNotDisposed()
+        {
+            if (disposed) {
+                throw new ObjectDisposedException(CLASSNAME);
+            }
+        }
+
     }
+
+
+
 }
