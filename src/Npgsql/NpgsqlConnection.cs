@@ -317,6 +317,8 @@ namespace Npgsql
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LogLevel.Debug);
 	    
+	    connection_string_values.Clear();
+	    
 	    // Get the key-value pairs delimited by CONN_DELIM
       String[] pairs = connection_string.Split(new Char[] {CONN_DELIM});
 	    	
