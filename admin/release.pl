@@ -43,6 +43,7 @@ my $targets = { "ChangeLog" => 1,
 my $ERROR_NOT_CVS_TAGGED = 1;
 my $ERROR_DOES_NOT_COMPILE = 2;
 my $ERROR_NONINTERACTIVE_TEST_DONT_PASS = 3;
+my $ERROR_MISSING_LICENSE = 4;
 
 #
 # Check messages
@@ -72,6 +73,11 @@ my ($rel_version, $version, $RELEASE_TAG) = get_release_info();
 
 # Prepare the list of files to be passed to tar
 my $target_files = prepare_release_files( $targets );
+
+
+# Make sure that the notices for this project are in all the areas that
+# they should be
+check_notices( $target_files );
 
 # Verify that all files are properly tagged
 verify_tagged( $RELEASE_TAG );
@@ -122,6 +128,8 @@ sub gather_input() {
     return $npgsql_host;
 }
 
+
+
 ######################################################################
 # Make sure that npgsql compiles correctly
 ######################################################################
@@ -157,6 +165,7 @@ sub clean() {
     system("(cd src/testsuite/noninteractive; make clean > /dev/null)");
     system("rm -f admin/*.tar.gz > /dev/null");
     system("rm -f ChangeLog* > /dev/null");
+    system("find . -name *~ -print0 | xargs -0 rm -f > /dev/null");
     print $OK;
 }
 
@@ -213,13 +222,66 @@ sub prepare_release_files() {
 	} elsif ( -d $file ) {
 	    open( DIRFILES, "find $file -print |grep -v CVS | grep -v .#| sed 1d |");
 	    while(<DIRFILES>) {
-		$_ =~ s/\n/ /;
+		$_ =~ s/\n/ /;  #Strip trailing newline
+		$_ =~ s/\s*$//; #Strip trailing whitespace
 		push @{ $target_files }, $_;
 	    }
 	}
     }
 
     return $target_files;
+}
+
+
+
+
+
+######################################################################
+# Make sure that npgsql includes the proper notices where it should
+######################################################################
+sub check_notices() {
+    my $target_files = shift;
+    my $copyright = "Copyright\ \(C\)\ 2002\ The\ Npgsql\ Development\ Team";
+    my $licenses = { LGPL => "GNU Lesser General Public" };
+    my $errors = 0;
+
+    foreach my $file ( @$target_files ) {
+	if ( $file =~ m/.*\.cs$/
+	     || $file =~ m/Makefile/
+	     || $file =~ m/.*\.pl/
+	     ) {	    
+	    my $found_license = 0;
+	    my $file_content;
+
+	    $/ = undef;               # Slurp in whole file
+	    open ( CS_IN, "$file" );
+	    $file_content = <CS_IN>;
+	    close ( CS_IN );
+	    
+	    # Make sure the license is there
+	    foreach my $license ( keys %$licenses ) {
+		if ( $file_content =~ m/$licenses->{$license}/ ) {
+		    $found_license = 1;
+		}
+	    }
+	    if ( !$found_license ) {
+		print "File $file is missing a proper license\n";
+		$errors = 1;
+	    }
+
+#FIXME: This doesn't work. Hm...
+	    # Make sure the copyright is there
+#	    if ( $file_content !~ m/$copyright/ ) {
+#		print "File $file is missing a proper copyright\n";
+#		$errors = 1;
+#	    }
+	}
+    }
+
+    if ( $errors ) {
+	print "Please add the proper notices in the listed files first\n";
+	exit $ERROR_MISSING_LICENSE;
+    }
 }
 
 
