@@ -663,6 +663,7 @@ namespace Npgsql
                 planName = Connector.NextPlanName();
                 String portalName = Connector.NextPortalName();
 
+                Console.WriteLine(planName);
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
                 Connector.Parse(parse);
@@ -737,10 +738,15 @@ namespace Npgsql
 
             Boolean addProcedureParenthesis = false;  // Do not add procedure parenthesis by default.
             
+            Boolean functionReturnsRecord = false;    // Functions don't return record by default.
+            
             String result = text;
 
             if (type == CommandType.StoredProcedure)
             {
+                
+                functionReturnsRecord = CheckFunctionReturnRecord();
+                
                 // Check if just procedure name was passed. If so, does not replace parameter names and just pass parameter values in order they were added in parameters collection.
                 if (!result.Trim().EndsWith(")"))  
                 {
@@ -751,16 +757,24 @@ namespace Npgsql
                 if (Connector.SupportsPrepare)
                     result = "select * from " + result; // This syntax is only available in 7.3+ as well SupportsPrepare.
                 else
-                    result = "select " + result;				// Only a single result return supported. 7.2 and earlier.
+                    result = "select " + result;        //Only a single result return supported. 7.2 and earlier.
             }
             else if (type == CommandType.TableDirect)
-                return "select * from " + result; // There is no parameter support on table direct.
+                return "select * from " + result;       // There is no parameter support on table direct.
 
             if (parameters == null || parameters.Count == 0)
+            {
                 if (addProcedureParenthesis)
-                    return AddSingleRowBehaviorSupport(result + ")");
-                else
-                    return AddSingleRowBehaviorSupport(result);
+                        result += ")";
+                        
+                if (functionReturnsRecord)
+                    result = AddFunctionReturnsRecordSupport(result);
+                
+                
+                result = AddSingleRowBehaviorSupport(result);
+                                           
+                return result;
+             }   
 
 
             //CheckParameters();
@@ -790,10 +804,78 @@ namespace Npgsql
                         result += Param.TypeInfo.ConvertToBackend(Param.Value, false);
             }
             
+            
             if (addProcedureParenthesis)
                 result += ")";
 
+            Console.WriteLine(functionReturnsRecord);
+            if (functionReturnsRecord)
+                result = AddFunctionReturnsRecordSupport(result);
+                
             return AddSingleRowBehaviorSupport(result);
+        }
+        
+        
+        
+        private Boolean CheckFunctionReturnRecord()
+        {
+        
+            if (Parameters.Count == 0)
+                return false;
+                
+            String returnRecordQuery = "select count(*) > 0 from pg_proc where prorettype = ( select oid from pg_type where typname = 'record' ) and proargtypes='{0}' and proname='{1}';";
+            
+            StringBuilder parameterTypes = new StringBuilder("");
+            
+            foreach(NpgsqlParameter p in Parameters)
+            {
+                if ((p.Direction == ParameterDirection.Input) ||
+                (p.Direction == ParameterDirection.InputOutput))
+                {
+                    parameterTypes.Append(Connection.Connector.OidToNameMapping[p.TypeInfo.Name].OID);
+                }
+            }
+        
+                
+            NpgsqlCommand c = new NpgsqlCommand(String.Format(returnRecordQuery, parameterTypes.ToString(), CommandText), Connection);
+            
+            Boolean ret = (Boolean) c.ExecuteScalar();
+            
+            // reset any responses just before getting new ones
+            connector.Mediator.ResetResponses();
+            return ret;
+            
+        
+        }
+        
+        
+        private String AddFunctionReturnsRecordSupport(String OriginalResult)
+        {
+                                
+            StringBuilder sb = new StringBuilder(OriginalResult);
+            
+            sb.Append(" as (");
+            
+            foreach(NpgsqlParameter p in Parameters)
+            {
+                if ((p.Direction == ParameterDirection.Output) ||
+                (p.Direction == ParameterDirection.InputOutput))
+                {
+                    sb.Append(String.Format("{0} {1}, ", p.ParameterName.Substring(1), p.TypeInfo.Name));
+                }
+            }
+            
+            String result = sb.ToString();
+            
+            result = result.Remove(result.Length - 2, 1);
+            
+            result += ")";
+            
+            
+            
+            return result;
+            
+            
         }
 
 
@@ -888,6 +970,8 @@ namespace Npgsql
 
             planName = Connector.NextPlanName();
 
+            Console.WriteLine(planName);
+            
             StringBuilder command = new StringBuilder("prepare " + planName);
 
             String textCommand = text;
@@ -1008,20 +1092,22 @@ namespace Npgsql
         }//ReplaceParameterValue
         
         
-        private String AddSingleRowBehaviorSupport(String resultCommandText)
+        private String AddSingleRowBehaviorSupport(String ResultCommandText)
         {
+            
+            ResultCommandText = ResultCommandText.Trim();
         
             if ((commandBehavior & CommandBehavior.SingleRow) > 0)
             {
-                if (resultCommandText.EndsWith(";"))
-                    resultCommandText = resultCommandText.Substring(0, resultCommandText.Length - 1);
-                resultCommandText += " limit 1;";
+                if (ResultCommandText.EndsWith(";"))
+                    ResultCommandText = ResultCommandText.Substring(0, ResultCommandText.Length - 1);
+                ResultCommandText += " limit 1;";
                 
             }
             
             
             
-            return resultCommandText;
+            return ResultCommandText;
             
         }
 
