@@ -9,8 +9,9 @@ public class Test_1
   public static void Main(String[] args)
     {
 
-      String connstring = NPGSQL_TESTS_CONNECTIONSTRING;
-      System.Console.WriteLine("String send from test is:" + connstring);
+      String connstring;
+      connstring = NpgsqlTests.getConnectionString();
+      System.Console.WriteLine("Test Works");
 
       NpgsqlConnection conn = new NpgsqlConnection(connstring);
 

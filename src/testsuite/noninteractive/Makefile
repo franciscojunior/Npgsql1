@@ -6,7 +6,7 @@ OBJECTS=
 PSQL=psql
 NPGSQL_template_DB=template1
 NPGSQL_DB_PREFIX=npgsql_tests
-NPGSQL_DB=$(NPGSQL_DB_PREFIX)_$(shell date +%Y%m%d_%H%M%S)
+NPGSQL_DB:=$(NPGSQL_DB_PREFIX)_$(shell date +%Y%m%d_%H%M%S)
 NPGSQL_HOST=127.0.0.1
 NPGSQL_PORT=5432
 NPGSQL_UID=npgsql_tests
@@ -18,7 +18,7 @@ NPGSQL_TESTS_SHARED_LIB=NpgsqlTests.dll
 
 export CC CPPFLAGS NPGSQL_template_DB NPGSQL_TEST_STRING NPGSQL_TESTS_LOG \
 	NPGSQL_DB_PREFIX NPGSQL_DB NPGSQL_HOST NPGSQL_UID NPGSQL_PWD PSQL \
-	NPGSQL_TESTS_SHARED_SRC NPGSQL_TESTS_SHARED_LIB
+	NPGSQL_TESTS_SHARED_SRC NPGSQL_TESTS_SHARED_LIB MONO
 
 export PGPASSWORD=$(NPGSQL_PWD)
 export PGUSER=$(NPGSQL_UID)
@@ -36,8 +36,17 @@ db:
 	@echo -n "Creating test tables..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
 	-f add_tables.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
 	(echo "FAILED" && exit 1)
-	@echo -n "Adding test functions..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
+	@echo -n "Adding test tables..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
 	-f add_tables.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
+	(echo "FAILED" && exit 1)
+	@echo -n "Adding test functions..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
+	-f add_functions.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
+	(echo "FAILED" && exit 1)
+	@echo -n "Adding test triggers..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
+	-f add_triggers.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
+	(echo "FAILED" && exit 1)
+	@echo -n "Adding test views..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
+	-f add_views.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
 	(echo "FAILED" && exit 1)
 	@echo -n "Adding test data..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
 	-f add_data.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
@@ -50,7 +59,7 @@ tests:
 	@./runTests.sh
 
 clean:
-	rm -rf *~ out-* *.exe $(NPGSQL_LIB) $(NPGSQL_TESTS_LOG) \
+	rm -rf *~ out_* *.exe $(NPGSQL_LIB) $(NPGSQL_TESTS_LOG) \
 	$(NPGSQL_TESTS_SHARED_SRC) \
 	$(NPGSQL_TESTS_SHARED_LIB)
 	@./cleanDBs.sh
