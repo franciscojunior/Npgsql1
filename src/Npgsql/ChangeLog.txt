@@ -1,12 +1,29 @@
 
+2002-06-10
+	fxjr:
+					- Added NpgsqlPasswordPacket class to hide protocol PasswordPacket 
+					message handling.
+					- Added NpgsqlStartupPacket class to hide protocol StartupPacket 
+					message handling.
+					
+					NpgsqlConnection.cs
+								- Changed implementation of WriteStartupPacket() to use 
+								NpgsqlStartupPacket class.
+								- Changed PG_PORT to be "5432" instead of 5432 as discussed.
+								This prevents the InvalidCastException when a port isn't specified
+								in the connection string.
+								- Changed implementation of HandleStartupPacketResponse() to use
+								NpgsqlPasswordPacket class.
+										
 2002-06-07
 	fxjr:
-					NpgsqlConnection.cs
-								- Changed WriteStartupPacked implementation to use PGUtil.WriteLimString()
-								method.
+
+          NpgsqlConnection.cs
+					      - Changed WriteStartupPacket() implementation to use PGUtil.WriteLimString()
+						    method.
 					
-					PGUtil.cs
-								- Started implementation of the method WriteLimString().
+				  PGUtil.cs
+					      - Started implementation of the method WriteLimString().
 								
 2002-06-07
 	dpage:
