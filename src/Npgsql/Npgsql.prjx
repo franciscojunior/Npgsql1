@@ -1,6 +1,4 @@
-<Project name="Npgsql" projecttype="C#" fileversion="1.0" description="creates a console C# project" newfilesearch="None" enableviewstate="True" projectdocumentation="">
-  <DeploymentInformation target="" script="" strategy="File" />
-  <References />
+<Project name="Npgsql" description="creates a console C# project" newfilesearch="None" enableviewstate="True" version="1.1" projecttype="C#">
   <Contents>
     <File name=".\AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlConnection.cs" subtype="Code" buildaction="Compile" />
@@ -21,17 +19,30 @@
     <File name=".\NpgsqlRowDescription.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlBackEndKeyData.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlAsciiRow.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlClosedState.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlConnectedState.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlDataAdapter.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlDataReader.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlMediator.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlMessageTypes.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlQuery.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlReadyState.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlResultSet.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlStartupState.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlState.cs" subtype="Code" buildaction="Compile" />
   </Contents>
+  <References />
+  <DeploymentInformation target="" script="" strategy="File" />
   <Configurations active="Debug">
-    <Configuration name="Debug" description="">
+    <Configuration runwithwarnings="False" name="Debug">
+      <CodeGeneration runtime="MsNet" compiler="Csc" warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Library" definesymbols="" generatexmldocumentation="False" win32Icon="" />
+      <Execution commandlineparameters="" consolepause="True" />
       <Output directory=".\" assembly="Npgsql" />
-      <CodeGeneration warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Library" definesymbols="" generatexmldocumentation="False" win32Icon="" />
-      <Execution consolepause="True" runwithwarnings="False" />
     </Configuration>
-    <Configuration name="Release" description="">
+    <Configuration runwithwarnings="False" name="Release">
+      <CodeGeneration runtime="MsNet" compiler="Csc" warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Exe" definesymbols="" generatexmldocumentation="False" win32Icon="" />
+      <Execution commandlineparameters="" consolepause="True" />
       <Output directory=".\" assembly="Npgsql" />
-      <CodeGeneration warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Exe" definesymbols="" generatexmldocumentation="False" win32Icon="" />
-      <Execution consolepause="True" runwithwarnings="False" />
     </Configuration>
   </Configurations>
 </Project>
