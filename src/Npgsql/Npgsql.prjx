@@ -14,6 +14,7 @@
     <File name=".\LICENSE.txt" subtype="Code" buildaction="Nothing" />
     <File name=".\NpgsqlCommand.cs" subtype="Code" buildaction="Compile" />
     <File name=".\STATUS.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\PGUtil.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <Configurations active="Debug">
     <Configuration name="Debug" description="">
