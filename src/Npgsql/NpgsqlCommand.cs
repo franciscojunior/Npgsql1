@@ -79,6 +79,7 @@ namespace Npgsql
 				// [TODO] Validate commandtext.
 				text = value;
 				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".CommandText = " + value, LogLevel.Normal);
+				planName = String.Empty;
 			}
 		}
 		
@@ -221,7 +222,12 @@ namespace Npgsql
 			// Check the connection state.
 			CheckConnectionState();
 			
-			connection.Query(this);
+			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+				connection.Query(this); 
+			else
+				throw new NotImplementedException("Only Text and StoredProcedure types supported!");
+			
+			
 			
 			// Check if there were any errors.
 			// [FIXME] Just check the first error.
@@ -282,8 +288,12 @@ namespace Npgsql
 			// Check the connection state.
 			CheckConnectionState();
 			
-			connection.Query(this);
+			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+				connection.Query(this); 
+			else
+				throw new NotImplementedException("Only Text and StoredProcedure types supported!");
 			
+						
 			// Check if there were any errors.
 			// [FIXME] Just check the first error.
 			if (connection.Mediator.Errors.Count > 0)
@@ -300,8 +310,18 @@ namespace Npgsql
 		  
 			// Check the connection state.
 			CheckConnectionState();
+						
+			if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
+				connection.Query(this); 
+			else
+				throw new NotImplementedException("Only Text and StoredProcedure types supported!");
 			
-			connection.Query(this);	// If there is any error, an NpgsqlException will be thrown.
+			
+			// Check if there were any errors.
+			// [FIXME] Just check the first error.
+			if (connection.Mediator.Errors.Count > 0)
+				throw new NpgsqlException(connection.Mediator.Errors[0].ToString());
+			
 			
 			//ArrayList results = connection.Mediator.Data;
 			
@@ -422,15 +442,20 @@ namespace Npgsql
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetClearCommandText()", LogLevel.Debug);
 			
+			
+			String result = text;
+			
+			if (type == CommandType.StoredProcedure)
+					result = "select " + result;
+						
 			if (parameters.Count == 0)
-				return text;
+				return result;
+						
 			
 			CheckParameters();
 			
-			String result = text;
 			String parameterName;
 						
-			// Now check if the parameters are there and replace them for the actual values.
 			for (Int32 i = 0; i < parameters.Count; i++)
 			{
 				parameterName = parameters[i].ParameterName;
@@ -474,11 +499,14 @@ namespace Npgsql
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetPrepareCommandText()", LogLevel.Debug);
 			
 			
-			planName = "plan" + System.Threading.Interlocked.Increment(ref planIndex);
+			planName = "NpgsqlPlan" + System.Threading.Interlocked.Increment(ref planIndex);
 			
 			StringBuilder command = new StringBuilder("prepare " + planName);
 			
 			String textCommand = text;
+			
+			if (type == CommandType.StoredProcedure)
+				textCommand = "select " + textCommand;
 			
 			
 			
@@ -544,6 +572,9 @@ namespace Npgsql
 				if (text.IndexOf(':' + parameterName) <= 0)
 					throw new NpgsqlException("Parameter :" + parameterName + " wasn't found in the query.");
 			}
+			
+			
+			
 		}
 	}
 	
