@@ -837,7 +837,7 @@ namespace Npgsql
                 if ((p.Direction == ParameterDirection.Input) ||
                 (p.Direction == ParameterDirection.InputOutput))
                 {
-                    parameterTypes.Append(Connection.Connector.OidToNameMapping[p.TypeInfo.Name].OID);
+                    parameterTypes.Append(Connection.Connector.OidToNameMapping[p.TypeInfo.Name].OID + " ");
                 }
             }
         
