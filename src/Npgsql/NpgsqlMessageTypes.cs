@@ -57,7 +57,7 @@ namespace Npgsql
 		public const Char CopyDataRows = ' ';
 		public const Char CopyInResponse = 'G';
 		public const Char CopyOutResponse = 'H';
-		public const Char CursorResponse = 'B';
+		public const Char CursorResponse = 'P';
 		public const Char EmptyQueryResponse = 'I';
 		public const Char ErrorResponse = 'E';
 		public const Char FunctionCall = 'F';
