@@ -48,8 +48,8 @@ namespace Npgsql
     private ListDictionary	connection_string_values;
 
     // In the connection string
-    private readonly char CONN_DELIM = ';';  // Delimeter
-    private readonly char CONN_ASSIGN = '=';
+    private readonly Char CONN_DELIM = ';';  // Delimeter
+    private readonly Char CONN_ASSIGN = '=';
     private readonly String CONN_SERVER = "SERVER";
     private readonly String CONN_USERID = "USER ID";
     private readonly String CONN_PASSWORD = "PASSWORD";
@@ -57,7 +57,7 @@ namespace Npgsql
     private readonly String CONN_PORT = "PORT";
 
     // Postgres default port
-    private readonly Int32 PG_PORT = 5432;
+    private readonly String PG_PORT = "5432";
 		
     // These are for ODBC connection string compatibility
     private readonly String ODBC_USERID = "UID";
@@ -237,7 +237,7 @@ namespace Npgsql
         if (connection_state == ConnectionState.Open)
         {
           // Terminate the connection sending Terminate message.
-          output_stream.WriteByte((byte)'X');
+          output_stream.WriteByte((Byte)'X');
           output_stream.Flush();
 		    		
         }
@@ -283,7 +283,7 @@ namespace Npgsql
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LogLevel.Debug);
 	    	
       // Get the key-value pairs delimited by CONN_DELIM
-      String[] pairs = connection_string.Split(new char[] {CONN_DELIM});
+      String[] pairs = connection_string.Split(new Char[] {CONN_DELIM});
 	    	
       String[] keyvalue;
       // Now, for each pair, get its key-value.
@@ -294,7 +294,7 @@ namespace Npgsql
         if (s == "")	
           continue;
 	    		
-        keyvalue = s.Split(new char[] {CONN_ASSIGN});
+        keyvalue = s.Split(new Char[] {CONN_ASSIGN});
 	    		
         // Check if there is a key-value pair.
         if (keyvalue.Length != 2)
@@ -333,29 +333,16 @@ namespace Npgsql
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WritestartupPacket()", LogLevel.Debug);
 	    	
-      // Packet length = 296
-      output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)296)), 0, 4);
-	    	
-      // Protocol version = 2.0
-      output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)((PROTOCOL_VERSION_MAJOR<<16) | PROTOCOL_VERSION_MINOR))), 0, 4);
-	    	
-      // Database name.
-      String db_name = (String)connection_string_values[CONN_DATABASE];
-      
-      // Write LimString padded with nulls
-      PGUtil.WriteLimString(db_name, 64, output_stream, connection_encoding);
-      
-      // User name.
-      String user_name = (String)connection_string_values[CONN_USERID];
-      
-      // Write LimString padded with nulls
-      PGUtil.WriteLimString(user_name, 32, output_stream, connection_encoding);
+      NpgsqlStartupPacket startup_packet = new NpgsqlStartupPacket(296,
+			                                                             PROTOCOL_VERSION_MAJOR,
+			                                                             PROTOCOL_VERSION_MINOR,
+			                                                             (String)connection_string_values[CONN_DATABASE],
+			                                                             (String)connection_string_values[CONN_USERID],
+			                                                             "",
+			                                                             "",
+			                                                             "");
     	
-      // Write the other unused fields
-      String unused = "";
-    	
-    	// Write LimString padded with nulls
-    	PGUtil.WriteLimString(unused, 64 + 64 + 64, output_stream, connection_encoding);
+    	startup_packet.WriteToStream(output_stream, connection_encoding);
     	
       output_stream.Flush();
 	    	
@@ -369,13 +356,13 @@ namespace Npgsql
       // Handle possible error messages or password requests.
 	    	
       NetworkStream 	ns = connection.GetStream(); // Stream to read from network.
-      Int32 			num_bytes_read;
+      Int32 			num_Bytes_read;
       Int32			auth_type;
       Boolean			ready_query = false;
 	    	
       while (!ready_query)
       {
-        // Check the first byte of response.
+        // Check the first Byte of response.
         switch (ns.ReadByte())
         {
           case 'E':
@@ -392,7 +379,7 @@ namespace Npgsql
             // Received an Authentication Request.
 		    			
             // Read the request.
-            num_bytes_read = ns.Read(input_buffer, 0, 4);
+            num_Bytes_read = ns.Read(input_buffer, 0, 4);
             auth_type = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
 		    			
             if (auth_type == AUTH_OK)
@@ -408,12 +395,17 @@ namespace Npgsql
               NpgsqlEventLog.LogMsg("Server requested cleartext password authentication.", LogLevel.Debug);
               
               // Send the PasswordPacket.
-              String password = ((String) connection_string_values[CONN_PASSWORD]);
+              
+              /*String password = ((String) connection_string_values[CONN_PASSWORD]);
               // Add the null string terminator
               password = password.PadRight(password.Length + 1, '\x00');
 			    			
               output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(password.Length + 4)), 0, 4);
               output_stream.Write(connection_encoding.GetBytes(password), 0, password.Length);
+            	*/
+            	
+            	NpgsqlPasswordPacket password_packet = new NpgsqlPasswordPacket((String) connection_string_values[CONN_PASSWORD]);
+            	password_packet.WriteToStream(output_stream, connection_encoding);
               output_stream.Flush();
 		    				
               // Console.WriteLine("Going listen");
@@ -438,8 +430,8 @@ namespace Npgsql
           case 'K':
             NpgsqlEventLog.LogMsg("BackendKeyData message from Server", LogLevel.Debug);
             // BackendKeyData message.
-            // Read the BackendKeyData message contents. Two Int32 integers = 8 bytes.
-            num_bytes_read = ns.Read(input_buffer, 0, 8);
+            // Read the BackendKeyData message contents. Two Int32 integers = 8 Bytes.
+            num_Bytes_read = ns.Read(input_buffer, 0, 8);
             cancel_proc_id = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
             cancel_secret_key = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 4));
 		    			
