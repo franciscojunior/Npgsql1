@@ -30,6 +30,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Net;
 
+
 namespace Npgsql
 {
 	///<summary>
@@ -110,16 +111,16 @@ namespace Npgsql
 		
 		public static void CheckedStreamRead(Stream stream, Byte[] buffer, Int32 offset, Int32 size)
 		{
-      Int32 bytes_from_stream = 0;
-      Int32 total_bytes_read = 0;
-      do
-      {
-        bytes_from_stream = stream.Read(buffer, offset + total_bytes_read, size);
-        total_bytes_read += bytes_from_stream;
-        size -= bytes_from_stream;
-      }
-      while(size > 0);
-
+			Int32 bytes_from_stream = 0;
+			Int32 total_bytes_read = 0;
+			do
+			{
+				bytes_from_stream = stream.Read(buffer, offset + total_bytes_read, size);
+				total_bytes_read += bytes_from_stream;
+				size -= bytes_from_stream;
+			}
+			while(size > 0);
+			
 		}
 		
 		public static void WriteQueryToStream( String query, Stream stream, Encoding encoding )
@@ -139,24 +140,6 @@ namespace Npgsql
 		}
 		
 		
-    public static String GetSystemTypeFromDbType(Int32 dbType)
-    {
-    	// This method gets a db type identifier and return the equivalent
-    	// system type name.
-    	
-    	//[FIXME] Only Int32 and String supported for now.
-    	switch (dbType)
-    	{
-    		case 23:
-    			return "System.Int32";
-    		
-    		case 25:
-    			return "System.String";
-    		
-    		default:
-    			return "System.String";
-    		
-    	}
-    }
+   
 	}
 }
