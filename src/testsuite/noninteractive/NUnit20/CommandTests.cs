@@ -60,26 +60,35 @@ namespace NpgsqlTests
 			NpgsqlCommand command = new NpgsqlCommand();
 			
 			// Add parameters.
-			command.Parameters.Add(new NpgsqlParameter("Parameter1", DbType.Boolean));
-			command.Parameters.Add(new NpgsqlParameter("Parameter2", DbType.Int32));
-			command.Parameters.Add(new NpgsqlParameter("Parameter3", DbType.DateTime));
+			command.Parameters.Add(new NpgsqlParameter(":Parameter1", DbType.Boolean));
+			command.Parameters.Add(new NpgsqlParameter(":Parameter2", DbType.Int32));
+			command.Parameters.Add(new NpgsqlParameter(":Parameter3", DbType.DateTime));
 			
 			
 			// Get by indexers.
 			
-			Assertion.AssertEquals("ParametersGetName", "Parameter1", command.Parameters["Parameter1"].ParameterName);
-			Assertion.AssertEquals("ParametersGetName", "Parameter2", command.Parameters["Parameter2"].ParameterName);
-			Assertion.AssertEquals("ParametersGetName", "Parameter3", command.Parameters["Parameter3"].ParameterName);
+			Assertion.AssertEquals("ParametersGetName", ":Parameter1", command.Parameters[":Parameter1"].ParameterName);
+			Assertion.AssertEquals("ParametersGetName", ":Parameter2", command.Parameters[":Parameter2"].ParameterName);
+			Assertion.AssertEquals("ParametersGetName", ":Parameter3", command.Parameters[":Parameter3"].ParameterName);
 						                 
 
-			Assertion.AssertEquals("ParametersGetName", "Parameter1", command.Parameters[0].ParameterName);
-			Assertion.AssertEquals("ParametersGetName", "Parameter2", command.Parameters[1].ParameterName);
-			Assertion.AssertEquals("ParametersGetName", "Parameter3", command.Parameters[2].ParameterName);						             
+			Assertion.AssertEquals("ParametersGetName", ":Parameter1", command.Parameters[0].ParameterName);
+			Assertion.AssertEquals("ParametersGetName", ":Parameter2", command.Parameters[1].ParameterName);
+			Assertion.AssertEquals("ParametersGetName", ":Parameter3", command.Parameters[2].ParameterName);						             
 			
 			
 			
 		}
 		
+		[Test]
+		public void EmptyQuery()
+		{
+			_conn.Open();
+		
+			NpgsqlCommand command = new NpgsqlCommand(";", _conn);
+			command.ExecuteNonQuery();
+			
+		}
 		[Test]
 		[ExpectedException(typeof(NpgsqlException))]
 		public void NoNameParameterAdd()
