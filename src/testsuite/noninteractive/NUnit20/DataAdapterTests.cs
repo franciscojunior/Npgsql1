@@ -116,5 +116,27 @@ namespace NpgsqlTests
 			
 						
 		}
+		
+		[Test]
+		public void FillWithEmptyResultset()
+		{
+		  
+		  _conn.Open();
+			
+			DataSet ds = new DataSet();
+
+			NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = -1", _conn);
+		  
+		  
+		  da.Fill(ds);
+		  
+		  Assertion.AssertEquals(1, ds.Tables.Count);
+		  Assertion.AssertEquals(4, ds.Tables[0].Columns.Count);
+		  Assertion.AssertEquals("field_serial", ds.Tables[0].Columns[0].ColumnName);
+		  Assertion.AssertEquals("field_int2", ds.Tables[0].Columns[1].ColumnName);
+		  Assertion.AssertEquals("field_timestamp", ds.Tables[0].Columns[2].ColumnName);
+		  Assertion.AssertEquals("field_numeric", ds.Tables[0].Columns[3].ColumnName);
+		  
+		}
 	}
 }
