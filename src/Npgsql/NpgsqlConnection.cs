@@ -307,17 +307,17 @@ namespace Npgsql
         if (keyvalue.Length != 2)
           throw new ArgumentException("key=value argument incorrect in ConnectionString", connection_string);
 	    	
-	// Shift the key to upper case, and substitute ODBC style keys
-	keyvalue[0] = keyvalue[0].ToUpper();
-	if (keyvalue[0] == ODBC_USERID)
-	  keyvalue[0] = CONN_USERID;
+				// Shift the key to upper case, and substitute ODBC style keys
+				keyvalue[0] = keyvalue[0].ToUpper();
+				if (keyvalue[0] == ODBC_USERID)
+	  			keyvalue[0] = CONN_USERID;
         if (keyvalue[0] == ODBC_PASSWORD)
           keyvalue[0] = CONN_PASSWORD;	    	 
 	    	
-	// Add the pair to the dictionary. The key is shifted to upper
-	// case for case insensitivity.
-	    	
-	NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LogLevel.Normal);
+				// Add the pair to the dictionary. The key is shifted to upper
+				// case for case insensitivity.
+				    	
+				NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LogLevel.Normal);
         connection_string_values.Add(keyvalue[0], keyvalue[1]);
       }
 	    	
@@ -377,8 +377,8 @@ namespace Npgsql
             // An error occured.
             // Copy the message and throw an exception.
             // Close the connection.
-            Close();
             String error_message = PGUtil.ReadString(ns, connection_encoding);
+            Close();
             throw new NpgsqlException(error_message);
 		    		
           case 'R':
