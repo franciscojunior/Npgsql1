@@ -29,7 +29,7 @@ else
 	LDFLAGS=-r /usr/lib/System.Data.dll --target library -o $(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
-OBJECTS:=$(shell ls *.cs)
+OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs)
 
 all: $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS)
