@@ -5,7 +5,7 @@
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
-//	Copyright (C) 2002 Francisco Jr.
+//	Copyright (C) 2002 The Npgsql Development Team
 //
 
 // This library is free software; you can redistribute it and/or
@@ -31,6 +31,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Text;
+using System.Collections;
 using System.Collections.Specialized;
 
 
@@ -41,48 +42,46 @@ namespace Npgsql
   /// PostgreSQL Server.
   /// </summary>
   /// 
+  /// <remarks> remarks test </remarks>
+  /// 
   public sealed class NpgsqlConnection : IDbConnection
   {
-    private ConnectionState connection_state;
-    private String      	connection_string;
+  	
+  	private NpgsqlState			state;
+  	
+    private ConnectionState	connection_state;
+    private String					connection_string;
     private ListDictionary	connection_string_values;
 
     // In the connection string
-    private readonly Char CONN_DELIM = ';';  // Delimeter
-    private readonly Char CONN_ASSIGN = '=';
-    private readonly String CONN_SERVER = "SERVER";
-    private readonly String CONN_USERID = "USER ID";
+    private readonly Char		CONN_DELIM 		= ';';  // Delimeter
+    private readonly Char 	CONN_ASSIGN 	= '=';
+    private readonly String CONN_SERVER 	= "SERVER";
+    private readonly String CONN_USERID 	= "USER ID";
     private readonly String CONN_PASSWORD = "PASSWORD";
     private readonly String CONN_DATABASE = "DATABASE";
-    private readonly String CONN_PORT = "PORT";
+    private readonly String CONN_PORT 		= "PORT";
 
     // Postgres default port
     private readonly String PG_PORT = "5432";
 		
     // These are for ODBC connection string compatibility
-    private readonly String ODBC_USERID = "UID";
+    private readonly String ODBC_USERID 	= "UID";
     private readonly String ODBC_PASSWORD = "PWD";
       		
     // Values for possible CancelRequest messages.
-    private Int32			cancel_proc_id;
-    private Int32			cancel_secret_key;
-  	
+    private NpgsqlBackEndKeyData backend_keydata;
+    
+    // Mediator which will hold data generated from backend
+    private NpgsqlMediator	_mediator;
+        
     // Logging related values
     private readonly String CLASSNAME = "NpgsqlConnection";
   		
-    private TcpClient 		connection;
-    private BufferedStream	output_stream;
-    private Byte[]		input_buffer;
-    private Encoding		connection_encoding;
-  		
-    // Protocol specific fields
-		
-    private readonly Int32 PROTOCOL_VERSION_MAJOR = 2;
-    private readonly Int32 PROTOCOL_VERSION_MINOR = 0;
-  		
-    private readonly Int32 AUTH_OK = 0;
-    private readonly Int32 AUTH_CLEARTEXT_PASSWORD = 3;
-  		
+    private TcpClient				connection;
+    /*private BufferedStream	output_stream;
+    private Byte[]					input_buffer;*/
+    private Encoding				connection_encoding;
   		
     public NpgsqlConnection() : this(""){}
 
@@ -91,13 +90,18 @@ namespace Npgsql
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlConnection()", LogLevel.Debug);
       
       connection_state = ConnectionState.Closed;
-      connection_string = ConnectionString;
+    	state = NpgsqlClosedState.Instance;
+    	connection_string = ConnectionString;
       connection_string_values = new ListDictionary();
       connection_encoding = Encoding.Default;
+    	
+    	_mediator = new NpgsqlMediator();
+    	
       ParseConnectionString();
     }
 
-    public string ConnectionString
+		///<value> This is the ConnectionString value </value>
+    public String ConnectionString
     {
       get
       {
@@ -166,47 +170,17 @@ namespace Npgsql
         // Check if the connection is already open.
         if (connection_state == ConnectionState.Open)
           throw new NpgsqlException("Connection already open");
-		    	
+		    		    
+		    CurrentState.Open(this);
+      	
+      	// Check if there were any errors.
+      	if (_mediator.Errors.Count > 0)
+      		throw new NpgsqlException(_mediator.Errors[0].ToString());
+      	
+      	backend_keydata = _mediator.GetBackEndKeyData();
+      	
         // Change the state of connection to open.
         connection_state = ConnectionState.Open;
-		    	
-        IPEndPoint ep_server;
-	    		
-        // Open the connection to the backend.
-        connection = new TcpClient();
-		    			    	
-        // If it was specified an IP address in doted notation 
-        // (i.e.:192.168.0.1), there may be a long delay trying
-        // resolve it when it is not necessary.
-        // So, try first connect as if it was a dotted ip address.
-		    
-		    try
-        {
-          IPAddress ipserver = IPAddress.Parse((String)connection_string_values[CONN_SERVER]);
-          ep_server = new IPEndPoint(ipserver, Int32.Parse((String)connection_string_values[CONN_PORT]));
-        }
-        catch(FormatException)	// The exception isn't used.
-        {
-          // Server isn't in dotted decimal format. Just connect using DNS resolves.
-          IPHostEntry he_server = Dns.GetHostByName((String)connection_string_values[CONN_SERVER]);
-          ep_server = new IPEndPoint(he_server.AddressList[0], Int32.Parse((String)connection_string_values[CONN_PORT]));	
-        }
-		    	
-        // Connect to the server.
-        connection.Connect(ep_server);	
-		    NpgsqlEventLog.LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, LogLevel.Normal);
-		    
-        output_stream = new BufferedStream(connection.GetStream());
-        input_buffer = new Byte[8192];
-		    	
-		    	
-        // Write the startup packet to server.
-        WriteStartupPacket();
-		    	
-        // Now, process the response. 
-        HandleStartupPacketResponse();
-	    		
-        // Connection completed.
 	    			    		
       }
       catch(SocketException e)
@@ -234,12 +208,9 @@ namespace Npgsql
     
       try
       {
-      	if ((connection_state == ConnectionState.Open) && (output_stream != null))
+      	if ((connection_state == ConnectionState.Open))
         {
-          // Terminate the connection sending Terminate message.
-          output_stream.WriteByte((Byte)'X');
-          output_stream.Flush();
-		    		
+          CurrentState.Close(this);
         }
       }
       catch (IOException e)
@@ -336,139 +307,106 @@ namespace Npgsql
         connection_string_values[CONN_PORT] = PG_PORT;
     }
 	    
-    private void WriteStartupPacket()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WritestartupPacket()", LogLevel.Debug);
-	    	
-      NpgsqlStartupPacket startup_packet = new NpgsqlStartupPacket(296,
-			                                                             PROTOCOL_VERSION_MAJOR,
-			                                                             PROTOCOL_VERSION_MINOR,
-			                                                             (String)connection_string_values[CONN_DATABASE],
-			                                                             (String)connection_string_values[CONN_USERID],
-			                                                             "",
-			                                                             "",
-			                                                             "");
-    	
-    	startup_packet.WriteToStream(output_stream, connection_encoding);
-    	
-      output_stream.Flush();
-	    	
-    }
-	    
-    private void HandleStartupPacketResponse()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".HandleStartupPacketResponse()", LogLevel.Debug);
-	    	
-      // The startup packet was sent.
-      // Handle possible error messages or password requests.
-	    	
-      NetworkStream 	ns = connection.GetStream(); // Stream to read from network.
-      Int32 			num_Bytes_read;
-      Int32			auth_type;
-      Boolean			ready_query = false;
-	    	
-      while (!ready_query)
-      {
-        // Check the first Byte of response.
-        switch (ns.ReadByte())
-        {
-          case 'E':
-            NpgsqlEventLog.LogMsg("ErrorResponse message from Server", LogLevel.Debug);
-            // An error occured.
-            // Copy the message and throw an exception.
-            // Close the connection.
-            String error_message = PGUtil.ReadString(ns, connection_encoding);
-            Close();
-            throw new NpgsqlException(error_message);
-		    		
-          case 'R':
-            NpgsqlEventLog.LogMsg("AuthenticationRequest message from Server", LogLevel.Debug);
-            // Received an Authentication Request.
-		    			
-            // Read the request.
-            num_Bytes_read = ns.Read(input_buffer, 0, 4);
-            auth_type = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
-		    			
-            if (auth_type == AUTH_OK)
-            {
-              // Authentication is ok.
-              // Wait for ReadForQuery message
-              NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
-              continue;
-            }
-		    			
-            if (auth_type == AUTH_CLEARTEXT_PASSWORD)
-            {
-              NpgsqlEventLog.LogMsg("Server requested cleartext password authentication.", LogLevel.Debug);
-              
-              // Send the PasswordPacket.
-              NpgsqlPasswordPacket password_packet = new NpgsqlPasswordPacket((String) connection_string_values[CONN_PASSWORD]);
-            	password_packet.WriteToStream(output_stream, connection_encoding);
-              output_stream.Flush();
-		    			
-              // Wait for ReadForQuery message
-              NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
-              continue;  			
-            }
-		    			
-            // Only AuthenticationClearTextPassword supported for now.
-            // Close the connection.
-            Close();
-            throw new NpgsqlException("Only AuthenticationClearTextPassword supported for now.");
-		    		
-          case 'Z':
-            NpgsqlEventLog.LogMsg("ReadyForQuery message from Server", LogLevel.Debug);
-            // Ready for query response.
-            // Exit loops.
-            ready_query = true;
-            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
-            continue;
-		    		
-          case 'K':
-            NpgsqlEventLog.LogMsg("BackendKeyData message from Server", LogLevel.Debug);
-            // BackendKeyData message.
-            
-            NpgsqlBackEndKeyData backend_key_data = new NpgsqlBackEndKeyData();
-						backend_key_data.ReadFromStream(ns);
-        		cancel_proc_id = backend_key_data.ProcessID;
-        		cancel_secret_key = backend_key_data.SecretKey;
-	
-            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
-            // Wait for ReadForQuery message
-            continue;
-          case 'N':
-            NpgsqlEventLog.LogMsg("NoticeResponse message from Server", LogLevel.Debug);
-            // NoticeResponse message.
-            // [TODO] Check what to do with the NoticeResponse message. 
-            // For now, just ignore (ugly!!).
-		    					    			
-            String notice_response = PGUtil.ReadString(ns, connection_encoding);
-		    			
-            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
-            // Wait for ReadForQuery message
-            continue;
-        }
-      }
-	    	    	
-    }
-	    
-    // Internal properties
-	    
-    internal TcpClient tcp_connection
-    {
-      get
-      {
-        return connection;
-      }
-	    	
-    }
-	    
-    internal Encoding encoding
-    {
-      get
-      {
-        return connection_encoding;
-      }
-    }
+    
+    // State 
+		internal void Query( NpgsqlCommand queryCommand )
+		{
+			CurrentState.Query( this, queryCommand );
+		}
+		internal void Authenticate()
+		{
+			CurrentState.Authenticate( this );
+		}
+		internal void Startup()
+		{
+			CurrentState.Startup( this );
+		}
+		internal NpgsqlState CurrentState
+		{
+			get 
+			{
+				return state;
+			}
+			set
+			{
+				state = value;
+			}
+		}
+		// Internal properties
+
+		internal NpgsqlBackEndKeyData BackEndKeyData
+		{
+			get
+			{
+				return backend_keydata;
+			}
+			set
+			{
+				backend_keydata = value;
+			}
+		}
+		
+		internal String ServerName
+		{
+			get
+			{
+				return (String)connection_string_values[CONN_SERVER];
+			}
+		}
+		internal String ServerPort
+		{
+			get
+			{
+				return   (String)connection_string_values[CONN_PORT];
+			}
+		}
+		internal String DatabaseName
+		{
+			get
+			{
+				return (String)connection_string_values[CONN_DATABASE];
+			}
+		}
+		internal String UserName
+		{
+			get
+			{
+				return (String)connection_string_values[CONN_USERID];
+			}
+		}
+		internal String ServerPassword
+		{
+			get
+			{
+				return (String)connection_string_values[CONN_PASSWORD];
+			}
+		}
+		internal TcpClient TcpClient
+		{
+			get
+			{
+				return connection;
+			}
+			set
+			{
+				connection = value;
+			}
+		}
+		internal Encoding Encoding
+		{
+			get
+			{
+				return connection_encoding;
+			}
+		}
+		
+		internal NpgsqlMediator	Mediator
+		{
+			get
+			{
+				return _mediator;
+			}
+		}
+		
   }
 }
