@@ -102,18 +102,29 @@ namespace NpgsqlTypes
 				case NpgsqlDbType.Integer:
 									
 				case NpgsqlDbType.Smallint:
-							
-					return parameter.Value.ToString();
+				
+					if (parameter.Value == DBNull.Value)
+						return "Null";
+					else
+						return parameter.Value.ToString();
+				
 				
 				case NpgsqlDbType.Numeric:
-					return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
+					if (parameter.Value == DBNull.Value)
+						return "Null";
+					else
+						return ((Decimal)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
 				
 				case NpgsqlDbType.Text:
 				{
 					
+					
 					if (parameter.Value is String)
 						return "'" + parameter.Value.ToString().Replace("'", "\\'") + "'";
 					
+					if (parameter.Value == DBNull.Value)
+						return "Null";
+						
 					NpgsqlString value = (NpgsqlString) parameter.Value;
 					
 					if (value.IsNull)
@@ -130,6 +141,9 @@ namespace NpgsqlTypes
 					
 					if (parameter.Value is DateTime)
 						return "'" + ((DateTime)parameter.Value).ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff") + "'";
+					
+					if (parameter.Value == DBNull.Value)
+						return "Null";
 					
 					NpgsqlDateTime value = (NpgsqlDateTime) parameter.Value;
 					
