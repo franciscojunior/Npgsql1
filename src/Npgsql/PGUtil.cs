@@ -52,7 +52,9 @@ namespace Npgsql
 		/// </summary>
 		
 		public static String ReadString(Stream network_stream, Encoding encoding)
-		{
+		{  
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ReadString()", LogLevel.Debug);
+		
 			// [FIXME] Is 512 enough?
 			Byte[] buffer = new Byte[512];
 			Byte b;
@@ -78,6 +80,8 @@ namespace Npgsql
 		
 		public static void WriteString(String the_string, Stream network_stream, Encoding encoding)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WriteString()", LogLevel.Debug);
+		  
 			network_stream.Write(encoding.GetBytes(the_string + '\x00') , 0, the_string.Length + 1);
 		}
 		
@@ -89,6 +93,8 @@ namespace Npgsql
 		
 		public static void WriteLimString(String the_string, Int32 n, Stream network_stream, Encoding encoding)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".WriteLimString()", LogLevel.Debug);
+		  
 			// [FIXME] Parameters should be validated. And what about strings
 			// larger than or equal to n?
 			

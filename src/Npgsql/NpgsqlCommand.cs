@@ -54,6 +54,8 @@ namespace Npgsql
 		
 		public NpgsqlCommand(String cmdText, NpgsqlConnection connection)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlCommand()", LogLevel.Debug);
+			
 			text = cmdText;
 			this.connection = connection;
 			parameters = new NpgsqlParameterCollection();
@@ -74,6 +76,7 @@ namespace Npgsql
 			{
 				// [TODO] Validate commandtext.
 				text = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".CommandText = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -90,6 +93,7 @@ namespace Npgsql
 					throw new ArgumentException("CommandTimeout can't be less than zero");
 				
 				timeout = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".CommandTimeout = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -103,6 +107,7 @@ namespace Npgsql
 			set
 			{
 				type = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".CommandType = " + value, LogLevel.Normal);
 			}
 			
 		}
@@ -117,6 +122,7 @@ namespace Npgsql
 			set
 			{
 				connection = (NpgsqlConnection) value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".IDbCommand.Connection", LogLevel.Normal);
 			}
 		}
 		
@@ -130,6 +136,7 @@ namespace Npgsql
 			set
 			{
 				connection = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Connection", LogLevel.Normal);
 			}
 		}
 		
@@ -158,7 +165,7 @@ namespace Npgsql
 			
 			set
 			{
-				throw new NotImplementedException();
+				throw new NotImplementedException();	
 			}
 		}
 		
@@ -178,6 +185,8 @@ namespace Npgsql
 		
 		public void Cancel()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Cancel()", LogLevel.Debug);
+		  
 			// [TODO] Finish method implementation.
 			throw new NotImplementedException();
 		}
@@ -185,16 +194,22 @@ namespace Npgsql
 		
 		IDbDataParameter IDbCommand.CreateParameter()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".IDbCommand.CreateParameter()", LogLevel.Debug);
+		  
 			return CreateParameter();
 		}
 		
 		public NpgsqlParameter CreateParameter()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateParameter()", LogLevel.Debug);
+		  
 			return new NpgsqlParameter();
 		}
 		
 		public Int32 ExecuteNonQuery()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ExecuteNonQuery()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -310,6 +325,8 @@ namespace Npgsql
 		
 		public IDataReader ExecuteReader()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ExecuteReader()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -318,6 +335,8 @@ namespace Npgsql
 		
 		public IDataReader ExecuteReader(CommandBehavior cb)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ExecuteReader()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -327,6 +346,8 @@ namespace Npgsql
 		
 		public Object ExecuteScalar()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ExecuteScalar()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -433,8 +454,6 @@ namespace Npgsql
 							network_stream.Read(input_buffer, 0, 4 + 2 + 4);
 						}
 						
-						
-						
 						// Now wait for the AsciiRow messages.
 						break;
 						
@@ -450,7 +469,6 @@ namespace Npgsql
 						
 						// [FIXME] For now, ignore the field mask. 
 						network_stream.Read(input_buffer, 0, (num_fields + 7)/8 );
-							
 							
 						for (Int32 field_count = 0; field_count < num_fields; field_count++)
 						{
@@ -544,6 +562,8 @@ namespace Npgsql
 		
 		public void Prepare()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Prepare()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			CheckConnectionState();
 			
@@ -554,6 +574,7 @@ namespace Npgsql
 		
 		public void Dispose()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", LogLevel.Debug);
 			
 		}
 		
@@ -565,6 +586,8 @@ namespace Npgsql
 		
 		private void CheckConnectionState()
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CheckConnectionState()", LogLevel.Debug);
+		  
 			// Check the connection state.
 			if (connection == null)
 				throw new InvalidOperationException("The Connection is not set");

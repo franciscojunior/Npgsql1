@@ -45,16 +45,14 @@ namespace Npgsql
 	  
     // Logging related values
     private static readonly String CLASSNAME = "NpgsqlEventLog";
-    private static   String    logfile;
+    private static   String       logfile;
     private static   LogLevel     level;
+    private static   Boolean echomessages;
 
     // Constructor
     // By marking this private, it should not be possible to create
     // instances of this class.
-    private NpgsqlEventLog()
-    {
-			
-    }
+    private NpgsqlEventLog() {}
     
     ///<summary>
     /// Sets/Returns the level of information to log to the logfile.
@@ -90,6 +88,22 @@ namespace Npgsql
         LogMsg("Set " + CLASSNAME + ".LogFile = " + value, LogLevel.Normal);
       }
     }
+
+    ///<summary>
+    /// Sets/Returns whether Log messages should be echoed to the console
+    /// </summary>	
+    public static Boolean EchoMessages
+    {
+      get
+      {
+        return echomessages;
+      }
+      set
+      {
+        echomessages = value;
+        LogMsg("Set " + CLASSNAME + ".EchoMessages = " + value, LogLevel.Normal);
+      }
+    }
     
     // Event/Debug Logging
     public static void LogMsg(String message, LogLevel msglevel) 
@@ -98,6 +112,11 @@ namespace Npgsql
         return;
         
       Process proc = Process.GetCurrentProcess();
+      
+      if (echomessages)
+      {
+        Console.WriteLine(message);
+      }
       
       if (logfile != null)
       {

@@ -79,6 +79,7 @@ namespace Npgsql
 			set
 			{
 				precision = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Precision = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -92,6 +93,7 @@ namespace Npgsql
 			set
 			{
 				scale = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Scale = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -105,6 +107,7 @@ namespace Npgsql
 			set
 			{
 				size = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Size = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -119,6 +122,7 @@ namespace Npgsql
 			set
 			{
 				type = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".DbType = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -132,6 +136,7 @@ namespace Npgsql
 			set
 			{
 				direction = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Direction = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -145,6 +150,7 @@ namespace Npgsql
 			set
 			{
 				is_nullable = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".IsNullable = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -158,6 +164,7 @@ namespace Npgsql
 			set
 			{
 				name = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".ParameterName = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -171,6 +178,7 @@ namespace Npgsql
 			set
 			{
 				source_column = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".SourceColumn = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -184,6 +192,7 @@ namespace Npgsql
 			set
 			{
 				source_version = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".SourceVersion = " + value, LogLevel.Normal);
 			}
 		}
 		
@@ -198,6 +207,7 @@ namespace Npgsql
 			set
 			{
 				this.value = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Value", LogLevel.Normal);
 			}
 		}
 				

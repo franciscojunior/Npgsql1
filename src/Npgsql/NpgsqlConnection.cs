@@ -88,6 +88,8 @@ namespace Npgsql
 
     public NpgsqlConnection(String ConnectionString)
     {
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlConnection()", LogLevel.Debug);
+      
       connection_state = ConnectionState.Closed;
       connection_string = ConnectionString;
       connection_string_values = new ListDictionary();
@@ -220,7 +222,6 @@ namespace Npgsql
         // [TODO] Better exception handling. :)
         Close();
 	    		
-        //Console.WriteLine(e.StackTrace);
         throw new NpgsqlException("Error in Open()", e);
       }
 	    	
@@ -378,7 +379,7 @@ namespace Npgsql
         switch (ns.ReadByte())
         {
           case 'E':
-            // Console.WriteLine("ErrorResponse");
+            NpgsqlEventLog.LogMsg("ErrorResponse message from Server", LogLevel.Debug);
             // An error occured.
             // Copy the message and throw an exception.
             // Close the connection.
@@ -387,7 +388,7 @@ namespace Npgsql
             throw new NpgsqlException(error_message);
 		    		
           case 'R':
-            // Console.WriteLine("AuthenticationRequest");
+            NpgsqlEventLog.LogMsg("AuthenticationRequest message from Server", LogLevel.Debug);
             // Received an Authentication Request.
 		    			
             // Read the request.
@@ -398,6 +399,7 @@ namespace Npgsql
             {
               // Authentication is ok.
               // Wait for ReadForQuery message
+              NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
               continue;
             }
 		    			
@@ -416,6 +418,7 @@ namespace Npgsql
 		    				
               // Console.WriteLine("Going listen");
               // Wait for ReadForQuery message
+              NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
               continue;  			
             }
 		    			
@@ -425,32 +428,33 @@ namespace Npgsql
             throw new NpgsqlException("Only AuthenticationClearTextPassword supported for now.");
 		    		
           case 'Z':
-            // Console.WriteLine("ReadyForQuery");
+            NpgsqlEventLog.LogMsg("ReadyForQuery message from Server", LogLevel.Debug);
             // Ready for query response.
             // Exit loops.
             ready_query = true;
+            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
             continue;
 		    		
           case 'K':
+            NpgsqlEventLog.LogMsg("BackendKeyData message from Server", LogLevel.Debug);
             // BackendKeyData message.
-            // Console.WriteLine("BackendKeyData");
             // Read the BackendKeyData message contents. Two Int32 integers = 8 bytes.
             num_bytes_read = ns.Read(input_buffer, 0, 8);
             cancel_proc_id = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
             cancel_secret_key = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 4));
 		    			
-            // Console.WriteLine("Going listen");
+            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
             // Wait for ReadForQuery message
             continue;
           case 'N':
+            NpgsqlEventLog.LogMsg("NoticeResponse message from Server", LogLevel.Debug);
             // NoticeResponse message.
-            // Console.WriteLine("NoticeResponse");
             // [TODO] Check what to do with the NoticeResponse message. 
             // For now, just ignore (ugly!!).
 		    					    			
             String notice_response = PGUtil.ReadString(ns, connection_encoding);
 		    			
-            // Console.WriteLine("Going listen");
+            NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
             // Wait for ReadForQuery message
             continue;
         }

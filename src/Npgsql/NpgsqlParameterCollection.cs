@@ -45,6 +45,8 @@ namespace Npgsql
     
 		public override Int32 Add(Object parameter)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Add()", LogLevel.Debug);
+		  
 			// Call the add version that receives a NpgsqlParameter as parameter
 			try
 			{
@@ -58,6 +60,8 @@ namespace Npgsql
 		
 		public Int32 Add(NpgsqlParameter parameter)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Add()", LogLevel.Debug);
+		  
 			// Check if the parameter has at least a name.
 			if (parameter.ParameterName != null)
 				// Add the parameter
@@ -69,12 +73,16 @@ namespace Npgsql
 		
 		public Boolean Contains(String parameterName)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Contains(" + parameterName + ")", LogLevel.Debug);
+		  
 			// Check if parameterName is in the collection.
 			return (IndexOf(parameterName) != -1);
 		}
 				
 		public Int32 IndexOf(String parameterName)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".IndexOf(" + parameterName + ")", LogLevel.Debug);
+		  
 			// Iterate values to see what is the index of parameter.
 			Int32 index = 0;
 			
@@ -90,6 +98,8 @@ namespace Npgsql
 		
 		public void RemoveAt(String parameterName)
 		{
+		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".RemoveAt(" + parameterName + ")", LogLevel.Debug);
+		  
 			base.RemoveAt(IndexOf(parameterName));
 		}
 		
@@ -104,6 +114,7 @@ namespace Npgsql
 			{
 				// base[IndexOf(parameterName)] = value;
 				this[IndexOf(parameterName)] = value;
+				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".Value", LogLevel.Normal);
 			}
 		}
 	}
