@@ -94,11 +94,13 @@ namespace Npgsql
 		{
 			get
 			{
-				return base[IndexOf(parameterName)];
+				// return base[IndexOf(parameterName)];
+				return this[IndexOf(parameterName)];
 			}
 			set
 			{
-				base[IndexOf(parameterName)] = value;
+				// base[IndexOf(parameterName)] = value;
+				this[IndexOf(parameterName)] = value;
 			}
 		}
 	}
