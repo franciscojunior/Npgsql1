@@ -5,7 +5,7 @@
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
-//	Copyright (C) 2002 Francisco Jr.
+//	Copyright (C) 2002 The Npgsql Development Team
 //
 
 // This library is free software; you can redistribute it and/or
@@ -61,15 +61,23 @@ namespace Npgsql
 			
 		}
 		
-		public NpgsqlParameter(String ParameterName, DbType ParameterType)
+		public NpgsqlParameter(String parameterName, DbType parameterType)
 		{
-			name = ParameterName;
-			type = ParameterType;
+			name = parameterName;
+			type = parameterType;
 		}
 		
+		public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size, String sourceColumn)
+		{
+			name = parameterName;
+			type = parameterType;
+			this.size = size;
+			source_column = sourceColumn;
+			direction = ParameterDirection.Input;
+		}
 		// Implementation of IDbDataParameter
 		
-		public byte Precision
+		public Byte Precision
 		{
 			get
 			{
@@ -83,7 +91,7 @@ namespace Npgsql
 			}
 		}
 		
-		public byte Scale
+		public Byte Scale
 		{
 			get
 			{
@@ -130,6 +138,7 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".Direction", LogLevel.Normal);
 				return direction;
 			}
 			
@@ -158,6 +167,7 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".ParameterName", LogLevel.Normal);
 				return name;
 			}
 			
@@ -172,6 +182,7 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg(CLASSNAME + ".get_SourceColumn" + value, LogLevel.Normal);
 				return source_column;
 			}
 			
@@ -186,6 +197,7 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg(CLASSNAME + ".get_SourceVersion = " + value, LogLevel.Normal);
 				return source_version;
 			}
 			
@@ -200,6 +212,7 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".Value", LogLevel.Normal);
 				return value;
 			}
 			
