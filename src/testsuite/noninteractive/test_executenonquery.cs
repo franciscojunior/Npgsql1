@@ -19,7 +19,6 @@
 using System;
 using System.Data;
 using Npgsql;
-using Npgsql.NpgsqlTests;
 
 public class test_executenonquery
 {

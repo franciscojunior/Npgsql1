@@ -21,7 +21,7 @@
 NPGSQL_LIB=Npgsql.dll
 MONO=mono
 CC=mcs
-CPPFLAGS=-r ../../Npgsql/$(NPGSQL_LIB) -r /usr/lib/System.Data.dll
+CPPFLAGS=-r $(NPGSQL_LIB) -r System.Data.dll
 OBJECTS=
 PSQL=psql
 NPGSQL_template_DB=template1
@@ -78,7 +78,7 @@ compile_lib:
 	(cd ../../Npgsql; make)
 
 links:
-	@test -L $(NPGSQL_LIB) || ln -s ../../Npgsql/$(NPGSQL_LIB) $(NPGSQL_LIB)
+	@test -L $(NPGSQL_LIB) || ln -s ../../Npgsql/build/mono/$(NPGSQL_LIB) $(NPGSQL_LIB)
 
 tests:
 	@./runTests.sh 2>&1 | tee -a ${NPGSQL_TESTS_LOG}
