@@ -422,25 +422,74 @@ namespace Npgsql
 
 		private DataTable GetResultsetSchema()
 		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetResultsetSchema()", LogLevel.Debug);
-			// [FIXME] For now, just support fields name.
 			
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetResultsetSchema()", LogLevel.Debug);
+			DataTable result = null;
+
 			NpgsqlRowDescription rd = _currentResultset.RowDescription;
 			Int16 numFields = rd.NumFields;
-			DataTable result = new DataTable();
-			
-			result.Columns.Add("ColumnName");
-			DataRow row;
-			
-			for (Int16 i = 0; i < numFields; i++)
-			{
-				row = result.NewRow();
-				row["ColumnName"] = rd[i].name;
-				result.Rows.Add(row);
+			if(numFields > 0) {
+				result = new DataTable("SchemaTable");
+
+				result.Columns.Add ("ColumnName", typeof (string));
+				result.Columns.Add ("ColumnOrdinal", typeof (int));
+				result.Columns.Add ("ColumnSize", typeof (int));
+				result.Columns.Add ("NumericPrecision", typeof (int));
+				result.Columns.Add ("NumericScale", typeof (int));
+				result.Columns.Add ("IsUnique", typeof (bool));
+				result.Columns.Add ("IsKey", typeof (bool));
+				DataColumn dc = result.Columns["IsKey"];
+				dc.AllowDBNull = true; // IsKey can have a DBNull
+				result.Columns.Add ("BaseCatalogName", typeof (string));
+				result.Columns.Add ("BaseColumnName", typeof (string));
+				result.Columns.Add ("BaseSchemaName", typeof (string));
+				result.Columns.Add ("BaseTableName", typeof (string));
+				result.Columns.Add ("DataType", typeof(Type));
+				result.Columns.Add ("AllowDBNull", typeof (bool));
+				result.Columns.Add ("ProviderType", typeof (int));
+				result.Columns.Add ("IsAliased", typeof (bool));
+				result.Columns.Add ("IsExpression", typeof (bool));
+				result.Columns.Add ("IsIdentity", typeof (bool));
+				result.Columns.Add ("IsAutoIncrement", typeof (bool));
+				result.Columns.Add ("IsRowVersion", typeof (bool));
+				result.Columns.Add ("IsHidden", typeof (bool));
+				result.Columns.Add ("IsLong", typeof (bool));
+				result.Columns.Add ("IsReadOnly", typeof (bool));
+
+				DataRow row;
+
+				for (Int16 i = 0; i < numFields; i++) {
+					row = result.NewRow();
+
+					row["ColumnName"] = GetName(i);
+					row["ColumnOrdinal"] = i + 1;
+					row["ColumnSize"] = (int) rd[i].type_size;
+					row["NumericPrecision"] = 0;
+					row["NumericScale"] = 0;
+					row["IsUnique"] = false;
+					row["IsKey"] = DBNull.Value;
+					row["BaseCatalogName"] = "";
+					row["BaseColumnName"] = GetName(i);
+					row["BaseSchemaName"] = "";
+					row["BaseTableName"] = "";
+					row["DataType"] = GetFieldType(i);
+					row["AllowDBNull"] = false;
+					row["ProviderType"] = (int) rd[i].type_oid;
+					row["IsAliased"] = false;
+					row["IsExpression"] = false;
+					row["IsIdentity"] = false;
+					row["IsAutoIncrement"] = false;
+					row["IsRowVersion"] = false;
+					row["IsHidden"] = false;
+					row["IsLong"] = false;
+					row["IsReadOnly"] = false;
+
+					result.Rows.Add(row);
+				}
 			}
-			
+
 			return result;
-			
+
 		}
 	}
 }
