@@ -1,6 +1,6 @@
 <project name="NpgsqlTests" default="build" basedir=".">
 
-    <property name="NAnt.dir" value="c:\win32app\nant-0.8.2" />
+    <property name="NAnt.lib.dir" value="/home/fxjr/Desenvolvimento/CVSRepositories/Mono/install/lib" />
     <property name="assemblyname" value="NpgsqlTests" />
     
     <target name="clean" description="cleans the build directory">
@@ -12,13 +12,15 @@
     </target>
     
     <target name="build" depends="init">
-      <csc target="library" output="${nunit2tests.build.dir}\${assemblyname}.dll" debug="${debug}" >
+      <csc target="library" output="${nunit2tests.build.dir}/${assemblyname}.dll" debug="${debug}" >
         <sources>
-          <includes name="${testfiles.dir}\*.cs" />
+          <includes name="*.cs" />
         </sources>
         <references>
-          <includes name="${NAnt.dir}\bin\nunit.framework.dll" />
-          <includes name="${ms.build.dir}\Npgsql.dll" />
+          <includes name="${NAnt.lib.dir}/NUnit.Framework.dll" />
+          <includes name="${ms.build.dir}/Npgsql.dll" />
+	  <includes name="System.Data.dll" />
+	  <includes name="System.Web.dll" />
         </references>
       </csc>
     </target>    

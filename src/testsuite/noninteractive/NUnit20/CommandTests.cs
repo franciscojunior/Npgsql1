@@ -693,6 +693,33 @@ namespace NpgsqlTests
 			Assertion.AssertEquals(5, result);
 			
 		}
+        
+        [Test]
+		public void AnsiStringSupport()
+		{
+			_conn.Open();
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Guid));
+			
+			command.Parameters[0].Value = "TesteAnsiString";
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = String.Format("select count(*) from tablea where field_text = '{0}'", command.Parameters[0].Value);
+			command.Parameters.Clear();
+			
+			Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+			
+			command.CommandText = "delete from tablea where field_serial = (select max(field_serial) from tablea);";
+			command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, result);
+			
+		}
 		
 		
 		
