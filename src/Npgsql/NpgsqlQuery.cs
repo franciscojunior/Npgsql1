@@ -47,7 +47,7 @@ namespace Npgsql
 			
 			// Write the query. In this case it is the CommandText text.
 			// It is a string terminated by a C NULL character.
-			outputStream.Write(encoding.GetBytes(_commandText + '\x00') , 0, _commandText.Length + 1);
+			outputStream.Write(encoding.GetBytes(_commandText + '\x00') , 0, encoding.GetByteCount(_commandText) + 1);
 			
 			
 			
