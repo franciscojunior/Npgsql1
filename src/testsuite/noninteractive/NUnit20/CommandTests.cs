@@ -35,14 +35,14 @@ namespace NpgsqlTests
 	public class CommandTests
 	{
 		private NpgsqlConnection 	_conn = null;
-		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests";
+		private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;SSL=yes";
 		
 		[SetUp]
 		protected void SetUp()
 		{
-			NpgsqlEventLog.Level = LogLevel.None;
-			//NpgsqlEventLog.Level = LogLevel.Debug;
-			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.None;
+			NpgsqlEventLog.Level = LogLevel.Debug;
+			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		

@@ -1,6 +1,6 @@
 <project name="NpgsqlTests" default="build" basedir=".">
 
-    <property name="NAnt.lib.dir" value="/home/fxjr/Desenvolvimento/CVSRepositories/Mono/install/lib" />
+    <property name="NAnt.lib.dir" value="/home/fxjr/Desenvolvimento/CVSRepositories/MonoCommit/install/lib" />
     <property name="assemblyname" value="NpgsqlTests" />
     
     <target name="clean" description="cleans the build directory">

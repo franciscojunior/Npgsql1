@@ -42,9 +42,9 @@ namespace NpgsqlTests
 		[SetUp]
 		protected void SetUp()
 		{
-			NpgsqlEventLog.Level = LogLevel.None;
-			//NpgsqlEventLog.Level = LogLevel.Debug;
-			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+			//NpgsqlEventLog.Level = LogLevel.None;
+			NpgsqlEventLog.Level = LogLevel.Debug;
+			NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
 		
