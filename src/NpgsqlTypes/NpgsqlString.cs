@@ -29,12 +29,15 @@ namespace NpgsqlTypes
 	public struct NpgsqlString
 	{
 		private String _value;
+		private Boolean _notNull;
+		
 		
 		public static readonly NpgsqlString Null;
 		
 		public NpgsqlString(String value)
 		{
 			_value = value;
+			_notNull = true;
 
 		}
 		
@@ -42,7 +45,7 @@ namespace NpgsqlTypes
 		{
 			get
 			{
-				return false;
+				return !_notNull;
 			}
 		}
 		
@@ -57,6 +60,14 @@ namespace NpgsqlTypes
 			}
 		}
 		
+		
+		public override String ToString()
+		{
+			if (this.IsNull)
+				return "Null";
+			else
+				return _value.ToString();
+		}
 		public static explicit operator NpgsqlString (NpgsqlByte x) 
 		{
 			
@@ -73,6 +84,8 @@ namespace NpgsqlTypes
 			return x.Value;
 				
 		}
+		
+		
 		
 		
 	}
