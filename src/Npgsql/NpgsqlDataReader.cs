@@ -258,7 +258,7 @@ namespace Npgsql
 	  
 	  public Int32 GetOrdinal(String name)
 	  {
-	    throw new NotImplementedException();
+	    return _currentResultset.RowDescription.FieldIndex(name);
 	  }
 	  
 	  public Object this [ Int32 i ]
