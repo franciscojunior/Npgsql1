@@ -1,0 +1,18 @@
+
+
+
+2002-05-18
+	
+	First Npgsql beta release.
+	In this version there is a limited functionality. It is only possible to
+connect and disconnect from server.
+	Only clear text authentication is supported right now.
+	To compile you can use the SharpDevelop to open the Combine file (Npgsql.cmbx) or
+type at command console: csc /t:library /out:Npgsql.dll NpgsqlConnection.cs AssemblyInfo.cs NpgsqlException.cs
+This will create the file Npgsql.dll that can be copied to the application directory.
+
+	I will be working in the Command functionality now.
+	
+	
+	Play with it and send your bugs and comments :)
+	(fxjr)

@@ -1,0 +1,16 @@
+<Combine name="Npgsql" fileversion="1.0" description="">
+  <StartMode startupentry="Npgsql" single="True">
+    <Execute entry="Npgsql" type="None" />
+  </StartMode>
+  <Entries>
+    <Entry filename=".\Npgsql.prjx" />
+  </Entries>
+  <Configurations active="Debug">
+    <Configuration name="Release" description="">
+      <Entry name="Npgsql" configurationname="Debug" build="False" />
+    </Configuration>
+    <Configuration name="Debug" description="">
+      <Entry name="Npgsql" configurationname="Debug" build="False" />
+    </Configuration>
+  </Configurations>
+</Combine>

@@ -1,0 +1,43 @@
+
+2002-05-21
+	
+	- Started draft NpgsqlCommand class implementation.
+	- Finish draft NpgsqlParameter class implementation.
+	- Updated AssemblyVersion attribute in AssemblyInfo.cs file.
+	
+2002-05-19
+
+	- Finish draft NpgsqlParameterCollection class implementation.
+	- Start implementing NpgsqlParameter class.
+		
+2002-05-18
+
+	- Start implementing the NpgsqlParameterCollection class.
+	- Added LICENSE file and LGPL header in source files.
+	
+2002-05-17
+
+	- More work in exception handling. It still is far from ideal :)
+	
+2002-05-16
+
+	- Some work in exception handling.
+
+2002-05-13
+	
+	- Finish Open method implementation in class NpgsqlConnection. Now
+	it can connect and show messages where there is any error when connecting.
+
+2002-05-12
+	
+	- Started Open method implementation in class NpgsqlConnection.
+
+2002-05-11
+	
+	- Created ProcessConnectionString in class NpgsqlConnection to
+	parse the connection string into a ListDictionary.
+
+2002-05-10
+	
+	- Started coding NpgsqlConnection.cs
+	- Initial implementation.

@@ -1,0 +1,29 @@
+<Project name="Npgsql" projecttype="C#" fileversion="1.0" description="creates a console C# project" newfilesearch="None" enableviewstate="True" projectdocumentation="">
+  <DeploymentInformation target="" script="" strategy="File" />
+  <References />
+  <Contents>
+    <File name=".\AssemblyInfo.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlConnection.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\ChangeLog.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\NpgsqlException.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\README.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\TODO.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\RELEASENOTES.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\NpgsqlParameterCollection.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlParameter.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\LICENSE.txt" subtype="Code" buildaction="Nothing" />
+    <File name=".\NpgsqlCommand.cs" subtype="Code" buildaction="Compile" />
+  </Contents>
+  <Configurations active="Debug">
+    <Configuration name="Debug" description="">
+      <Output directory=".\" assembly="Npgsql" />
+      <CodeGeneration warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Library" definesymbols="" generatexmldocumentation="False" win32Icon="" />
+      <Execution consolepause="True" runwithwarnings="False" />
+    </Configuration>
+    <Configuration name="Release" description="">
+      <Output directory=".\" assembly="Npgsql" />
+      <CodeGeneration warninglevel="4" includedebuginformation="True" optimize="True" unsafecodeallowed="False" generateoverflowchecks="True" mainclass="" target="Exe" definesymbols="" generatexmldocumentation="False" win32Icon="" />
+      <Execution consolepause="True" runwithwarnings="False" />
+    </Configuration>
+  </Configurations>
+</Project>
