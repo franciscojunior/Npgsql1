@@ -167,8 +167,11 @@ namespace NpgsqlTypes
                 NativeTypeMapping.AddDbTypeAlias("text", DbType.AnsiStringFixedLength);
                 NativeTypeMapping.AddTypeAlias("text", typeof(String));
 
-		NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
-
+                NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
+                
+                NativeTypeMapping.AddType("char", NpgsqlDbType.Char, DbType.Byte, true, null);
+                NativeTypeMapping.AddTypeAlias("char", typeof(Byte));
+                                
                 NativeTypeMapping.AddType("bytea", NpgsqlDbType.Bytea, DbType.Binary, true,
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBinary));
 
@@ -183,11 +186,8 @@ namespace NpgsqlTypes
                 null);
 
                 NativeTypeMapping.AddTypeAlias("int2", typeof(Int16));
+                                
                 
-                NativeTypeMapping.AddDbTypeAlias("int2", DbType.Byte);
-
-		NativeTypeMapping.AddTypeAlias("int2", typeof(Byte));
-
                 NativeTypeMapping.AddType("int4", NpgsqlDbType.Integer, DbType.Int32, false,
                 null);
 
