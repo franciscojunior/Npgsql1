@@ -234,7 +234,7 @@ namespace Npgsql
     
       try
       {
-        if (connection_state == ConnectionState.Open)
+      	if ((connection_state == ConnectionState.Open) && (output_stream != null))
         {
           // Terminate the connection sending Terminate message.
           output_stream.WriteByte((Byte)'X');
@@ -254,11 +254,18 @@ namespace Npgsql
       }
     }
 	    
-    public IDbCommand CreateCommand()
+    IDbCommand IDbConnection.CreateCommand()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LogLevel.Debug);
-      throw new NotImplementedException();
+      return (NpgsqlCommand) CreateCommand();
     }
+    
+    public NpgsqlCommand CreateCommand()
+    {
+    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LogLevel.Debug);
+      return new NpgsqlCommand("", this);
+    }
+    
     // Implement the IDisposable interface.
     public void Dispose()
     {
@@ -395,20 +402,10 @@ namespace Npgsql
               NpgsqlEventLog.LogMsg("Server requested cleartext password authentication.", LogLevel.Debug);
               
               // Send the PasswordPacket.
-              
-              /*String password = ((String) connection_string_values[CONN_PASSWORD]);
-              // Add the null string terminator
-              password = password.PadRight(password.Length + 1, '\x00');
-			    			
-              output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(password.Length + 4)), 0, 4);
-              output_stream.Write(connection_encoding.GetBytes(password), 0, password.Length);
-            	*/
-            	
-            	NpgsqlPasswordPacket password_packet = new NpgsqlPasswordPacket((String) connection_string_values[CONN_PASSWORD]);
+              NpgsqlPasswordPacket password_packet = new NpgsqlPasswordPacket((String) connection_string_values[CONN_PASSWORD]);
             	password_packet.WriteToStream(output_stream, connection_encoding);
               output_stream.Flush();
-		    				
-              // Console.WriteLine("Going listen");
+		    			
               // Wait for ReadForQuery message
               NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
               continue;  			
@@ -430,11 +427,12 @@ namespace Npgsql
           case 'K':
             NpgsqlEventLog.LogMsg("BackendKeyData message from Server", LogLevel.Debug);
             // BackendKeyData message.
-            // Read the BackendKeyData message contents. Two Int32 integers = 8 Bytes.
-            num_Bytes_read = ns.Read(input_buffer, 0, 8);
-            cancel_proc_id = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
-            cancel_secret_key = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 4));
-		    			
+            
+            NpgsqlBackEndKeyData backend_key_data = new NpgsqlBackEndKeyData();
+						backend_key_data.ReadFromStream(ns);
+        		cancel_proc_id = backend_key_data.ProcessID;
+        		cancel_secret_key = backend_key_data.SecretKey;
+	
             NpgsqlEventLog.LogMsg("Listening for next message", LogLevel.Debug);
             // Wait for ReadForQuery message
             continue;
