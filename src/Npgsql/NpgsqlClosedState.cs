@@ -26,6 +26,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Resources;
+using System.Security.Tls;
 
 namespace Npgsql
 {
@@ -57,7 +58,7 @@ namespace Npgsql
             
 			IPEndPoint serverEndPoint;
 			// Open the connection to the backend.
-			context.TcpClient = new TcpClient();		    			    	
+			// context.TcpClient = new TcpClient();		    			    	
 			// If it was specified an IP address in doted notation 
 			// (i.e.:192.168.0.1), there may be a long delay trying
 			// resolve it when it is not necessary.
@@ -75,8 +76,44 @@ namespace Npgsql
 			}
 			
 			// Connect to the server.
+            TlsSessionSettings tlsSettings = new TlsSessionSettings();
 
-   		context.TcpClient.Connect(serverEndPoint);	
+			tlsSettings.Protocol	= TlsProtocol.Tls1;
+			tlsSettings.ServerName	= context.ServerName;
+			tlsSettings.ServerPort	= Int32.Parse(context.ServerPort);
+
+            // Create a new TLS Session
+			try 
+			{
+				TlsSession session = new TlsSession(tlsSettings);
+				BufferedStream stream = new BufferedStream(session.NetworkStream);
+				context.setNormalStream(session.NetworkStream);
+				context.setStream(stream);
+				BinaryReader receive = new BinaryReader(session.NetworkStream);
+				BinaryWriter send = new BinaryWriter(session.NetworkStream);
+
+				// If the PostgreSQL server has SSL connections enabled Open TLS session if (response == 'S') {
+				if (context.SSL=="yes")
+				{
+					PGUtil.WriteInt32(session.NetworkStream, 8);
+					PGUtil.WriteInt32(session.NetworkStream,80877103);
+					// Receive response
+					Char response = (Char)session.NetworkStream.ReadByte();
+
+					if (response == 'S') 
+					{
+						session.Open(); // open TLS session
+					} 
+					
+				} 
+				
+			}
+			catch (TlsException e) 
+			{
+				throw new NpgsqlException(e.ToString());
+			}
+			// Create objects for read & write
+   		    // context.TcpClient.Connect(serverEndPoint);	
             NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, serverEndPoint.Address, serverEndPoint.Port);
 					
 			ChangeState( context, NpgsqlConnectedState.Instance );

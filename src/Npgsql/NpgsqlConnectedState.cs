@@ -24,6 +24,8 @@
 
 using System;
 using System.IO;
+using System.Security.Tls;
+
 
 namespace Npgsql
 {
@@ -60,7 +62,7 @@ namespace Npgsql
   																   "",
   																   "");
   		  
-  			startupPacket.WriteToStream( new BufferedStream(context.TcpClient.GetStream()), context.Encoding );
+  			startupPacket.WriteToStream( context.getStream(), context.Encoding );
   			ProcessBackendResponses( context );
 		  }
 		  else if (context.BackendProtocolVersion == ProtocolVersion.Version2)

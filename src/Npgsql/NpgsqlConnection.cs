@@ -34,6 +34,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using NpgsqlTypes;
 using Npgsql.Design;
+using System.Security.Tls;
 
 
 namespace Npgsql {
@@ -75,6 +76,7 @@ namespace Npgsql {
 		internal readonly String CONN_PASSWORD = "PASSWORD";
 		internal readonly String CONN_DATABASE = "DATABASE";
 		internal readonly String CONN_PORT 		= "PORT";
+        internal readonly String SSL_ENABLED	= "SSL";
 		// Postgres default port
 		internal readonly String PG_PORT = "5432";
 		
@@ -95,6 +97,9 @@ namespace Npgsql {
 		private readonly String CLASSNAME = "NpgsqlConnection";
   		
 		private TcpClient				connection;
+        private TlsNetworkStream		secstream;
+        private BufferedStream			stream;
+
 		private Encoding				connection_encoding;
   	
 		private Boolean					_supportsPrepare = false;
@@ -327,7 +332,8 @@ namespace Npgsql {
 			if (connection_string_values[CONN_PORT] == null)
 				// Port is optional. Defaults to PG_PORT.
 				connection_string_values[CONN_PORT] = PG_PORT;
-    	
+    	    if (connection_string_values[SSL_ENABLED] == null)
+				connection_string_values[SSL_ENABLED] = "no";
 	    	
 			try {
 		    		    	
@@ -541,6 +547,33 @@ namespace Npgsql {
 			
 		}
     
+        internal BufferedStream getStream()
+		{
+			return stream;
+		}
+		internal void setStream(BufferedStream bs)
+		{
+			stream=bs;
+		}
+		internal TlsNetworkStream getNormalStream()
+		{
+			return secstream;
+		}
+		internal void setNormalStream(TlsNetworkStream tns)
+		{
+			secstream=tns;
+		}
+        
+		/*
+		public bool useSSL() 
+		{
+			if (SSL_ENABLED=="yes")
+				return true;
+
+			return false;
+		}
+		*/
+
 		// State 
 		internal void Query( NpgsqlCommand queryCommand ) {
 			CurrentState.Query( this, queryCommand );
@@ -621,6 +654,15 @@ namespace Npgsql {
 				return (String)connection_string_values[CONN_PASSWORD];
 			}
 		}
+        internal String SSL 
+		{
+			get 
+			{
+				return (String)connection_string_values[SSL_ENABLED];
+			}
+
+		}
+
 		internal TcpClient TcpClient {
 			get {
 				return connection;
@@ -629,6 +671,15 @@ namespace Npgsql {
 				connection = value;
 			}
 		}
+        
+        internal TlsNetworkStream SecuredStream 
+		{
+			get 
+			{
+				return SecuredStream;
+			}
+		}
+        
 		internal Encoding Encoding {
 			get {
 				return connection_encoding;
