@@ -79,14 +79,9 @@ namespace Npgsql
         /// <p>When you specify an <see cref="System.Object">Object</see>
         /// in the value parameter, the <see cref="System.Data.DbType">DbType</see> is
         /// inferred from the .NET Framework type of the <b>Object</b>.</p>
-        /// <p>Use caution when using this overload of the
-        /// <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> constructor
-        /// to specify integer parameter values. Because this overload takes a <i>value</i>
-        /// of type <b>Object</b>, you must convert the integral value to an <b>Object</b> type when
-        /// the value is zero, as the following C# example demonstrates.
-        /// <code>Parameter = new SqlParameter("@pname", Convert.ToInt32(0));</code>
-        /// If you do not perform this conversion, the compiler will assume you are
-        /// attempting to call the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> (string, SqlDbType) constructor overload.</p>
+        /// <p>When using this constructor, you must be aware of a possible misuse of the constructor which takes a DbType parameter.
+        /// This happens when calling this constructor passing an int 0 and the compiler thinks you are passing a value of DbType.
+        /// Use <code> Convert.ToInt32(value) </code> for example to have compiler calling the correct constructor.</p>
         /// </remarks>
         public NpgsqlParameter(String parameterName, object value)
         {
@@ -155,6 +150,8 @@ namespace Npgsql
             }
             this.size = size;
             source_column = sourceColumn;
+            
+            
         }
 
         /// <summary>
@@ -360,8 +357,9 @@ namespace Npgsql
             set
             {
                 name = value;
-                if ( (name.Equals(String.Empty)) || (name[0] != ':') )
-                    name = ':' + name;
+                if ( (name.Equals(String.Empty)) || ((name[0] != ':') && (name[0] != '@')) )
+                     name = ':' + name;
+                
                 NpgsqlEventLog.LogPropertySet(LogLevel.Normal, CLASSNAME, "ParameterName", value);
             }
         }

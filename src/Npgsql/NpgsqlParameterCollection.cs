@@ -235,7 +235,7 @@ namespace Npgsql
 
             // Iterate values to see what is the index of parameter.
             Int32 index = 0;
-            if (parameterName[0] != ':')
+            if ( (parameterName[0] != ':') && (parameterName[0] != '@') )
                 parameterName = ':' + parameterName;
 
             foreach(NpgsqlParameter parameter in this)
