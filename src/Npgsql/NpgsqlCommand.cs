@@ -78,7 +78,7 @@ namespace Npgsql {
 		/// <param name="connection">A <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> that represents the connection to a PostgreSQL server.</param>
 		/// <param name="transaction">The <see cref="Npgsql.NpgsqlTransaction">NpgsqlTransaction</see> in which the <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see> executes.</param>
 		public NpgsqlCommand(String cmdText, NpgsqlConnection connection, NpgsqlTransaction transaction) {
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlConnection));
+			resman = new System.Resources.ResourceManager(this.GetType());
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 			
 			planName = String.Empty;

@@ -1,5 +1,4 @@
 // created on 10/5/2002 at 23:01
-
 // Npgsql.NpgsqlConnection.cs
 // 
 // Author:
@@ -24,9 +23,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-
-
 using System;
 using System.ComponentModel;
 using System.Data;
@@ -39,8 +35,8 @@ using System.Collections.Specialized;
 using NpgsqlTypes;
 using Npgsql.Design;
 
-namespace Npgsql {
 
+namespace Npgsql {
 	/// <summary>
 	/// Represents the method that handles the <see cref="Npgsql.NpgsqlConnection.Notification">Notification</see> events.
 	/// </summary>
@@ -54,7 +50,6 @@ namespace Npgsql {
 	/// </summary>
 	[System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlConnection))]
 	public sealed class NpgsqlConnection : Component, IDbConnection, IDisposable {
-
 		//Changed the Name of this event because events usually don't start with 'On' in the .Net-Framework
 		// (but their handlers do ;-)
 		/// <summary>
@@ -68,12 +63,10 @@ namespace Npgsql {
 		private ConnectionState	connection_state;
 		private String					connection_string;
 		internal ListDictionary	connection_string_values;
-
 		// some of the following constants are needed
 		// for designtime support so I made them 'internal'
 		// as I didn't want to add another interface for internal access
 		// --brar
-
 		// In the connection string
     internal readonly Char CONN_DELIM 		= ';';  // Delimeter
 		internal readonly Char CONN_ASSIGN 	= '=';
@@ -82,7 +75,6 @@ namespace Npgsql {
 		internal readonly String CONN_PASSWORD = "PASSWORD";
 		internal readonly String CONN_DATABASE = "DATABASE";
 		internal readonly String CONN_PORT 		= "PORT";
-
 		// Postgres default port
 		internal readonly String PG_PORT = "5432";
 		
@@ -128,7 +120,7 @@ namespace Npgsql {
 		/// </summary>
 		/// <param name="ConnectionString">The connection used to open the PostgreSQL database.</param>
 		public NpgsqlConnection(String ConnectionString) {
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlConnection));
+			resman = new System.Resources.ResourceManager(this.GetType());
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, ConnectionString);
       
 			connection_state = ConnectionState.Closed;

@@ -56,7 +56,7 @@ namespace Npgsql
 		
 		internal NpgsqlTransaction(NpgsqlConnection conn, IsolationLevel isolation)
 		{
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlTransaction));
+			resman = new System.Resources.ResourceManager(this.GetType());
 
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 			if ((isolation != IsolationLevel.ReadCommitted) &&

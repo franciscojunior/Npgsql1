@@ -60,14 +60,17 @@ namespace Npgsql
 
 
 
+
 		
 		#region Constructors
 
 		/// <summary>
+
 		/// Initializes a new instance of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> class.
 		/// </summary>
 		public NpgsqlParameter(){
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlParameter));
+			resman = new System.Resources.ResourceManager(this.GetType());
+
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 		}
 
@@ -91,7 +94,8 @@ namespace Npgsql
 		/// attempting to call the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> (string, SqlDbType) constructor overload.</p>
 		/// </remarks>
 		public NpgsqlParameter(String parameterName, object value) {
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlParameter));
+			resman = new System.Resources.ResourceManager(this.GetType());
+
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, parameterName, value);
 			// Set db_type according to:
 			// http://msdn.microsoft.com/library/en-us/cpguide/html/cpconusingparameterswithdataadapters.asp
@@ -174,7 +178,8 @@ namespace Npgsql
 		/// <param name="size">The length of the parameter.</param>
 		/// <param name="sourceColumn">The name of the source column.</param>
 		public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size, String sourceColumn) {
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlParameter));
+			resman = new System.Resources.ResourceManager(this.GetType());
+
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, parameterName, parameterType, size, source_column);
 			name = parameterName;
 			if (name[0] != ':') // Support both ':'paramname and paramname constructions.
@@ -206,7 +211,8 @@ namespace Npgsql
 		/// <param name="value">An <see cref="System.Object">Object</see> that is the value 
 		/// of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see>.</param>
 		public NpgsqlParameter (String parameterName, DbType parameterType, Int32 size, String sourceColumn, ParameterDirection direction, bool isNullable, byte precision, byte scale, DataRowVersion sourceVersion, object value) {
-			resman = new System.Resources.ResourceManager(typeof(NpgsqlParameter));
+			resman = new System.Resources.ResourceManager(this.GetType());
+
 			this.ParameterName = parameterName;
 			this.DbType = parameterType;
 			this.Size = size;
