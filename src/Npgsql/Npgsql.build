@@ -11,6 +11,7 @@
 	<property name="tls.lib" value="${nant.project.basedir}/../../lib/Mono.Security.Protocol.Tls.dll" />
 	<property name="assemblyname" value="Npgsql"/>
 	<property name="debug" value="true"/>
+	<property name="xmldoc" value="${ms.build.dir}/${assemblyname}.xml"/>
 	<property name="mono.home" value="C:\Programme\mono-0.25"/>
 	<property name="mcs.bat" value="c:\windows\mcs.bat"/>
 	<!-- monoresgen doesn't work on my Windows-Computer no Problem with Linux - see Makefile Brar-->
@@ -77,7 +78,7 @@
 	</target>
 
 	<target name="build" depends="resources">
-		<csc target="library" output="${ms.build.dir}/${assemblyname}.dll" debug="${debug}">
+		<csc target="library" output="${ms.build.dir}/${assemblyname}.dll" debug="${debug}" doc="${xmldoc}">
 			<references>
 				<includes name="System.Data.dll" />
 				<includes name="System.Windows.Forms.dll" />
@@ -88,7 +89,7 @@
 			<resources prefix="${assemblyname}.Design">
 				<includes name="${ms.res.dir}/Design/*.resources"/>
 			</resources>
-            <resources prefix="NpgsqlTypes">
+			<resources prefix="NpgsqlTypes">
 				<includes name="${ms.res.dir}/NpgsqlTypes/*.resources"/>
 			</resources>
 			<resources prefix="${assemblyname}">
