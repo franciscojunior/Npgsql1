@@ -371,7 +371,7 @@ namespace NpgsqlTests
 		}
 		
 		[Test]
-		public void InsertNullStringValue()
+		public void InsertNullString()
 		{
 			_conn.Open();
 			
@@ -400,7 +400,7 @@ namespace NpgsqlTests
 		}
 	
 		[Test]
-		public void InsertNullDateTimeValue()
+		public void InsertNullDateTime()
 		{
 			_conn.Open();
 			
@@ -487,7 +487,65 @@ namespace NpgsqlTests
 			
 		}
 		
+		
 		[Test]
+		public void InsertNullNumeric()
+		{
+			_conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_numeric) values (:a)", _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Decimal));
+			
+			command.Parameters[0].Value = DBNull.Value;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select count(*) from tableb where field_numeric is null";
+			command.Parameters.Clear();
+			
+			Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+			
+			command.CommandText = "delete from tableb where field_serial = (select max(field_serial) from tableb);";
+			command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(3, result);
+			
+		}
+		
+		[Test]
+		public void InsertNullBoolean()
+		{
+			_conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_bool) values (:a)", _conn);
+			
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.Boolean));
+			
+			command.Parameters[0].Value = DBNull.Value;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select count(*) from tablea where field_bool is null";
+			command.Parameters.Clear();
+			
+			Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+			
+			command.CommandText = "delete from tablea where field_serial = (select max(field_serial) from tablea);";
+			command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(5, result);
+			
+		}
+		
+		
+		
 		
 	}
 }
