@@ -30,11 +30,24 @@ namespace NpgsqlTypes
   {
     Bigint,
     Boolean,
+    Box,
+    Bytea,
+    Circle,
+    Date,
+    Double,
     Integer,
+    Line,
+    LSeg,
+    Money,
     Numeric,
+    Path,
+    Point,
+    Polygon,
+    Real,
     Smallint,
-    Timestamp,
-    Text
+    Text,
+    Time,
+    Timestamp
     
   }
   

@@ -34,7 +34,7 @@ namespace Npgsql
     /// <summary>
     /// Provides a means of reading a forward-only stream of rows from a PostgreSQL backend.  This class cannot be inherited.
     /// </summary>
-    public class NpgsqlDataReader : IDataReader, IEnumerable
+    public sealed class NpgsqlDataReader : IDataReader, IEnumerable
     {
         private NpgsqlConnection 	_connection;
         private ArrayList 			_resultsets;
@@ -355,9 +355,33 @@ namespace Npgsql
             }
             else
             {
-                return TI.DBType;
+                //return TI.DBType;
+                return DbType.String;
             }
         }
+        
+        /// <summary>
+        /// Return the data NpgsqlDbType of the column at index <param name="Index"></param>.
+        /// </summary>
+        public NpgsqlDbType GetFieldNpgsqlDbType(Int32 Index)
+        {
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetFieldType");
+
+            CheckHaveResultSet();
+
+            NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
+
+            if (TI == null)
+            {
+                return NpgsqlDbType.Text;
+            }
+            else
+            {
+                return TI.NpgsqlDbType;
+                
+            }
+        }
+        
 
         /// <summary>
         /// Return the value of the column at index <param name="Index"></param>.

@@ -49,7 +49,8 @@ namespace Npgsql
         private Int32				    size = 0;
 
         // Fields to implement IDataParameter
-        private DbType				    db_type = DbType.String;
+        //private NpgsqlDbType				    npgsqldb_type = NpgsqlDbType.Text;
+        //private DbType                    db_type = DbType.String;
         private NpgsqlNativeTypeInfo	type_info;
         private ParameterDirection	    direction = ParameterDirection.Input;
         private Boolean				    is_nullable = false;
@@ -94,16 +95,16 @@ namespace Npgsql
             if ((this.value == null) || (this.value == DBNull.Value) )
             {
                 // don't really know what to do - leave default and do further exploration
+                // Default type for null values is String.
                 this.value = DBNull.Value;
-                db_type = DbType.String;
-                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(db_type);
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String));
                 return;
             } else {
                 type_info = NpgsqlTypesHelper.GetNativeTypeInfo(value.GetType());
                 if (type_info == null) {
     				throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value.GetType()));
                 }
-                db_type = type_info.DBType;
+                
             }
         }
 
@@ -113,7 +114,11 @@ namespace Npgsql
         /// </summary>
         /// <param name="parameterName">The name of the parameter to map.</param>
         /// <param name="parameterType">One of the <see cref="System.Data.DbType">DbType</see> values.</param>
-        public NpgsqlParameter(String parameterName, DbType parameterType) : this(parameterName, parameterType, 0, String.Empty)
+        public NpgsqlParameter(String parameterName, NpgsqlDbType parameterType) : this(parameterName, parameterType, 0, String.Empty)
+        {}
+        
+        
+        public NpgsqlParameter(String parameterName, DbType parameterType) : this(parameterName, NpgsqlTypesHelper.GetNativeTypeInfo(parameterType).NpgsqlDbType, 0, String.Empty)
         {}
 
         /// <summary>
@@ -123,9 +128,13 @@ namespace Npgsql
         /// <param name="parameterName">The name of the parameter to map.</param>
         /// <param name="parameterType">One of the <see cref="System.Data.DbType">DbType</see> values.</param>
         /// <param name="size">The length of the parameter.</param>
-        public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size) : this(parameterName, parameterType, size, String.Empty)
+        public NpgsqlParameter(String parameterName, NpgsqlDbType parameterType, Int32 size) : this(parameterName, parameterType, size, String.Empty)
         {}
 
+        public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size) : this(parameterName, NpgsqlTypesHelper.GetNativeTypeInfo(parameterType).NpgsqlDbType, size, String.Empty)
+        {}
+        
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see>
         /// class with the parameter name, the <see cref="System.Data.DbType">DbType</see>, the size,
@@ -135,7 +144,7 @@ namespace Npgsql
         /// <param name="parameterType">One of the <see cref="System.Data.DbType">DbType</see> values.</param>
         /// <param name="size">The length of the parameter.</param>
         /// <param name="sourceColumn">The name of the source column.</param>
-        public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size, String sourceColumn)
+        public NpgsqlParameter(String parameterName, NpgsqlDbType parameterType, Int32 size, String sourceColumn)
         {
 
             resman = new System.Resources.ResourceManager(this.GetType());
@@ -143,16 +152,21 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, parameterName, parameterType, size, source_column);
 
             this.ParameterName = parameterName;
-            db_type = parameterType;
+            
             type_info = NpgsqlTypesHelper.GetNativeTypeInfo(parameterType);
-            if (type_info == null) {
+            if (type_info == null)
     			throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), parameterType));
-            }
+            
             this.size = size;
             source_column = sourceColumn;
             
             
         }
+        
+        public NpgsqlParameter(String parameterName, DbType parameterType, Int32 size, String sourceColumn) : this(parameterName, NpgsqlTypesHelper.GetNativeTypeInfo(parameterType).NpgsqlDbType, size, sourceColumn)
+        {}
+        
+        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see>
@@ -175,14 +189,12 @@ namespace Npgsql
         /// <param name="sourceVersion">One of the <see cref="System.Data.DataRowVersion">DataRowVersion</see> values.</param>
         /// <param name="value">An <see cref="System.Object">Object</see> that is the value
         /// of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see>.</param>
-        public NpgsqlParameter (String parameterName, DbType parameterType, Int32 size, String sourceColumn, ParameterDirection direction, bool isNullable, byte precision, byte scale, DataRowVersion sourceVersion, object value)
+        public NpgsqlParameter (String parameterName, NpgsqlDbType parameterType, Int32 size, String sourceColumn, ParameterDirection direction, bool isNullable, byte precision, byte scale, DataRowVersion sourceVersion, object value)
         {
 
             resman = new System.Resources.ResourceManager(this.GetType());
-
-
+ 
             this.ParameterName = parameterName;
-            this.DbType = parameterType;
             this.Size = size;
             this.SourceColumn = sourceColumn;
             this.Direction = direction;
@@ -194,8 +206,19 @@ namespace Npgsql
 
             if (this.value == null) {
                 this.value = DBNull.Value;
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String));
             }
+            else
+            {
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(parameterType);
+                if (type_info == null)
+                    throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), parameterType));
+            }
+            
         }
+        
+        public NpgsqlParameter (String parameterName, DbType parameterType, Int32 size, String sourceColumn, ParameterDirection direction, bool isNullable, byte precision, byte scale, DataRowVersion sourceVersion, object value) : this(parameterName, NpgsqlTypesHelper.GetNativeTypeInfo(parameterType).NpgsqlDbType, size, sourceColumn, direction, isNullable, precision, scale, sourceVersion, value)
+        {}
 
         // Implementation of IDbDataParameter
         /// <summary>
@@ -275,20 +298,46 @@ namespace Npgsql
             get
             {
                 NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "DbType");
-                return db_type;
+                return TypeInfo.DbType;
             }
 
             // [TODO] Validate data type.
             set
             {
                 NpgsqlEventLog.LogPropertySet(LogLevel.Normal, CLASSNAME, "DbType", value);
-                db_type = value;
                 type_info = NpgsqlTypesHelper.GetNativeTypeInfo(value);
-                if (type_info == null) {
-    				throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value));
-                }
+                if (type_info == null) 
+                    throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value));
+                
             }
         }
+        
+        /// <summary>
+        /// Gets or sets the <see cref="System.Data.DbType">DbType</see> of the parameter.
+        /// </summary>
+        /// <value>One of the <see cref="System.Data.DbType">DbType</see> values. The default is <b>String</b>.</value>
+        [Category("Data"), RefreshProperties(RefreshProperties.All), DefaultValue(NpgsqlDbType.Text)]
+        public NpgsqlDbType NpgsqlDbType
+        {
+            get
+            {
+                NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "DbType");
+                
+                return TypeInfo.NpgsqlDbType;
+            }
+
+            // [TODO] Validate data type.
+            set
+            {
+                NpgsqlEventLog.LogPropertySet(LogLevel.Normal, CLASSNAME, "DbType", value);
+                type_info = NpgsqlTypesHelper.GetNativeTypeInfo(value);
+                if (type_info == null)
+                    throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value));
+                
+            }
+        }
+
+        
 
         internal NpgsqlNativeTypeInfo TypeInfo
         {
@@ -441,7 +490,7 @@ namespace Npgsql
         /// <returns>A new <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> that is a copy of this instance.</returns>
         object System.ICloneable.Clone()
         {
-            return new NpgsqlParameter(this.ParameterName, this.DbType,	this.Size, this.SourceColumn, this.Direction, this.IsNullable, this.Precision, this.Scale, this.SourceVersion, this.Value);
+            return new NpgsqlParameter(this.ParameterName, this.NpgsqlDbType,	this.Size, this.SourceColumn, this.Direction, this.IsNullable, this.Precision, this.Scale, this.SourceVersion, this.Value);
         }
 
 
