@@ -80,7 +80,7 @@ namespace NpgsqlTypes
 				case NpgsqlDbType.Timestamp:
 					return "timestamp";
 				default:
-					throw new NpgsqlException(String.Format("The NpgsqlDbType {0} isn't supported yet", npgsqlDbType));
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", npgsqlDbType));
 				
 			}
 		}
@@ -111,7 +111,7 @@ namespace NpgsqlTypes
 				
 				default:
 					// This should not happen!
-					throw new NpgsqlException (String.Format("Parameter type {0} not supported", parameter.NpgsqlDbType));
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", parameter.NpgsqlDbType));
 					
 				
 			}
@@ -126,27 +126,34 @@ namespace NpgsqlTypes
 		/// </summary>
 		public static Object ConvertNpgsqlTypeToSystemType(Hashtable oidToNameMapping, Object data, Int32 typeOid)
 		{
-								
-			switch ((String)oidToNameMapping[typeOid])
+			
+			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
+			// when connecting because we don't have yet loaded typeMapping. The switch below
+			// crashes with NullPointerReference when it can't find the typeOid.
+			
+			if (oidToNameMapping.Count == 0)
+				return (String) (NpgsqlString)data;					
+			
+			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
-				case "bool":
+				case NpgsqlDbType.Boolean:
 					return (Boolean)(NpgsqlBoolean)data;
-				case "int2":
+				case NpgsqlDbType.Smallint:
 					return (Int16)(NpgsqlInt16)data;
-				case "int4":
-				case "oid":
-				  return (Int32)(NpgsqlInt32)data;
+				case NpgsqlDbType.Integer:
+					return (Int32)(NpgsqlInt32)data;
 				
-				case "int8":
+				case NpgsqlDbType.Bigint:
 					return (Int64)(NpgsqlInt64)data;
 				
-				case "numeric":
+				case NpgsqlDbType.Numeric:
 					return (Decimal)(NpgsqlDecimal)data;
-				case "timestamp":
+				case NpgsqlDbType.Timestamp:
 					return (DateTime)(NpgsqlDateTime)data;
-				case "text":
-				default:
+				case NpgsqlDbType.Text:
 					return (String)(NpgsqlString)data;
+				default:
+						throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
 				
 				
 					
@@ -161,32 +168,39 @@ namespace NpgsqlTypes
 		/// 
 		public static Object ConvertBackendStringToNpgsqlType(Hashtable oidToNameMapping, String data, Int32 typeOid, Int32 typeModifier)
 		{
+			//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
+			// when connecting because we don't have yet loaded typeMapping. The switch below
+			// crashes with NullPointerReference when it can't find the typeOid.
 			
-			switch ((String)oidToNameMapping[typeOid])
+			if (oidToNameMapping.Count == 0)
+				return new NpgsqlString(data);
+			
+			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
-				case "bool":
+				case NpgsqlDbType.Boolean:
 					return NpgsqlBoolean.Parse(data);
-				case "int2":
+				case NpgsqlDbType.Smallint:
 					return NpgsqlInt16.Parse(data);
-				case "int4":
-				case "oid":
-				  return NpgsqlInt32.Parse(data);
+				case NpgsqlDbType.Integer:
+					return NpgsqlInt32.Parse(data);
 				
-				case "int8":
+				case NpgsqlDbType.Bigint:
 					return NpgsqlInt64.Parse(data);
 				
-				case "numeric":
+				case NpgsqlDbType.Numeric:
 					// Got this manipulation of typemodifier from jdbc driver - file AbstractJdbc1ResultSetMetaData.java.html method getColumnDisplaySize
-					{ typeModifier -= 4;
+					{ 
+						typeModifier -= 4;
 						//Console.WriteLine("Numeric from server: {0} digitos.digitos {1}.{2}", data, (typeModifier >> 16) & 0xffff, typeModifier & 0xffff);
 						return new NpgsqlDecimal(Decimal.Parse(data, NumberFormatInfo.InvariantInfo));
 					}
 				
-				case "timestamp":
+				case NpgsqlDbType.Timestamp:
 					return NpgsqlDateTime.Parse(data);
-				case "text":
-				default:
+				case NpgsqlDbType.Text:
 					return new NpgsqlString(data);
+				default:
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
 				
 			
 			}
@@ -203,22 +217,22 @@ namespace NpgsqlTypes
     	// This method gets a db type identifier and return the equivalent
     	// system type name.
     	
-    	switch ((String)oidToNameMapping[typeOid])
+    	
+    	switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
-				case "bool":
+				case NpgsqlDbType.Boolean:
 					return "NpgsqlTypes.NpgsqlBoolean";
-				case "int2":
+				case NpgsqlDbType.Smallint:
 					return "NpgsqlTypes.NpgsqlInt16";
-				case "int4":
-				case "oid":
-				  return "NpgsqlTypes.NpgsqlInt32";
-				case "int8":
+				case NpgsqlDbType.Integer:
+					return "NpgsqlTypes.NpgsqlInt32";
+				case NpgsqlDbType.Bigint:
 					return "NpgsqlTypes.NpgsqlInt64";
-				case "numeric":
+				case NpgsqlDbType.Numeric:
 					return "NpgsqlTypes.NpgsqlDecimal";
-				case "timestamp":
+				case NpgsqlDbType.Timestamp:
 					return "NpgsqlTypes.NpgsqlDateTime";
-				case "text":
+				case NpgsqlDbType.Text:
 				default:
 					return "NpgsqlTypes.NpgsqlString";
 			
@@ -232,29 +246,35 @@ namespace NpgsqlTypes
 		/// </summary>
 		/// 
 		
-		public static String GetNpgsqlTypeNameFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
+		public static String GetSystemTypeNameFromTypeOid(Hashtable oidToNameMapping, Int32 typeOid)
     {
     	// This method gets a db type identifier and return the equivalent
     	// system type name.
     	
-    	switch ((String)oidToNameMapping[typeOid])
+    	//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
+			// when connecting because we don't have yet loaded typeMapping. The switch below
+			// crashes with NullPointerReference when it can't find the typeOid.
+    	if (oidToNameMapping.Count == 0)
+				return "System.String";
+    	
+    	switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
-				case "bool":
+				case NpgsqlDbType.Boolean:
 					return "System.Boolean";
-				case "int2":
+				case NpgsqlDbType.Smallint:
 					return "System.Int16";
-				case "int4":
-				case "oid":
-				  return "System.Int32";
-				case "int8":
+				case NpgsqlDbType.Integer:
+					return "System.Int32";
+				case NpgsqlDbType.Bigint:
 					return "System.Int64";
-				case "numeric":
+				case NpgsqlDbType.Numeric:
 					return "System.Decimal";
-				case "timestamp":
+				case NpgsqlDbType.Timestamp:
 					return "System.DateTime";
-				case "text":
-				default:
+				case NpgsqlDbType.Text:
 					return "System.String";
+				default:
+					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
 			
 			}
     	
@@ -291,13 +311,43 @@ namespace NpgsqlTypes
 				
 				// Data was read. Clear the mapping from previous bootstrap value so we don't get
 				// exceptions trying to add duplicate key.
-				oidToNameMapping.Clear();
+				// oidToNameMapping.Clear();
 				
 				while (dr.Read())
 				{
 					// Add the key as a Int32 value so the switch in ConvertStringToNpgsqlType can use it
 					// in the search. If don't, the key is added as string and the switch doesn't work.
-					oidToNameMapping.Add(Int32.Parse((String)dr[0]), dr[1]);
+					
+					NpgsqlDbType type;
+					String typeName = (String) dr[1];
+										
+					switch (typeName)
+					{
+						case "bool":
+							type = NpgsqlDbType.Boolean;
+							break;
+						case "int2":
+							type = NpgsqlDbType.Smallint;
+							break;
+						case "int4":
+							type = NpgsqlDbType.Integer;
+							break;
+						case "int8":
+							type = NpgsqlDbType.Bigint;
+							break;
+						case "numeric":
+							type = NpgsqlDbType.Numeric;
+							break;
+						case "timestamp":
+							type = NpgsqlDbType.Timestamp;
+							break;
+						default:
+							type = NpgsqlDbType.Text; // Default npgsqltype of the oid. Unsupported types will be returned as NpgsqlString.
+							break;
+					}
+										
+					
+					oidToNameMapping.Add(Int32.Parse((String)dr[0]), type);
 				}
 				
 				_oidToNameMappings.Add(conn.ServerVersion, oidToNameMapping);
