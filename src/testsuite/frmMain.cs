@@ -99,6 +99,10 @@ using Npgsql;
 		
 		  log("Connecting to PostgreSQL...");
 		  
+		  // Setup the logging
+		  NpgsqlEventLog.Level = 2;
+		  NpgsqlEventLog.LogName = "testsuite.log";
+		  
 		  if (cnDB != null)
 		  {
         if (cnDB.State != ConnectionState.Closed)
