@@ -48,6 +48,14 @@ namespace Npgsql
     private static   String    logfile;
     private static   LogLevel     level;
 
+    // Constructor
+    // By marking this private, it should not be possible to create
+    // instances of this class.
+    private NpgsqlEventLog()
+    {
+			
+    }
+    
     ///<summary>
     /// Sets/Returns the level of information to log to the logfile.
     /// 0 - None
