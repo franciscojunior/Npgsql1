@@ -341,7 +341,6 @@ namespace Npgsql
 		    			// Console.WriteLine("ErrorResponse");
 		    			// An error occured.
 		    			// Copy the message and throw an exception.
-		    			// num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
 		    			// Close the connection.
 		    			Close();
 		    			String error_message = PGUtil.ReadString(ns, connection_encoding);
@@ -350,7 +349,9 @@ namespace Npgsql
 		    		case 'R':
 		    			// Console.WriteLine("AuthenticationRequest");
 		    			// Received an Authentication Request.
-		    			num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
+		    			
+		    			// Read the request.
+		    			num_bytes_read = ns.Read(input_buffer, 0, 4);
 		    			auth_type = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
 		    			
 		    			if (auth_type == AUTH_OK)
@@ -404,9 +405,7 @@ namespace Npgsql
 		    			// Console.WriteLine("NoticeResponse");
 		    			// [TODO] Check what to do with the NoticeResponse message. 
 		    			// For now, just ignore (ugly!!).
-		    			
-		    			// num_bytes_read = ns.Read(input_buffer, 0, connection.ReceiveBufferSize);
-		    			// String noticeresponse = new String(connection_encoding.GetChars(input_buffer, 0, num_bytes_read));
+		    					    			
 		    			String notice_response = PGUtil.ReadString(ns, connection_encoding);
 		    			
 		    			// Console.WriteLine("Going listen");
