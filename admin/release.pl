@@ -43,7 +43,7 @@ my $targets = { "ChangeLog" => 1,
 my $ERROR_NOT_CVS_TAGGED = 1;
 my $ERROR_DOES_NOT_COMPILE = 2;
 my $ERROR_NONINTERACTIVE_TEST_DONT_PASS = 3;
-my $ERROR_MISSING_LICENSE = 4;
+my $ERROR_MISSING_NOTICES = 4;
 
 #
 # Check messages
@@ -73,7 +73,6 @@ my ($rel_version, $version, $RELEASE_TAG) = get_release_info();
 
 # Prepare the list of files to be passed to tar
 my $target_files = prepare_release_files( $targets );
-
 
 # Make sure that the notices for this project are in all the areas that
 # they should be
@@ -106,7 +105,7 @@ exit 0;
 ######################################################################
 # Print out a banner
 ######################################################################
-sub banner() {
+sub banner {
 print "-------------------------------------------------------------------------\n";
 print "This is the release script of $RELEASE_NAME. A few checks will be made...\n";
 print "-------------------------------------------------------------------------\n";
@@ -115,7 +114,7 @@ print "-------------------------------------------------------------------------
 ######################################################################
 # Gather some input from the user
 ######################################################################
-sub gather_input() {
+sub gather_input {
     my $npgsql_host;
 
     print "Please enter the IP address of the npgsql host database used for running the non-interactive test suite[default=127.0.0.1]: ";
@@ -133,7 +132,7 @@ sub gather_input() {
 ######################################################################
 # Make sure that npgsql compiles correctly
 ######################################################################
-sub check_compiles() {
+sub check_compiles {
     print "Checking if npgsql compiles correctly...";
     if (system("(cd src/Npgsql; make 2>&1 > /dev/null)") == 0) {
 	print $OK;
@@ -145,11 +144,14 @@ sub check_compiles() {
 ######################################################################
 # Make sure that all noninteractive tests pass
 ######################################################################
-sub check_tests() {
+sub check_tests {
     my ($npgsql_host) = ( @_ );
+    my $retval;
 
     print "Checking if all non-interactive tests pass...";
-    if (system("(cd src/testsuite/noninteractive; make $npgsql_host 2>&1 > /dev/null)") == 0) {
+    $retval = system("(cd src/testsuite/noninteractive; make NPGSQL_HOST=$npgsql_host 2>&1 > /dev/null)");
+    $retval >>= 8;   # must do this to get the actual exit value
+    if ($retval == 0) {
 	print $OK;
     } else {
 	failed($ERROR_NONINTERACTIVE_TEST_DONT_PASS);
@@ -159,7 +161,7 @@ sub check_tests() {
 ######################################################################
 # Clean up the mess we made so far
 ######################################################################
-sub clean() {
+sub clean {
     print "Cleaning up ...";
     system("(cd src/Npgsql; make clean > /dev/null)");
     system("(cd src/testsuite/noninteractive; make clean > /dev/null)");
@@ -172,7 +174,7 @@ sub clean() {
 ######################################################################
 # Create a ChangeLog
 ######################################################################
-sub changelog() {
+sub changelog {
     print "Creating a ChangeLog file ...";
     system("$CVS2CL 2> /dev/null");
     print $OK;
@@ -181,7 +183,7 @@ sub changelog() {
 ######################################################################
 # We failed somewhere; exit
 ######################################################################
-sub failed() {
+sub failed {
     my ($error) = @_;
 
     print $FAILED;
@@ -191,7 +193,7 @@ sub failed() {
 ######################################################################
 # Figure out the new version number and release tag
 ######################################################################
-sub get_release_info() {
+sub get_release_info {
     my $version;
     my $rel_version;
     my $rel_tag;
@@ -212,7 +214,7 @@ sub get_release_info() {
 ######################################################################
 # Prepare $target_files to be passed to tar
 ######################################################################
-sub prepare_release_files() {
+sub prepare_release_files {
     my ( $targets ) = ( @_ );
     my $target_files;
 
@@ -239,15 +241,18 @@ sub prepare_release_files() {
 ######################################################################
 # Make sure that npgsql includes the proper notices where it should
 ######################################################################
-sub check_notices() {
+sub check_notices {
     my $target_files = shift;
     my $copyright = 'Copyright \(C\) 2002 The Npgsql Development Team';
     my $url = 'http:\/\/gborg\.postgresql\.org\/project\/npgsql\/projdisplay\.php';
+    my $email = 'npgsql\-general\@gborg\.postgresql\.org';
     my $licenses = { LGPL => "GNU Lesser General Public" };
     my $errors = 0;
 
+    print "Checking if all proper notices are present ...";
+
     foreach my $file ( @$target_files ) {
-	if ( $file =~ m/.*\.cs$/
+	if ( $file =~ m/.*\.cs/
 	     || $file =~ m/Makefile/
 	     || $file =~ m/.*\.pl/
 	     ) {	    
@@ -266,22 +271,34 @@ sub check_notices() {
 		}
 	    }
 	    if ( !$found_license ) {
-		print "File $file is missing a proper license\n";
+		print "\nFile $file is missing a license";
 		$errors = 1;
 	    }
 
 	    # Make sure the copyright is there
-	    if ( $file_content !~ m/$copyright/
-		 || $file_content !~ m/$url/) {
-		print "File $file is missing a proper copyright\n";
+	    if ( $file_content !~ m/$copyright/ ) {
+		print "\nFile $file is missing a copyright";
 		$errors = 1;
 	    }
+
+	    # Make sure the contact email is there
+	    if ( $file_content !~ m/$email/ ) {
+		print "\nFile $file is missing a contact email";
+		$errors = 1;
+	    }
+
+	    # Make sure the contact URL is there
+	    if ( $file_content !~ m/$url/ ) {
+		print "\nFile $file is missing a contact URL";
+		$errors = 1;
+	    }
+	    
 	}
     }
 
     if ( $errors ) {
 	print "Please add the proper notices in the listed files first\n";
-	exit $ERROR_MISSING_LICENSE;
+	failed( $ERROR_MISSING_NOTICES );
     }
 }
 
@@ -290,7 +307,7 @@ sub check_notices() {
 ######################################################################
 # Verify that all files are properly tagged
 ######################################################################
-sub verify_tagged() {
+sub verify_tagged {
     my $errors;
 
     print "Checking if all files are properly tagged as $RELEASE_TAG. NO implicit tagging will be performed ...\n";
@@ -321,7 +338,7 @@ sub verify_tagged() {
 ######################################################################
 # Create release tar.gz
 ######################################################################
-sub create_release() {
+sub create_release {
     my ( $RELEASE_NAME, $rel_version, $version, $target_files ) = ( @_ );
     my $rel_file=$RELEASE_NAME . "_" . $rel_version . ".tar.gz";
 
