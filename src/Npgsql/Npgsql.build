@@ -103,11 +103,17 @@
 							public static void ScriptMain(Project project) {
 									DirectoryInfo di = new DirectoryInfo(Path.Combine(Path.Combine(project.BaseDirectory, project.Properties["ms.res.dir"]), project.Properties["locale"]));
 									foreach(FileInfo fi in di.GetFiles("*.resources")){
-										fi.MoveTo(Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".", fi.Name)));
+										string ToFile = Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".", fi.Name));
+										if(File.Exists(ToFile))
+											File.Delete(ToFile);
+										fi.MoveTo(ToFile);
 									}
 									di = new DirectoryInfo(Path.Combine(Path.Combine(Path.Combine(project.BaseDirectory, project.Properties["ms.res.dir"]), "Design"), project.Properties["locale"]));
 									foreach(FileInfo fi in di.GetFiles("*.resources")){
-										fi.MoveTo(Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".Design.", fi.Name)));
+										string ToFile = Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".Design.", fi.Name));
+										if(File.Exists(ToFile))
+											File.Delete(ToFile);
+										fi.MoveTo(ToFile);
 									}
 							}
 					]]></code>
