@@ -80,6 +80,10 @@ CPPFLAGS="${CPPFLAGS} -r ${NPGSQL_TESTS_SHARED_LIB}"
 # Run the tests
 #
 # -----------------------------------------------------------------------------
+echo "All tests are compiled with: 
+ \$ ${CC} ${CPPFLAGS} test_<name>.cs"
+echo "All tests are run with:
+ \$ ${MONO} test_<name>.exe"
 test_failed=0
 for file in `ls test_*.cs | sed -e s/test_// -e s/.cs//`;
 do
@@ -87,8 +91,8 @@ do
     echo -n "Compiling test file test_$file.cs..." && \
     ( ${CC} ${CPPFLAGS} test_${file}.cs >> ${NPGSQL_TESTS_LOG} 2>&1 && echo "OK") || echo "FAILED"
     echo -n "Running test file test_${file}.exe..." && \
-    ( ${MONO} test_${file}.exe > out_$file);
-    if diff out_$file expected_$file >> ${NPGSQL_TESTS_LOG} 2>&1
+    ( ${MONO} test_${file}.exe 2>&1 > out_$file);
+    if diff out_$file expected_$file 2>&1 >> ${NPGSQL_TESTS_LOG}
     then
 	echo "OK"
     else
@@ -98,7 +102,7 @@ do
     fi
 done
 
-if [ $test_failed == 0 ]
+if [ $test_failed == 0 ];
 then
     echo "==========================="
     echo "**** All tests passed  ****"

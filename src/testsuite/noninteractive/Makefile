@@ -62,7 +62,7 @@ links:
 	@test -L $(NPGSQL_LIB) || ln -s ../../Npgsql/$(NPGSQL_LIB) $(NPGSQL_LIB)
 
 tests:
-	@./runTests.sh
+	@./runTests.sh 2>&1 | tee -a ${NPGSQL_TESTS_LOG}
 
 clean:
 	rm -rf *~ out_* *.exe $(NPGSQL_LIB) $(NPGSQL_TESTS_LOG) \
