@@ -82,42 +82,37 @@ namespace NpgsqlTypes
 	
 	public struct NpgsqlBox
 	{
-		private NpgsqlPoint _LeftTop;
-		private NpgsqlPoint _RightBottom;
+		private NpgsqlPoint _UpperRight;
+		private NpgsqlPoint _LowerLeft;
 		
-		public NpgsqlBox(NpgsqlPoint LeftTop, NpgsqlPoint RightBottom)
+		public NpgsqlBox(NpgsqlPoint UpperRight, NpgsqlPoint LowerLeft)
 		{
-			_LeftTop = LeftTop;
-			_RightBottom = RightBottom;
+			_UpperRight = UpperRight;
+			_LowerLeft = LowerLeft;
 		}
 		
-		public NpgsqlBox(Single X, Single Y, Single Width, Single Height)
-		{
-			_LeftTop = new NpgsqlPoint(X, Y);
-			_RightBottom = new NpgsqlPoint(X + Width, Y + Height); 
-		}
 
-		public NpgsqlPoint LeftTop
+		public NpgsqlPoint UpperRight
 		{
 			get
 			{
-				return _LeftTop;
+				return _UpperRight;
 			}
 			set
 			{
-				_LeftTop = value;
+				_UpperRight = value;
 			}
 		}
 
-		public NpgsqlPoint RightBottom
+		public NpgsqlPoint LowerLeft
 		{
 			get
 			{
-				return _RightBottom;
+				return _LowerLeft;
 			}
 			set
 			{
-				_RightBottom = value;
+				_LowerLeft = value;
 			}
 		} 
 		

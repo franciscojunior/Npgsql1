@@ -30,6 +30,7 @@ using System.Globalization;
 using System.Text;
 using System.IO;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 using Npgsql;
 
@@ -271,13 +272,14 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToPoint(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-                        
-            Int32 commaIndex = BackendData.IndexOf(',');
             
-            Single x = Single.Parse(BackendData.Substring(1, commaIndex - 1));
-            Single y = Single.Parse(BackendData.Substring(1 + commaIndex, BackendData.Length - commaIndex - 2));
+            Regex r = new Regex(@"\((\d+),(\d+)\)");
+            Match m = r.Match(BackendData);
             
-            return new NpgsqlPoint(x, y);
+            return new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString()));
+            
+            
+            
         }
 
         /// <summary>
@@ -286,7 +288,14 @@ namespace NpgsqlTypes
         internal static Object ToRectangle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             // FIXME - uh actually parse the data
-            return new NpgsqlBox(100,250,20,40);
+            
+            //return new NpgsqlBox(new NpgsqlPoint(300,250), new NpgsqlPoint(20,40));
+            
+            Regex r = new Regex(@"\((\d+),(\d+)\),\((\d+),(\d+)\)");
+            Match m = r.Match(BackendData);
+            
+            return new NpgsqlBox(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())),
+            						new NpgsqlPoint(Single.Parse(m.Groups[3].ToString()), Single.Parse(m.Groups[4].ToString())));
         }
 
         /// <summary>
@@ -363,7 +372,7 @@ namespace NpgsqlTypes
             if (NativeData is NpgsqlBox)
 			{
 				NpgsqlBox box = (NpgsqlBox) NativeData;
-				return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", box.LeftTop.X, box.LeftTop.Y, box.RightBottom.X, box.RightBottom.Y);
+				return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", box.LowerLeft.X, box.LowerLeft.Y, box.UpperRight.X, box.UpperRight.Y);
 			    
             } else {
                 throw new InvalidCastException("Unable to cast data to Rectangle type");
