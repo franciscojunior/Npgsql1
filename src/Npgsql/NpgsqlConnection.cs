@@ -659,7 +659,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessServerVersion");
 
-            SupportsPrepare = ServerVersion.GreaterOrEqual(7, 3, 0);
+            SupportsPrepare = ServerVersion >= new ServerVersion(7, 3, 0);
         }
 
         /// <summary>

@@ -51,33 +51,79 @@ namespace Npgsql
         public static readonly Int32 ProtocolVersion2 = 2 << 16; // 131072
         public static readonly Int32 ProtocolVersion3 = 3 << 16; // 196608
 
-        public String  Raw;
-        public Int32   Major;
-        public Int32   Minor;
-        public Int32   Patch;
-
-        private ServerVersion()
-        {}
+        private Int32   _Major;
+        private Int32   _Minor;
+        private Int32   _Patch;
 
         public ServerVersion(Int32 Major, Int32 Minor, Int32 Patch)
         {
-            this.Raw = string.Format("{0}.{1}.{2}", Major, Minor, Patch);
-            this.Major = Major;
-            this.Minor = Minor;
-            this.Patch = Patch;
+            _Major = Major;
+            _Minor = Minor;
+            _Patch = Patch;
         }
 
-        public bool GreaterOrEqual(Int32 Major, Int32 Minor, Int32 Patch)
+        public Int32 Major
+        { get { return _Major; } }
+
+        public Int32 Minor
+        { get { return _Minor; } }
+
+        public Int32 Patch
+        { get { return _Patch; } }
+
+        public static bool operator == (ServerVersion One, ServerVersion TheOther)
         {
             return
-                (this.Major > Major) ||
-                (this.Major == Major && this.Minor > Minor) ||
-                (this.Major == Major && this.Minor == Minor && this.Patch >= Patch);
+              One._Major == TheOther._Major &&
+              One._Minor == TheOther._Minor &&
+              One._Patch == TheOther._Patch;
+        }
+
+        public static bool operator != (ServerVersion One, ServerVersion TheOther)
+        {
+            return ! (One == TheOther);
+        }
+
+        public static bool operator > (ServerVersion One, ServerVersion TheOther)
+        {
+            return
+                (One._Major > TheOther._Major) ||
+                (One._Major == TheOther._Major && One._Minor > TheOther._Minor) ||
+                (One._Major == TheOther._Major && One._Minor == TheOther._Minor && One._Patch > TheOther._Patch);
+        }
+
+        public static bool operator >= (ServerVersion One, ServerVersion TheOther)
+        {
+            return
+                (One._Major > TheOther._Major) ||
+                (One._Major == TheOther._Major && One._Minor > TheOther._Minor) ||
+                (One._Major == TheOther._Major && One._Minor == TheOther._Minor && One._Patch >= TheOther._Patch);
+        }
+
+        public static bool operator < (ServerVersion One, ServerVersion TheOther)
+        {
+            return
+                (One._Major < TheOther._Major) ||
+                (One._Major == TheOther._Major && One._Minor < TheOther._Minor) ||
+                (One._Major == TheOther._Major && One._Minor == TheOther._Minor && One._Patch < TheOther._Patch);
+        }
+
+        public static bool operator <= (ServerVersion One, ServerVersion TheOther)
+        {
+            return
+                (One._Major < TheOther._Major) ||
+                (One._Major == TheOther._Major && One._Minor < TheOther._Minor) ||
+                (One._Major == TheOther._Major && One._Minor == TheOther._Minor && One._Patch <= TheOther._Patch);
+        }
+
+        public override int GetHashCode()
+        {
+            return _Major ^ _Minor ^ _Patch;
         }
 
         public new String ToString()
         {
-            return Raw;
+            return string.Format("{0}.{1}.{2}", _Major, _Minor, _Patch);
         }
     }
 
