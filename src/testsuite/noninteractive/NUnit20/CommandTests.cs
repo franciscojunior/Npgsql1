@@ -321,7 +321,7 @@ namespace NpgsqlTests
 		  NpgsqlCommand command = new NpgsqlCommand("listen notifytest;", _conn);
 		  command.ExecuteNonQuery();
 		  
-		  _conn.OnNotification += new NotificationEventHandler(NotificationSupportHelper);
+		  _conn.Notification += new NotificationEventHandler(NotificationSupportHelper);
 		  
 		                                                       
 		  command = new NpgsqlCommand("notify notifytest;", _conn);
