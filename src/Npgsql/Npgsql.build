@@ -9,10 +9,13 @@
     <property name="build.dir" value="build" />
     <property name="ms.build.dir" value="${build.dir}/ms" />
     <property name="mono.build.dir" value="${build.dir}/mono" />
+    <property name="nunit2tests.build.dir" value="${build.dir}/nunit2tests" />
     <property name="assemblyname" value="Npgsql" />
     <property name="debug" value="true" />
     <property name="mono.home" value="c:\mono-0.19\install" />
     <property name="mcs.bat" value="c:\winnt\mcs.bat" />
+
+    <property name="testfiles.dir" value="..\testsuite\noninteractive\nunit20" />
     
     <target name="clean" description="cleans the build directory">
         <delete dir="${build.dir}" verbose="true" failonerror="true"/>
@@ -21,10 +24,11 @@
     <target name="init">
       <mkdir dir="${ms.build.dir}" />
       <mkdir dir="${mono.build.dir}" />
+      <mkdir dir="${nunit2tests.build.dir}" />
     </target>
     <target name="build" depends="init">
         
-        <csc target="library" output="${ms.build.dir}\${assemblyname}.dll" debug="${debug}">
+        <csc target="library" output="${ms.build.dir}\${assemblyname}.dll" debug="${debug}" >
             <sources>
                 <includes name="*.cs" />
 		<includes name="..\NpgsqlTypes\*.cs" />
@@ -33,7 +37,60 @@
     </target>
     
     <target name="monobuild" depends="init">
-      <exec program="${mcs.bat}" commandline="-t:library -r ${mono.home}\lib\System.Data.dll -out:${mono.build.dir}\${assemblyname}.dll *.cs ..\NpgsqlTypes\*.cs" />
+      <exec program="${mcs.bat}" commandline="-g -t:library -r ${mono.home}\lib\System.Data.dll -out:${mono.build.dir}\${assemblyname}.dll *.cs ..\NpgsqlTypes\*.cs" />-->
+
+       <!-- <mcs target="library" output="${mono.build.dir}\${assemblyname}.dll" debug="${debug}">
+            <sources>
+                <includes name="*.cs" />
+		<includes name="..\NpgsqlTypes\*.cs" />
+            </sources>
+        </mcs>-->
+
+    </target>
+    
+    <target name="tests" depends="build">
+      <nant buildfile="..\testsuite\noninteractive\nunit20\NpgsqlTests.build" inheritall="true" />
+      
+      <copy file="${ms.build.dir}/Npgsql.dll" todir="${nunit2tests.build.dir}" />
+      <nunit2>
+        <test assemblyname="${nunit2tests.build.dir}/NpgsqlTests.dll" />
+      </nunit2>
+    </target>
+    
+    
+    <target name="apidocs" depends="build">
+      <ndoc>
+        <assemblies basedir="${ms.build.dir}">
+                    <includes name="Npgsql.dll"/>
+                </assemblies>
+                <!--<summaries basedir="${build.dir}">
+                    <includes name="NamespaceSummary.xml"/>
+                </summaries>-->
+                <documenters>
+                    <documenter name="MSDN">
+                        <property name="OutputDirectory" value="${build.dir}\doc\MSDN" />
+                        <property name="IncludeFavorites" value="False" />
+                        <property name="Title" value="An NDoc Documented Class Library" />
+                        <property name="SplitTOCs" value="False" />
+                        <property name="DefaulTOC" value="" />
+                        <property name="ShowVisualBasic" value="True" />
+                        <property name="ShowMissingSummaries" value="True" />
+                        <property name="ShowMissingRemarks" value="True" />
+                        <property name="ShowMissingParams" value="True" />
+                        <property name="ShowMissingReturns" value="True" />
+                        <property name="ShowMissingValues" value="True" />
+                        <property name="DocumentInternals" value="False" />
+                        <property name="DocumentProtected" value="True" />
+                        <property name="DocumentPrivates" value="False" />
+                        <property name="DocumentEmptyNamespaces" value="False" />
+                        <property name="IncludeAssemblyVersion" value="False" />
+                        <property name="CopyrightText" value="" />
+                        <property name="CopyrightHref" value="" />
+                        <property name="HtmlHelpName" value="NAnt" />
+                        <property name="HtmlHelpCompilerFilename" value="hhc.exe" />
+                     </documenter>
+                </documenters> 
+      </ndoc>
     </target>
 </project>
 
