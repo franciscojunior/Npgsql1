@@ -446,7 +446,7 @@ namespace Npgsql
 			String result = text;
 			
 			if (type == CommandType.StoredProcedure)
-					result = "select " + result;
+					result = "select * from " + result;
 						
 			if (parameters.Count == 0)
 				return result;
@@ -506,7 +506,7 @@ namespace Npgsql
 			String textCommand = text;
 			
 			if (type == CommandType.StoredProcedure)
-				textCommand = "select " + textCommand;
+				textCommand = "select * from " + textCommand;
 			
 			
 			
