@@ -16,6 +16,8 @@
     <File name=".\STATUS.txt" subtype="Code" buildaction="Nothing" />
     <File name=".\PGUtil.cs" subtype="Code" buildaction="Compile" />
     <File name=".\NpgsqlEventLog.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlStartupPacket.cs" subtype="Code" buildaction="Compile" />
+    <File name=".\NpgsqlPasswordPacket.cs" subtype="Code" buildaction="Compile" />
   </Contents>
   <Configurations active="Debug">
     <Configuration name="Debug" description="">
