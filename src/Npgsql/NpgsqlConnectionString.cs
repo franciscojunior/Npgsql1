@@ -84,6 +84,9 @@ namespace Npgsql
             ListDictionary new_values = new ListDictionary(CaseInsensitiveComparer.Default);
             String[] pairs;
             String[] keyvalue;
+            
+            if (CS == null)
+            	CS = String.Empty;
 
             // Get the key-value pairs delimited by ;
             pairs = CS.Split(';');
