@@ -55,19 +55,30 @@ namespace Npgsql
     private readonly String CONN_PASSWORD = "PASSWORD";
     private readonly String CONN_DATABASE = "DATABASE";
     private readonly String CONN_PORT = "PORT";
+
+    // Postgres default port
+    private readonly Int32 PG_PORT = 5432;
 		
     // These are for ODBC connection string compatibility
     private readonly String ODBC_USERID = "UID";
     private readonly String ODBC_PASSWORD = "PWD";
+
+    // Values for LogMsg levels
+    private static readonly Int32 LOG_NONE = 1;
+    private static readonly Int32 LOG_ERR = 2;
+    private static readonly Int32 LOG_SQL = 3;
+    private static readonly Int32 LOG_INFO = 4;
+    private static readonly Int32 LOG_FUNC = 5;
+
+    // Logging related values
+    private static readonly String LOG_FILENAME = "Npgsql.log";
+    private String    logfile;
+    private Int32     loglevel;
+    private readonly String CLASSNAME = "NpgsqlConnection";
       		
     // Values for possible CancelRequest messages.
     private Int32			cancel_proc_id;
-    private Int32			cancel_secret_key;
-  	
-  	// Logging related values
-  	private String    logfile;
-  	private Int32     loglevel;
-  	private readonly String CLASSNAME = "NpgsqlConnection";
+    private Int32			cancel_secret_key;  	
   		
     private TcpClient 		connection;
     private BufferedStream	output_stream;
@@ -83,9 +94,9 @@ namespace Npgsql
     private readonly Int32 AUTH_CLEARTEXT_PASSWORD = 3;
   		
   		
-    public NpgsqlConnection() : this("", 0, "Npgsql.log"){}
-    public NpgsqlConnection(String ConnectionString) : this(ConnectionString, 0, "Npgsql.log"){}
-    public NpgsqlConnection(String ConnectionString, Int32 LogLevel) : this(ConnectionString, LogLevel, "Npgsql.log"){}
+    public NpgsqlConnection() : this("", LOG_NONE, LOG_FILENAME){}
+    public NpgsqlConnection(String ConnectionString) : this(ConnectionString, LOG_NONE, LOG_FILENAME){}
+    public NpgsqlConnection(String ConnectionString, Int32 LogLevel) : this(ConnectionString, LogLevel, LOG_FILENAME){}
     
     public NpgsqlConnection(String ConnectionString, Int32 LogLevel, String LogFile)
     {
@@ -140,9 +151,11 @@ namespace Npgsql
     
     ///<summary>
     /// Sets/Returns the level of information to log to the logfile.
-    /// 0 - None
-    /// 1 - Normal
-    /// 2 - Complete
+    /// 1 - None
+    /// 2 - (1) + Errors
+    /// 3 - (2) + SQL queries
+    /// 4 - (3) + Debug information
+    /// 5 - (4) + Function parameters
     /// </summary>	
     public Int32 LogLevel
     {
@@ -153,7 +166,7 @@ namespace Npgsql
       set
       {
         loglevel = value;
-        LogMsg("Set " + CLASSNAME + ".LogLevel = " + value, 1);
+        LogMsg("Set " + CLASSNAME + ".LogLevel = " + value, LOG_INFO);
       }
     }
     
@@ -169,31 +182,31 @@ namespace Npgsql
       set
       {
         logfile = value;
-        LogMsg("Set " + CLASSNAME + ".LogFile = " + value, 1);
+        LogMsg("Set " + CLASSNAME + ".LogFile = " + value, LOG_INFO);
       }
     }
 		
     public IDbTransaction BeginTransaction()
     {
-      LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", 2);
+      LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LOG_FUNC);
       throw new NotImplementedException();
     }
 	
     public IDbTransaction BeginTransaction(IsolationLevel level)
     {
-      LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", 2);
+      LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LOG_FUNC);
       throw new NotImplementedException();
     }
 
     public void ChangeDatabase(String dbName)
     {
-      LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", 2);
+      LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", LOG_FUNC);
       throw new NotImplementedException();
     }
 	
     public void Open()
     {
-      LogMsg("Entering " + CLASSNAME + ".Open()", 2);
+      LogMsg("Entering " + CLASSNAME + ".Open()", LOG_FUNC);
 	    	
       try
       {
@@ -230,7 +243,7 @@ namespace Npgsql
 		    	
         // Connect to the server.
         connection.Connect(ep_server);	
-		    LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, 1);
+		    LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, LOG_INFO);
 		    
         output_stream = new BufferedStream(connection.GetStream());
         input_buffer = new Byte[8192];
@@ -267,7 +280,7 @@ namespace Npgsql
     public void Close()
     
     {
-      LogMsg("Entering " + CLASSNAME + ".Close()", 2);
+      LogMsg("Entering " + CLASSNAME + ".Close()", LOG_FUNC);
     
       try
       {
@@ -293,13 +306,13 @@ namespace Npgsql
 	    
     public IDbCommand CreateCommand()
     {
-      LogMsg("Entering " + CLASSNAME + ".CreateCommand()", 2);
+      LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LOG_FUNC);
       throw new NotImplementedException();
     }
     // Implement the IDisposable interface.
     public void Dispose()
     {
-      LogMsg("Entering " + CLASSNAME + ".Dispose()", 2);
+      LogMsg("Entering " + CLASSNAME + ".Dispose()", LOG_FUNC);
 	    		    	
     }
 	    
@@ -317,7 +330,7 @@ namespace Npgsql
     /// </summary>
     private void ParseConnectionString()
     {
-      LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", 2);
+      LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LOG_FUNC);
 	    	
       // Get the key-value pairs delimited by CONN_DELIM
       String[] pairs = connection_string.Split(new char[] {CONN_DELIM});
@@ -347,7 +360,7 @@ namespace Npgsql
 	    	// Add the pair to the dictionary. The key is shifted to upper
 	    	// case for case insensitivity.
 	    	
-	    	LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], 1);
+	    	LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LOG_INFO);
         connection_string_values.Add(keyvalue[0], keyvalue[1]);
       }
 	    	
@@ -362,8 +375,8 @@ namespace Npgsql
         // Database is optional. "[...] defaults to the user name if empty"
         connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
       if (connection_string_values[CONN_PORT] == null)
-        // Port is optional. Defaults to 5432.
-        connection_string_values[CONN_PORT] = 5432;
+        // Port is optional. Defaults to PG_PORT.
+        connection_string_values[CONN_PORT] = PG_PORT;
     }
 	    
     private void WriteStartupPacket()
@@ -439,7 +452,7 @@ namespace Npgsql
 		    			
             if (auth_type == AUTH_CLEARTEXT_PASSWORD)
             {
-              LogMsg("Server requested cleartext password authentication.", 1);
+              LogMsg("Server requested cleartext password authentication.", LOG_INFO);
               
               // Send the PasswordPacket.
               String password = ((String) connection_string_values[CONN_PASSWORD]);
