@@ -1,7 +1,7 @@
 
 Npgsql - .Net Data Provider for PostgreSQL
 
-Development Version 0.2
+Development Version 0.3
 
 
 WHAT'S IT?
