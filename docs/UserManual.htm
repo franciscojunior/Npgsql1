@@ -1,0 +1,197 @@
+<html><head>
+
+<title>Npgsql: User's Manual</title>
+
+<meta http-equiv="content-Type" content="text/html; charset=iso-8859-1">
+<meta http-equiv="content-Style-Type" content="text/css">
+<meta http-equiv="expires" content="">
+<meta name="category" content="IT/Database/PostgreSQL/Npgsql/Docs/Internal">
+<meta name="filename" content="state-machine.htm">
+<meta name="date" content="2002-06-29">
+<meta name="author" content="Francisco Jr.">
+<meta name="robots" content="nofollow">
+<meta name="keywords" content="IT; Database; PostgreSQL; Npgsql; Communication; State Machine; Documentation;">
+<meta name="description" content="This document describes the User's Manual of Npgsql.">
+
+<link rel="stylesheet" href="global.css">
+<script language="JavaScript" src="global.js"></script>
+
+<!-- Table Layout Stylesheet -->
+
+<style>
+table.std {
+    border-bottom: 2 solid silver;
+    border-right: 2 solid silver;
+    line-height: 140%;
+    }
+tr.tableheader {
+    background-color: PowderBlue;
+    color: darkblue;
+    text-align: center;
+    font-weight: bold;
+    font-size: larger;
+    height: 40;
+    }
+tr.stateheader {
+    background-color: AliceBlue;
+    color: darkblue;
+    text-align: center;
+    font-weight: bold;
+    padding-top: 8;
+    padding-bottom: 8;
+    height: 40;
+    }
+tr.columnheader {
+    text-align: center;
+    font-weight: normal;
+    height-
+    }
+tr.std {
+    text-align: left;
+    vertical-align: top;
+    }
+td.std {
+    border-top: 2 solid silver;
+    border-left: 2 solid silver;
+    padding-right: 5;
+    padding-left: 5;
+    padding-top: 5;
+    padding-bottom: 5;
+    }
+
+p.headnotes {
+    font-size:smaller;
+    margin-top: 0;
+    margin-bottom: 0;
+    }
+</style>
+
+</head><body>
+
+<h1 align="center">Npgsql: User's Manual</h1>
+<center> Copyright &copy; The Npgsql Development Team </center>
+<hr />
+
+<p />
+
+<p class="headnotes">Last update: 2002-06-29 by fxjr</p>
+<p class="headnotes">Category: External documentation</p>
+<p class="headnotes">Intended Audience: Npgsql Users</p>
+
+
+<h2> 1. What is Npgsql? </h2>
+
+<p> Npgsql is a .Net Data Provider for <a href="http://www.postgresql.org">Postgresql Database Server</a>. </p>
+
+<p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to use PostgreSQL server to send and receive data. It is developed using the
+guidelines as specified in .Net docs.</p>
+
+<h2> 2. Npgsql Usage </h2>
+
+<p> This section explains Npgsql usage in a .Net Application. If you are used to develop Data Access applications using the
+Sql Server, OleDB or ODBC.NET providers, using Npgsql will be almost the same.</p>
+<p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
+
+<p> First, to use Npgsql objects more easily, you have to tell the compiler to use the Npgsql namespace. It will be needed also to specify the
+System.Data as a lot of classes used to data manipulation is in this namespace. To do that, in C#, you use the using directive: </p>
+
+<pre class="CodeBox">
+using System.Data;
+using Npgsql;
+</pre>
+
+<p>For example, to stablish a connection to a server located at ip 172.16.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
+<pre class="CodeBox">
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    conn.Close();
+  }
+}
+</pre>
+
+<p>This code doesn't do very much useful things. It only connects to the database and disconnects. If there is any error, a NpgsqlException would be thrown.
+Now, suppose there is a table called table1 with two fields a and b both of type int. If you want to add the tuple (1, 1) in this table you could send the 
+insert statement as follows:
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+    NpgsqlCommand command = new NpgsqlCommand("insert into table1 values(1, 1)", conn);
+    Int32 rowsaffected;
+    
+    try
+    {
+      rowsaffected = command.ExecuteNonQuery();
+    }
+    
+    Console.WriteLine("It was added {0} lines in table table1", rowsaffected);
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+<p> To execute statements which return just one value you use the ExecuteScalar() method of the Command object:
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+    NpgsqlCommand command = new NpgsqlCommand("select version()", conn);
+    String serverversion;
+    
+    try
+    {
+      serverversion = (String)command.ExecuteScalar();
+    }
+    
+    Console.WriteLine("PostgreSQL server version: {0}", serverversion);
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+Other queries could also be used, for example "select count(*) from table1". Also, queries that doesn't return single values
+could be used, but just the first column of the first row would be returned.
+
+<h3> 2.1 Npgsql.dll file location </h3>
+
+<p> In order to .Net Runtime locate Npgsql.dll, it must be put in the same directory the application is, unless you specify other 
+directory as a path to private components through a configuration file (using the probing element). Please, see .Net docs for information
+on how runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
+<p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
+So, for example the application directory is called "ASPNETApplication", Npgsql.dll must be placed in the "ASPNETApplication\bin" directory.
+If don't, you will get a lot of compiling errors when trying to use Npgsql.</p>
+
+</body>
+</html>
