@@ -23,6 +23,7 @@ namespace NpgsqlTests
 		protected void SetUp()
 		{
 			NpgsqlEventLog.Level = LogLevel.None;
+			//NpgsqlEventLog.Level = LogLevel.Debug;
 			//NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
 			_conn = new NpgsqlConnection(_connString);
 		}
@@ -245,6 +246,57 @@ namespace NpgsqlTests
 		
 		
 		[Test]
+		public void GetStringWithParameter()
+		{
+			_conn.Open();
+			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_text = :value;", _conn);
+			
+			String test = "Random text";
+			NpgsqlParameter param = new NpgsqlParameter();
+			param.ParameterName = "value";
+			param.DbType = DbType.String;
+			//param.NpgsqlDbType = NpgsqlDbType.Text;
+			param.Size = test.Length;
+			param.Value = test;
+			command.Parameters.Add(param);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+			
+			dr.Read();
+			
+			String result = dr.GetString(1);
+			
+			Assertion.AssertEquals(test, result);
+			
+		}
+		
+		[Test]
+		public void GetStringWithQuoteWithParameter()
+		{
+			_conn.Open();
+			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_text = :value;", _conn);
+			
+			String test = "Text with ' single quote";
+			NpgsqlParameter param = new NpgsqlParameter();
+			param.ParameterName = "value";
+			param.DbType = DbType.String;
+			//param.NpgsqlDbType = NpgsqlDbType.Text;
+			param.Size = test.Length;
+			param.Value = test;
+			command.Parameters.Add(param);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+			
+			dr.Read();
+			
+			String result = dr.GetString(1);
+			
+			Assertion.AssertEquals(test, result);
+			
+		}
+		
+		
+		[Test]
 		public void GetNpgsqlString()
 		{
 			_conn.Open();
@@ -390,6 +442,9 @@ namespace NpgsqlTests
 			
 			
 		}
+		
+		
+		
 		
 		
 	
