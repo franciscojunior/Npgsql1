@@ -15,7 +15,7 @@
 	
 	Bug fixes:
         
-		Added api documentation. Thanks Glen Parker.
+		Added api documentation in code. Thanks Glen Parker. (No html generation yet. This will be fixed in next release)
 		Fixed deserialization of NpgsqlException. There are some issues yet, just the base message is being deserialized. Errors collection are null. Thanks David Palmer (David dot Palmer at SensusTech dot com) for the heads up and fix.
         Improved Unicode encoding support. It was possible to characters in unicode cross the stream buffer and be discarded. Now we use Decoders which handle that situation. Thanks Oskars Ozols (oskars dot ozols at di dot lv)
         Improved connection startup code. Now new connections in ms.net goes a lot faster. Thanks Mikko Korkalo (mikko.korkalo at f-solutions dot net) for the patch.
