@@ -101,10 +101,11 @@ namespace Npgsql
             this.Transaction = transaction;
         }
 
+        /*
         /// <summary>
         /// Finalizer for <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see>.
         /// </summary>
-        /*~NpgsqlCommand ()
+        ~NpgsqlCommand ()
         {
             Dispose(false);
         }*/
@@ -528,10 +529,11 @@ namespace Npgsql
             }
         }
 
+        /*
         /// <summary>
         /// Releases the resources used by the <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see>.
         /// </summary>
-        /*protected override void Dispose (bool disposing)
+        protected override void Dispose (bool disposing)
         {
             
             if (disposing)

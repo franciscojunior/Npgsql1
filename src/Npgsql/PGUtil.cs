@@ -116,6 +116,11 @@ namespace Npgsql
                 (One._Major == TheOther._Major && One._Minor == TheOther._Minor && One._Patch <= TheOther._Patch);
         }
 
+        public override bool Equals(object O)
+        {
+            return (O.GetType() == this.GetType() && this == (ServerVersion)O);
+        }
+
         public override int GetHashCode()
         {
             return _Major ^ _Minor ^ _Patch;

@@ -32,9 +32,6 @@ namespace Npgsql
 {
     /// <summary>
     /// !!! Helper class, for compilation only.
-    /// </summary>
-
-    /// <summary>
     /// Connector implements the logic for the Connection Objects to
     /// access the physical connection to the database, and isolate
     /// the application developer from connection pooling internals.
@@ -176,7 +173,7 @@ namespace Npgsql
         /// connector is to be moved to the PooledConnectors list.</value>
         internal int mShareCount;
 
-        /// <value>Provides physical access to the server</value>
+        // <value>Provides physical access to the server</value>
         // !!! to be fixed
         //private Npgsql.Socket Socket;
 
@@ -224,6 +221,7 @@ namespace Npgsql
 
         }
 
+        /*
         /// <summary>
         /// Releases a connector back to the pool manager's garding. Or to the
         /// garbage collection.
@@ -232,7 +230,7 @@ namespace Npgsql
         /// evaluation inside this method, so they are left in their current state.
         ///	They get new meaning again when the connector is requested from the
         /// pool manager later. </remarks>
-        /*public void Release()
+        public void Release()
         {
             if ( this.mShared )
             {

@@ -44,13 +44,13 @@ namespace Npgsql
         private String _severity = "";
         private String _code = "";
         private String _message = "";
-        private String _detail;
+        private String _detail = "";
         private String _hint = "";
-        private String _position;
-        private String _where;
-        private String _file;
-        private String _line;
-        private String _routine;
+        private String _position = "";
+        private String _where = "";
+        private String _file = "";
+        private String _line = "";
+        private String _routine = "";
 
         /// <summary>
         /// Severity code.  All versions.
@@ -162,6 +162,9 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Return a string representation of this error object.
+        /// </summary>
         public override String ToString()
         {
             StringBuilder     B = new StringBuilder();
@@ -220,12 +223,12 @@ namespace Npgsql
 
             if (Parts.Length == 2)
             {
-                _severity = Parts[0];
+                _severity = Parts[0].Trim();
                 _message = Parts[1].Trim();
             }
             else
             {
-                _message = Parts[0];
+                _message = Parts[0].Trim();
             }
         }
 
@@ -240,8 +243,11 @@ namespace Npgsql
             // "FATA" string, which would mean a protocol 2.0 error string.
             if (messageLength == 1178686529)
             {
+                // Read the rest of the severity code and the ':'.
+                while (PGUtil.ReadString(inputStream, encoding, 1) != ":");
                 _severity = "FATAL";
-                _message = "FATA" + PGUtil.ReadString(inputStream, encoding);
+                // Now read the message
+                _message = PGUtil.ReadString(inputStream, encoding).Trim();
                 return;
             }
 

@@ -388,7 +388,7 @@ namespace Npgsql
                         // As the message can be localized, just check the initial unlocalized part of the
                         // message. If it is an error other than protocol error, when connecting using
                         // version 2.0 we shall catch the error again.
-                        if (((NpgsqlError)_mediator.Errors[0]).Message.StartsWith("FATAL"))
+                        if (((NpgsqlError)_mediator.Errors[0]).Severity == "FATAL")
                         {
                             // Try using the 2.0 protocol.
                             _mediator.ResetResponses();
