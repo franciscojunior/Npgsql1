@@ -35,6 +35,7 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using System.Collections.Specialized;
+using NpgsqlTypes;
 
 
 namespace Npgsql
@@ -90,6 +91,10 @@ namespace Npgsql
   	
   	private Boolean					_supportsPrepare = false;
   	
+  	private String 					_serverVersion; // Contains string returned from select version();
+  	
+  	private Hashtable				_oidToNameMapping; 
+  	
   	
     public NpgsqlConnection() : this(String.Empty){}
 
@@ -104,6 +109,8 @@ namespace Npgsql
       connection_encoding = Encoding.Default;
     	
     	_mediator = new NpgsqlMediator();
+    	
+    	_oidToNameMapping = new Hashtable();
     	
     	if (connection_string != String.Empty)
 				ParseConnectionString();
@@ -252,8 +259,12 @@ namespace Npgsql
         connection_state = ConnectionState.Open;
       	
       	// Get version information to enable/disable server version features.
-      	NpgsqlCommand command = new NpgsqlCommand("select version()", this);
-      	ProcessServerVersion((String) command.ExecuteScalar());
+      	NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
+      	_serverVersion = (String) command.ExecuteScalar();
+      	ProcessServerVersion();
+      	_oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+      	
+      	
       		    			    		
       }
       catch(SocketException e)
@@ -391,11 +402,11 @@ namespace Npgsql
 		/// 
 		/// </summary>
 		 		 
-		private void ProcessServerVersion(String serverVersion)
+		private void ProcessServerVersion()
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ProcessServerVersion()", LogLevel.Debug);
 			
-			SupportsPrepare = serverVersion.IndexOf("PostgreSQL 7.3") != -1;
+			SupportsPrepare = _serverVersion.IndexOf("PostgreSQL 7.3") != -1;
 			
 		}
     
@@ -524,6 +535,28 @@ namespace Npgsql
 			{
 				_supportsPrepare = value;
 			}
+		}
+		
+		internal String ServerVersion
+		{
+			get
+			{
+				return _serverVersion;
+			}
+		}
+		
+		internal Hashtable OidToNameMapping
+		{
+			get
+			{
+				return _oidToNameMapping;
+			}
+			
+			set 
+			{
+				_oidToNameMapping = value;
+			}
+			
 		}
 		
   }
