@@ -124,10 +124,10 @@ namespace NpgsqlTypes
     /// </summary>
     public struct NpgsqlLSeg
     {
-        public PointF     Start;
-        public PointF     End;
+        public NpgsqlPoint     Start;
+        public NpgsqlPoint     End;
 
-        public NpgsqlLSeg(PointF Start, PointF End)
+        public NpgsqlLSeg(NpgsqlPoint Start, NpgsqlPoint End)
         {
             this.Start = Start;
             this.End = End;
@@ -135,7 +135,7 @@ namespace NpgsqlTypes
 
         public override String ToString()
         {
-            return string.Format("({0}, {1})", Start, End);
+            return String.Format("({0}, {1})", Start, End);
         }
     }
 
@@ -144,18 +144,29 @@ namespace NpgsqlTypes
     /// </summary>
     public struct NpgsqlPath
     {
-        internal PointF[]     Points;
+        internal NpgsqlPoint[]	Points;
+        
+        internal Boolean 		IsOpen;			
 
-        public NpgsqlPath(PointF[] Points)
+        public NpgsqlPath(NpgsqlPoint[] Points)
         {
             this.Points = Points;
+            IsOpen = false;
         }
 
         public Int32 Count
         { get { return Points.Length; } }
 
-        public PointF this [Int32 Index]
+        public NpgsqlPoint this [Int32 Index]
         { get { return Points[Index]; } }
+        
+        public Boolean Open
+        {
+        	get
+        	{
+        		return IsOpen;
+        	}
+        }
     }
 
     /// <summary>

@@ -273,7 +273,7 @@ namespace NpgsqlTypes
         internal static Object ToPoint(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             
-            Regex r = new Regex(@"\((\d+),(\d+)\)");
+            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\)");
             Match m = r.Match(BackendData);
             
             return new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString()));
@@ -287,11 +287,8 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToRectangle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
             
-            //return new NpgsqlBox(new NpgsqlPoint(300,250), new NpgsqlPoint(20,40));
-            
-            Regex r = new Regex(@"\((\d+),(\d+)\),\((\d+),(\d+)\)");
+            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\),\((\d+.?\d*),(\d+.?\d*)\)");
             Match m = r.Match(BackendData);
             
             return new NpgsqlBox(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())),
@@ -303,8 +300,11 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToLSeg(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
-            return new NpgsqlLSeg(new PointF(10,20), new PointF(30,40));
+            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\),\((\d+.?\d*),(\d+.?\d*)\)");
+            Match m = r.Match(BackendData);
+            
+            return new NpgsqlLSeg(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())),
+            						new NpgsqlPoint(Single.Parse(m.Groups[3].ToString()), Single.Parse(m.Groups[4].ToString())));
         }
 
         /// <summary>
@@ -312,8 +312,41 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToPath(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
-            return new NpgsqlPath(new PointF[] { new PointF(10,20), new PointF(30,40), new PointF(50,60) } );
+        	Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\)");
+        	
+        	Match m = r.Match(BackendData);
+        	Boolean open = (BackendData[0] == '['); 
+        	ArrayList points = new ArrayList();
+        	    	
+        	while (m.Success)
+        	{
+        		
+        		if (open)
+        			points.Add(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())));
+        		else
+        		{
+        			// Here we have to do a little hack, because as of 2004-08-11 mono cvs version, the last group is returned with
+        			// a trailling ')' only when the last character of the string is a ')' which is the case for closed paths
+					// returned by backend. This gives parsing exception when converting to single. 
+					// I still don't know if this is a bug in mono or in my regular expression.
+        			// Check if there is this character and remove it.
+        			
+        			String group2 = m.Groups[2].ToString();
+        			if (group2.EndsWith(")"))
+        				group2 = group2.Remove(group2.Length - 1, 1);
+        				
+        			points.Add(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(group2)));
+        		}
+        			
+        		m = m.NextMatch();
+        		
+        	}
+        	
+        	NpgsqlPath result = new NpgsqlPath((NpgsqlPoint[]) points.ToArray(typeof(NpgsqlPoint)));
+			result.IsOpen = open; 
+        	return result;
+        	
+            
         }
 
         /// <summary>
@@ -395,7 +428,7 @@ namespace NpgsqlTypes
         {
             StringBuilder   B = new StringBuilder();
 
-            foreach (PointF P in ((NpgsqlPath)NativeData).Points) {
+            foreach (NpgsqlPoint P in ((NpgsqlPath)NativeData).Points) {
                 B.AppendFormat(CultureInfo.InvariantCulture, "{0}({1},{2})", (B.Length > 0 ? "," : ""), P.X, P.Y);
             }
 
