@@ -9,14 +9,7 @@ namespace NpgsqlTests
 {
 	
 	
-	/*const String dbTypesOid = "SELECT oid, typname FROM pg_type " +
-				"WHERE typrelid = 0 AND typname !~ '^_' " +
-				" AND  typname not in ('SET', 'cid', " +
-				"'int2vector', 'oidvector', 'regproc', " +
-				"'smgr', 'tid', 'unknown', 'xid') " +
-				"ORDER BY typname";
-	*/
-	
+		
 	[TestFixture]
 	public class ConnectionTests
 	{
