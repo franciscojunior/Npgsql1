@@ -61,6 +61,8 @@ using Npgsql;
     private System.Windows.Forms.Button cmdReader;
     private System.Windows.Forms.TextBox txtReader;
     private System.Windows.Forms.Label lblReader;
+		private System.Windows.Forms.TextBox txtDatabase;
+		private System.Windows.Forms.Label label1;
     private NpgsqlConnection cnDB;
 
     public frmMain()
@@ -81,7 +83,7 @@ using Npgsql;
     /// </summary>
     protected override void Dispose( bool disposing )
     {
-      if (cnDB.State == ConnectionState.Closed)
+      if (cnDB != null && cnDB.State == ConnectionState.Closed)
       {
         try
         {
@@ -141,7 +143,7 @@ using Npgsql;
       }
 
       // Setup a connection string
-      string szConnect = "DATABASE=template1;SERVER=" + txtHostname.Text + ";PORT=" + int.Parse(txtPort.Text) + ";UID=" + txtUsername.Text + ";PWD=" + txtPassword.Text + ";";
+      string szConnect = "DATABASE=" + txtDatabase.Text + ";SERVER=" + txtHostname.Text + ";PORT=" + int.Parse(txtPort.Text) + ";UID=" + txtUsername.Text + ";PWD=" + txtPassword.Text + ";";
       log("Connection String: " + szConnect);
 
       // Attempt to open a connection
@@ -410,302 +412,325 @@ using Npgsql;
     /// </summary>
     private void InitializeComponent()
     {
-      this.tabset = new System.Windows.Forms.TabControl();
-      this.Connection = new System.Windows.Forms.TabPage();
-      this.cmdDisconnect = new System.Windows.Forms.Button();
-      this.cmdConnect = new System.Windows.Forms.Button();
-      this.txtPassword = new System.Windows.Forms.TextBox();
-      this.txtUsername = new System.Windows.Forms.TextBox();
-      this.txtPort = new System.Windows.Forms.TextBox();
-      this.txtHostname = new System.Windows.Forms.TextBox();
-      this.lblPassword = new System.Windows.Forms.Label();
-      this.lblUsername = new System.Windows.Forms.Label();
-      this.lblPort = new System.Windows.Forms.Label();
-      this.lblHostname = new System.Windows.Forms.Label();
-      this.ExecuteNonQuery = new System.Windows.Forms.TabPage();
-      this.cmdNonQuery = new System.Windows.Forms.Button();
-      this.txtNonQuery = new System.Windows.Forms.TextBox();
-      this.lblNonQuery = new System.Windows.Forms.Label();
-      this.ExecuteScalar = new System.Windows.Forms.TabPage();
-      this.cmdScalar = new System.Windows.Forms.Button();
-      this.txtScalar = new System.Windows.Forms.TextBox();
-      this.lblScalar = new System.Windows.Forms.Label();
-      this.txtLog = new System.Windows.Forms.TextBox();
-      this.ExecuteReader = new System.Windows.Forms.TabPage();
-      this.cmdReader = new System.Windows.Forms.Button();
-      this.txtReader = new System.Windows.Forms.TextBox();
-      this.lblReader = new System.Windows.Forms.Label();
-      this.tabset.SuspendLayout();
-      this.Connection.SuspendLayout();
-      this.ExecuteNonQuery.SuspendLayout();
-      this.ExecuteScalar.SuspendLayout();
-      this.ExecuteReader.SuspendLayout();
-      this.SuspendLayout();
-      // 
-      // tabset
-      // 
-      this.tabset.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                         this.Connection,
-                                                                         this.ExecuteNonQuery,
-                                                                         this.ExecuteScalar,
-                                                                         this.ExecuteReader});
-      this.tabset.Location = new System.Drawing.Point(8, 8);
-      this.tabset.Name = "tabset";
-      this.tabset.SelectedIndex = 0;
-      this.tabset.Size = new System.Drawing.Size(600, 88);
-      this.tabset.TabIndex = 10;
-      // 
-      // Connection
-      // 
-      this.Connection.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                             this.cmdDisconnect,
-                                                                             this.cmdConnect,
-                                                                             this.txtPassword,
-                                                                             this.txtUsername,
-                                                                             this.txtPort,
-                                                                             this.txtHostname,
-                                                                             this.lblPassword,
-                                                                             this.lblUsername,
-                                                                             this.lblPort,
-                                                                             this.lblHostname});
-      this.Connection.Location = new System.Drawing.Point(4, 22);
-      this.Connection.Name = "Connection";
-      this.Connection.Size = new System.Drawing.Size(592, 62);
-      this.Connection.TabIndex = 0;
-      this.Connection.Text = "Connection";
-      // 
-      // cmdDisconnect
-      // 
-      this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
-      this.cmdDisconnect.Name = "cmdDisconnect";
-      this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
-      this.cmdDisconnect.TabIndex = 28;
-      this.cmdDisconnect.Text = "&Disconnect";
-      // 
-      // cmdConnect
-      // 
-      this.cmdConnect.Location = new System.Drawing.Point(488, 8);
-      this.cmdConnect.Name = "cmdConnect";
-      this.cmdConnect.Size = new System.Drawing.Size(88, 24);
-      this.cmdConnect.TabIndex = 27;
-      this.cmdConnect.Text = "&Connect";
-      // 
-      // txtPassword
-      // 
-      this.txtPassword.Location = new System.Drawing.Point(320, 32);
-      this.txtPassword.Name = "txtPassword";
-      this.txtPassword.PasswordChar = '*';
-      this.txtPassword.Size = new System.Drawing.Size(152, 20);
-      this.txtPassword.TabIndex = 26;
-      this.txtPassword.Text = "";
-      // 
-      // txtUsername
-      // 
-      this.txtUsername.Location = new System.Drawing.Point(320, 8);
-      this.txtUsername.Name = "txtUsername";
-      this.txtUsername.Size = new System.Drawing.Size(152, 20);
-      this.txtUsername.TabIndex = 25;
-      this.txtUsername.Text = "postgres";
-      // 
-      // txtPort
-      // 
-      this.txtPort.Location = new System.Drawing.Point(80, 32);
-      this.txtPort.Name = "txtPort";
-      this.txtPort.Size = new System.Drawing.Size(64, 20);
-      this.txtPort.TabIndex = 24;
-      this.txtPort.Text = "5432";
-      // 
-      // txtHostname
-      // 
-      this.txtHostname.Location = new System.Drawing.Point(80, 8);
-      this.txtHostname.Name = "txtHostname";
-      this.txtHostname.Size = new System.Drawing.Size(152, 20);
-      this.txtHostname.TabIndex = 23;
-      this.txtHostname.Text = "localhost";
-      // 
-      // lblPassword
-      // 
-      this.lblPassword.AutoSize = true;
-      this.lblPassword.Location = new System.Drawing.Point(248, 40);
-      this.lblPassword.Name = "lblPassword";
-      this.lblPassword.Size = new System.Drawing.Size(54, 13);
-      this.lblPassword.TabIndex = 22;
-      this.lblPassword.Text = "Password";
-      // 
-      // lblUsername
-      // 
-      this.lblUsername.AutoSize = true;
-      this.lblUsername.Location = new System.Drawing.Point(248, 16);
-      this.lblUsername.Name = "lblUsername";
-      this.lblUsername.Size = new System.Drawing.Size(56, 13);
-      this.lblUsername.TabIndex = 21;
-      this.lblUsername.Text = "Username";
-      // 
-      // lblPort
-      // 
-      this.lblPort.AutoSize = true;
-      this.lblPort.Location = new System.Drawing.Point(8, 40);
-      this.lblPort.Name = "lblPort";
-      this.lblPort.Size = new System.Drawing.Size(25, 13);
-      this.lblPort.TabIndex = 20;
-      this.lblPort.Text = "Port";
-      // 
-      // lblHostname
-      // 
-      this.lblHostname.AutoSize = true;
-      this.lblHostname.Location = new System.Drawing.Point(8, 16);
-      this.lblHostname.Name = "lblHostname";
-      this.lblHostname.Size = new System.Drawing.Size(56, 13);
-      this.lblHostname.TabIndex = 19;
-      this.lblHostname.Text = "Hostname";
-      // 
-      // ExecuteNonQuery
-      // 
-      this.ExecuteNonQuery.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                                  this.cmdNonQuery,
-                                                                                  this.txtNonQuery,
-                                                                                  this.lblNonQuery});
-      this.ExecuteNonQuery.Location = new System.Drawing.Point(4, 22);
-      this.ExecuteNonQuery.Name = "ExecuteNonQuery";
-      this.ExecuteNonQuery.Size = new System.Drawing.Size(592, 62);
-      this.ExecuteNonQuery.TabIndex = 1;
-      this.ExecuteNonQuery.Text = "ExecuteNonQuery";
-      // 
-      // cmdNonQuery
-      // 
-      this.cmdNonQuery.Location = new System.Drawing.Point(488, 16);
-      this.cmdNonQuery.Name = "cmdNonQuery";
-      this.cmdNonQuery.Size = new System.Drawing.Size(88, 32);
-      this.cmdNonQuery.TabIndex = 28;
-      this.cmdNonQuery.Text = "&Execute Non-Query";
-      // 
-      // txtNonQuery
-      // 
-      this.txtNonQuery.Location = new System.Drawing.Point(80, 8);
-      this.txtNonQuery.Multiline = true;
-      this.txtNonQuery.Name = "txtNonQuery";
-      this.txtNonQuery.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.txtNonQuery.Size = new System.Drawing.Size(392, 48);
-      this.txtNonQuery.TabIndex = 25;
-      this.txtNonQuery.Text = "UPDATE pg_description SET description = \'I am a non-query\' WHERE 1 = 2";
-      // 
-      // lblNonQuery
-      // 
-      this.lblNonQuery.AutoSize = true;
-      this.lblNonQuery.Location = new System.Drawing.Point(8, 16);
-      this.lblNonQuery.Name = "lblNonQuery";
-      this.lblNonQuery.Size = new System.Drawing.Size(60, 13);
-      this.lblNonQuery.TabIndex = 24;
-      this.lblNonQuery.Text = "Non-Query";
-      // 
-      // ExecuteScalar
-      // 
-      this.ExecuteScalar.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                                this.cmdScalar,
-                                                                                this.txtScalar,
-                                                                                this.lblScalar});
-      this.ExecuteScalar.Location = new System.Drawing.Point(4, 22);
-      this.ExecuteScalar.Name = "ExecuteScalar";
-      this.ExecuteScalar.Size = new System.Drawing.Size(592, 62);
-      this.ExecuteScalar.TabIndex = 2;
-      this.ExecuteScalar.Text = "ExecuteScalar";
-      // 
-      // cmdScalar
-      // 
-      this.cmdScalar.Location = new System.Drawing.Point(488, 16);
-      this.cmdScalar.Name = "cmdScalar";
-      this.cmdScalar.Size = new System.Drawing.Size(88, 32);
-      this.cmdScalar.TabIndex = 31;
-      this.cmdScalar.Text = "&Execute Scalar";
-      // 
-      // txtScalar
-      // 
-      this.txtScalar.Location = new System.Drawing.Point(80, 8);
-      this.txtScalar.Multiline = true;
-      this.txtScalar.Name = "txtScalar";
-      this.txtScalar.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.txtScalar.Size = new System.Drawing.Size(392, 48);
-      this.txtScalar.TabIndex = 30;
-      this.txtScalar.Text = "SELECT count(*) AS record_count  FROM pg_class";
-      // 
-      // lblScalar
-      // 
-      this.lblScalar.AutoSize = true;
-      this.lblScalar.Location = new System.Drawing.Point(8, 16);
-      this.lblScalar.Name = "lblScalar";
-      this.lblScalar.Size = new System.Drawing.Size(36, 13);
-      this.lblScalar.TabIndex = 29;
-      this.lblScalar.Text = "Scalar";
-      // 
-      // txtLog
-      // 
-      this.txtLog.AutoSize = false;
-      this.txtLog.Location = new System.Drawing.Point(8, 104);
-      this.txtLog.Multiline = true;
-      this.txtLog.Name = "txtLog";
-      this.txtLog.ReadOnly = true;
-      this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-      this.txtLog.Size = new System.Drawing.Size(600, 224);
-      this.txtLog.TabIndex = 11;
-      this.txtLog.Text = "";
-      // 
-      // ExecuteReader
-      // 
-      this.ExecuteReader.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                                this.cmdReader,
-                                                                                this.txtReader,
-                                                                                this.lblReader});
-      this.ExecuteReader.Location = new System.Drawing.Point(4, 22);
-      this.ExecuteReader.Name = "ExecuteReader";
-      this.ExecuteReader.Size = new System.Drawing.Size(592, 62);
-      this.ExecuteReader.TabIndex = 3;
-      this.ExecuteReader.Text = "ExecuteReader";
-      // 
-      // cmdReader
-      // 
-      this.cmdReader.Location = new System.Drawing.Point(488, 16);
-      this.cmdReader.Name = "cmdReader";
-      this.cmdReader.Size = new System.Drawing.Size(88, 32);
-      this.cmdReader.TabIndex = 34;
-      this.cmdReader.Text = "&Execute Reader";
-      // 
-      // txtReader
-      // 
-      this.txtReader.Location = new System.Drawing.Point(80, 8);
-      this.txtReader.Multiline = true;
-      this.txtReader.Name = "txtReader";
-      this.txtReader.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-      this.txtReader.Size = new System.Drawing.Size(392, 48);
-      this.txtReader.TabIndex = 33;
-      this.txtReader.Text = "SELECT * FROM pg_database";
-      // 
-      // lblReader
-      // 
-      this.lblReader.AutoSize = true;
-      this.lblReader.Location = new System.Drawing.Point(8, 16);
-      this.lblReader.Name = "lblReader";
-      this.lblReader.Size = new System.Drawing.Size(41, 13);
-      this.lblReader.TabIndex = 32;
-      this.lblReader.Text = "Reader";
-      // 
-      // frmMain
-      // 
-      this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
-      this.ClientSize = new System.Drawing.Size(618, 336);
-      this.Controls.AddRange(new System.Windows.Forms.Control[] {
-                                                                  this.txtLog,
-                                                                  this.tabset});
-      this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-      this.Name = "frmMain";
-      this.Text = "Npgsql Test Suite";
-      this.tabset.ResumeLayout(false);
-      this.Connection.ResumeLayout(false);
-      this.ExecuteNonQuery.ResumeLayout(false);
-      this.ExecuteScalar.ResumeLayout(false);
-      this.ExecuteReader.ResumeLayout(false);
-      this.ResumeLayout(false);
+			this.tabset = new System.Windows.Forms.TabControl();
+			this.Connection = new System.Windows.Forms.TabPage();
+			this.txtDatabase = new System.Windows.Forms.TextBox();
+			this.label1 = new System.Windows.Forms.Label();
+			this.cmdDisconnect = new System.Windows.Forms.Button();
+			this.cmdConnect = new System.Windows.Forms.Button();
+			this.txtPassword = new System.Windows.Forms.TextBox();
+			this.txtUsername = new System.Windows.Forms.TextBox();
+			this.txtPort = new System.Windows.Forms.TextBox();
+			this.txtHostname = new System.Windows.Forms.TextBox();
+			this.lblPassword = new System.Windows.Forms.Label();
+			this.lblUsername = new System.Windows.Forms.Label();
+			this.lblPort = new System.Windows.Forms.Label();
+			this.lblHostname = new System.Windows.Forms.Label();
+			this.ExecuteNonQuery = new System.Windows.Forms.TabPage();
+			this.cmdNonQuery = new System.Windows.Forms.Button();
+			this.txtNonQuery = new System.Windows.Forms.TextBox();
+			this.lblNonQuery = new System.Windows.Forms.Label();
+			this.ExecuteScalar = new System.Windows.Forms.TabPage();
+			this.cmdScalar = new System.Windows.Forms.Button();
+			this.txtScalar = new System.Windows.Forms.TextBox();
+			this.lblScalar = new System.Windows.Forms.Label();
+			this.ExecuteReader = new System.Windows.Forms.TabPage();
+			this.cmdReader = new System.Windows.Forms.Button();
+			this.txtReader = new System.Windows.Forms.TextBox();
+			this.lblReader = new System.Windows.Forms.Label();
+			this.txtLog = new System.Windows.Forms.TextBox();
+			this.tabset.SuspendLayout();
+			this.Connection.SuspendLayout();
+			this.ExecuteNonQuery.SuspendLayout();
+			this.ExecuteScalar.SuspendLayout();
+			this.ExecuteReader.SuspendLayout();
+			this.SuspendLayout();
+			// 
+			// tabset
+			// 
+			this.tabset.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																				 this.Connection,
+																																				 this.ExecuteNonQuery,
+																																				 this.ExecuteScalar,
+																																				 this.ExecuteReader});
+			this.tabset.Location = new System.Drawing.Point(8, 8);
+			this.tabset.Name = "tabset";
+			this.tabset.SelectedIndex = 0;
+			this.tabset.Size = new System.Drawing.Size(600, 108);
+			this.tabset.TabIndex = 10;
+			// 
+			// Connection
+			// 
+			this.Connection.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																						 this.txtDatabase,
+																																						 this.label1,
+																																						 this.cmdDisconnect,
+																																						 this.cmdConnect,
+																																						 this.txtPassword,
+																																						 this.txtUsername,
+																																						 this.txtPort,
+																																						 this.txtHostname,
+																																						 this.lblPassword,
+																																						 this.lblUsername,
+																																						 this.lblPort,
+																																						 this.lblHostname});
+			this.Connection.Location = new System.Drawing.Point(4, 22);
+			this.Connection.Name = "Connection";
+			this.Connection.Size = new System.Drawing.Size(592, 82);
+			this.Connection.TabIndex = 0;
+			this.Connection.Text = "Connection";
+			// 
+			// txtDatabase
+			// 
+			this.txtDatabase.Location = new System.Drawing.Point(80, 56);
+			this.txtDatabase.Name = "txtDatabase";
+			this.txtDatabase.Size = new System.Drawing.Size(152, 20);
+			this.txtDatabase.TabIndex = 30;
+			this.txtDatabase.Text = "template1";
+			// 
+			// label1
+			// 
+			this.label1.AutoSize = true;
+			this.label1.Location = new System.Drawing.Point(8, 64);
+			this.label1.Name = "label1";
+			this.label1.Size = new System.Drawing.Size(56, 13);
+			this.label1.TabIndex = 29;
+			this.label1.Text = "Database:";
+			// 
+			// cmdDisconnect
+			// 
+			this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
+			this.cmdDisconnect.Name = "cmdDisconnect";
+			this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
+			this.cmdDisconnect.TabIndex = 28;
+			this.cmdDisconnect.Text = "&Disconnect";
+			// 
+			// cmdConnect
+			// 
+			this.cmdConnect.Location = new System.Drawing.Point(488, 8);
+			this.cmdConnect.Name = "cmdConnect";
+			this.cmdConnect.Size = new System.Drawing.Size(88, 24);
+			this.cmdConnect.TabIndex = 27;
+			this.cmdConnect.Text = "&Connect";
+			// 
+			// txtPassword
+			// 
+			this.txtPassword.Location = new System.Drawing.Point(320, 32);
+			this.txtPassword.Name = "txtPassword";
+			this.txtPassword.PasswordChar = '*';
+			this.txtPassword.Size = new System.Drawing.Size(152, 20);
+			this.txtPassword.TabIndex = 26;
+			this.txtPassword.Text = "";
+			// 
+			// txtUsername
+			// 
+			this.txtUsername.Location = new System.Drawing.Point(320, 8);
+			this.txtUsername.Name = "txtUsername";
+			this.txtUsername.Size = new System.Drawing.Size(152, 20);
+			this.txtUsername.TabIndex = 25;
+			this.txtUsername.Text = "postgres";
+			// 
+			// txtPort
+			// 
+			this.txtPort.Location = new System.Drawing.Point(80, 32);
+			this.txtPort.Name = "txtPort";
+			this.txtPort.Size = new System.Drawing.Size(64, 20);
+			this.txtPort.TabIndex = 24;
+			this.txtPort.Text = "5432";
+			// 
+			// txtHostname
+			// 
+			this.txtHostname.Location = new System.Drawing.Point(80, 8);
+			this.txtHostname.Name = "txtHostname";
+			this.txtHostname.Size = new System.Drawing.Size(152, 20);
+			this.txtHostname.TabIndex = 23;
+			this.txtHostname.Text = "localhost";
+			// 
+			// lblPassword
+			// 
+			this.lblPassword.AutoSize = true;
+			this.lblPassword.Location = new System.Drawing.Point(248, 40);
+			this.lblPassword.Name = "lblPassword";
+			this.lblPassword.Size = new System.Drawing.Size(54, 13);
+			this.lblPassword.TabIndex = 22;
+			this.lblPassword.Text = "Password";
+			// 
+			// lblUsername
+			// 
+			this.lblUsername.AutoSize = true;
+			this.lblUsername.Location = new System.Drawing.Point(248, 16);
+			this.lblUsername.Name = "lblUsername";
+			this.lblUsername.Size = new System.Drawing.Size(56, 13);
+			this.lblUsername.TabIndex = 21;
+			this.lblUsername.Text = "Username";
+			// 
+			// lblPort
+			// 
+			this.lblPort.AutoSize = true;
+			this.lblPort.Location = new System.Drawing.Point(8, 40);
+			this.lblPort.Name = "lblPort";
+			this.lblPort.Size = new System.Drawing.Size(25, 13);
+			this.lblPort.TabIndex = 20;
+			this.lblPort.Text = "Port";
+			// 
+			// lblHostname
+			// 
+			this.lblHostname.AutoSize = true;
+			this.lblHostname.Location = new System.Drawing.Point(8, 16);
+			this.lblHostname.Name = "lblHostname";
+			this.lblHostname.Size = new System.Drawing.Size(56, 13);
+			this.lblHostname.TabIndex = 19;
+			this.lblHostname.Text = "Hostname";
+			// 
+			// ExecuteNonQuery
+			// 
+			this.ExecuteNonQuery.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																									this.cmdNonQuery,
+																																									this.txtNonQuery,
+																																									this.lblNonQuery});
+			this.ExecuteNonQuery.Location = new System.Drawing.Point(4, 22);
+			this.ExecuteNonQuery.Name = "ExecuteNonQuery";
+			this.ExecuteNonQuery.Size = new System.Drawing.Size(592, 82);
+			this.ExecuteNonQuery.TabIndex = 1;
+			this.ExecuteNonQuery.Text = "ExecuteNonQuery";
+			// 
+			// cmdNonQuery
+			// 
+			this.cmdNonQuery.Location = new System.Drawing.Point(488, 16);
+			this.cmdNonQuery.Name = "cmdNonQuery";
+			this.cmdNonQuery.Size = new System.Drawing.Size(88, 32);
+			this.cmdNonQuery.TabIndex = 28;
+			this.cmdNonQuery.Text = "&Execute Non-Query";
+			// 
+			// txtNonQuery
+			// 
+			this.txtNonQuery.Location = new System.Drawing.Point(80, 8);
+			this.txtNonQuery.Multiline = true;
+			this.txtNonQuery.Name = "txtNonQuery";
+			this.txtNonQuery.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.txtNonQuery.Size = new System.Drawing.Size(392, 67);
+			this.txtNonQuery.TabIndex = 25;
+			this.txtNonQuery.Text = "UPDATE pg_description SET description = \'I am a non-query\' WHERE 1 = 2";
+			// 
+			// lblNonQuery
+			// 
+			this.lblNonQuery.AutoSize = true;
+			this.lblNonQuery.Location = new System.Drawing.Point(8, 16);
+			this.lblNonQuery.Name = "lblNonQuery";
+			this.lblNonQuery.Size = new System.Drawing.Size(60, 13);
+			this.lblNonQuery.TabIndex = 24;
+			this.lblNonQuery.Text = "Non-Query";
+			// 
+			// ExecuteScalar
+			// 
+			this.ExecuteScalar.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																								this.cmdScalar,
+																																								this.txtScalar,
+																																								this.lblScalar});
+			this.ExecuteScalar.Location = new System.Drawing.Point(4, 22);
+			this.ExecuteScalar.Name = "ExecuteScalar";
+			this.ExecuteScalar.Size = new System.Drawing.Size(592, 82);
+			this.ExecuteScalar.TabIndex = 2;
+			this.ExecuteScalar.Text = "ExecuteScalar";
+			// 
+			// cmdScalar
+			// 
+			this.cmdScalar.Location = new System.Drawing.Point(488, 16);
+			this.cmdScalar.Name = "cmdScalar";
+			this.cmdScalar.Size = new System.Drawing.Size(88, 32);
+			this.cmdScalar.TabIndex = 31;
+			this.cmdScalar.Text = "&Execute Scalar";
+			// 
+			// txtScalar
+			// 
+			this.txtScalar.Location = new System.Drawing.Point(80, 8);
+			this.txtScalar.Multiline = true;
+			this.txtScalar.Name = "txtScalar";
+			this.txtScalar.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.txtScalar.Size = new System.Drawing.Size(392, 67);
+			this.txtScalar.TabIndex = 30;
+			this.txtScalar.Text = "SELECT count(*) AS record_count  FROM pg_class";
+			// 
+			// lblScalar
+			// 
+			this.lblScalar.AutoSize = true;
+			this.lblScalar.Location = new System.Drawing.Point(8, 16);
+			this.lblScalar.Name = "lblScalar";
+			this.lblScalar.Size = new System.Drawing.Size(36, 13);
+			this.lblScalar.TabIndex = 29;
+			this.lblScalar.Text = "Scalar";
+			// 
+			// ExecuteReader
+			// 
+			this.ExecuteReader.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																								this.cmdReader,
+																																								this.txtReader,
+																																								this.lblReader});
+			this.ExecuteReader.Location = new System.Drawing.Point(4, 22);
+			this.ExecuteReader.Name = "ExecuteReader";
+			this.ExecuteReader.Size = new System.Drawing.Size(592, 82);
+			this.ExecuteReader.TabIndex = 3;
+			this.ExecuteReader.Text = "ExecuteReader";
+			// 
+			// cmdReader
+			// 
+			this.cmdReader.Location = new System.Drawing.Point(488, 16);
+			this.cmdReader.Name = "cmdReader";
+			this.cmdReader.Size = new System.Drawing.Size(88, 32);
+			this.cmdReader.TabIndex = 34;
+			this.cmdReader.Text = "&Execute Reader";
+			// 
+			// txtReader
+			// 
+			this.txtReader.Location = new System.Drawing.Point(80, 8);
+			this.txtReader.Multiline = true;
+			this.txtReader.Name = "txtReader";
+			this.txtReader.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+			this.txtReader.Size = new System.Drawing.Size(392, 67);
+			this.txtReader.TabIndex = 33;
+			this.txtReader.Text = "SELECT * FROM pg_database";
+			// 
+			// lblReader
+			// 
+			this.lblReader.AutoSize = true;
+			this.lblReader.Location = new System.Drawing.Point(8, 16);
+			this.lblReader.Name = "lblReader";
+			this.lblReader.Size = new System.Drawing.Size(41, 13);
+			this.lblReader.TabIndex = 32;
+			this.lblReader.Text = "Reader";
+			// 
+			// txtLog
+			// 
+			this.txtLog.Anchor = (((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+				| System.Windows.Forms.AnchorStyles.Left) 
+				| System.Windows.Forms.AnchorStyles.Right);
+			this.txtLog.AutoSize = false;
+			this.txtLog.Location = new System.Drawing.Point(8, 119);
+			this.txtLog.Multiline = true;
+			this.txtLog.Name = "txtLog";
+			this.txtLog.ReadOnly = true;
+			this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Both;
+			this.txtLog.Size = new System.Drawing.Size(600, 214);
+			this.txtLog.TabIndex = 11;
+			this.txtLog.Text = "";
+			// 
+			// frmMain
+			// 
+			this.AutoScaleBaseSize = new System.Drawing.Size(5, 13);
+			this.ClientSize = new System.Drawing.Size(618, 345);
+			this.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																	this.txtLog,
+																																	this.tabset});
+			this.Name = "frmMain";
+			this.Text = "Npgsql Test Suite";
+			this.tabset.ResumeLayout(false);
+			this.Connection.ResumeLayout(false);
+			this.ExecuteNonQuery.ResumeLayout(false);
+			this.ExecuteScalar.ResumeLayout(false);
+			this.ExecuteReader.ResumeLayout(false);
+			this.ResumeLayout(false);
 
-    }
+		}
 		#endregion
 
     /// <summary>
