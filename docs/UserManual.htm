@@ -707,5 +707,24 @@ Entering NpgsqlConnection.Close()
 <p>I used the Debug level to show that a lot of information can be obtained. Of course, using the Normal level would be less verbose.
 Also, this same information was added to the file NpgsqlTests.LogFile.</p>
 
+<h3> 2.3 Npgsql design time support </h3>
+
+<p>
+Npgsql 0.6 and higher provide initial design time support.
+This means that you can drag and drop a NpgsqlConnection in the Form-Designer of Visual Studio .NET as you are used to with SqlConnections or OleDbConnections.<br>
+There is also a Dialog to edit and validate the ConnectionString
+</p>
+<p>To do so you must:
+<ol>
+	<li>Install Npgsql.dll into the gac</li>
+	<li>Add a new Registry-Key below 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\AssemblyFolders' and set 
+	it's default value to the path of your Npgsql.dll</li>
+	<li>Open Visual Studio .NET</li>
+	<li>Right-click the "Data"-Tab of the Toolbox</li>
+	<li>Click add/remove element</li>
+	<li>On the .Net-Tab select NpgsqlConnection</li>
+</ol>
+As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
+</p>
 </body>
 </html>
