@@ -5,7 +5,7 @@
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
-//	Copyright (C) 2002 Francisco Jr.
+//	Copyright (C) 2002 The Npgsql Development Team
 //
 
 // This library is free software; you can redistribute it and/or
@@ -26,6 +26,8 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Net.Sockets;
+using System.Net;
 
 namespace Npgsql
 {
@@ -69,8 +71,9 @@ namespace Npgsql
 				counter++;
 				b = (Byte)network_stream.ReadByte();
 			}
-			
-			return encoding.GetString(buffer, 0, counter);
+			String string_read = encoding.GetString(buffer, 0, counter);
+			NpgsqlEventLog.LogMsg("String Read: " + string_read, LogLevel.Debug);
+			return string_read;
 		}
 		
 		///<summary>
@@ -103,5 +106,54 @@ namespace Npgsql
       
       network_stream.Write(encoding.GetBytes(string_padded), 0, n);
 		}
+		
+		public static void CheckedStreamRead(Stream stream, Byte[] buffer, Int32 offset, Int32 size)
+		{
+			Int32 bytes_read = 0;
+			do
+			{
+				bytes_read = stream.Read(buffer, offset + bytes_read, size);
+				size = size - bytes_read;
+			}
+			while(size > 0);
+			
+		}
+		
+		public static void WriteQueryToStream( String query, Stream stream, Encoding encoding )
+		{
+			NpgsqlEventLog.LogMsg( CLASSNAME + query, LogLevel.Debug  );
+			// Send the query to server.
+			// Write the byte 'Q' to identify a query message.
+			stream.WriteByte((Byte)'Q');
+			
+			// Write the query. In this case it is the CommandText text.
+			// It is a string terminated by a C NULL character.
+			stream.Write(encoding.GetBytes(query + '\x00') , 0, query.Length + 1);
+			
+			// Send bytes.
+			stream.Flush();
+			
+		}
+		
+		
+    public static String GetSystemTypeFromDbType(Int32 dbType)
+    {
+    	// This method gets a db type identifier and return the equivalent
+    	// system type name.
+    	
+    	//[FIXME] Only Int32 and String supported for now.
+    	switch (dbType)
+    	{
+    		case 23:
+    			return "System.Int32";
+    		
+    		case 25:
+    			return "System.String";
+    		
+    		default:
+    			return "System.String";
+    		
+    	}
+    }
 	}
 }
