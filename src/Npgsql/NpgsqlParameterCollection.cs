@@ -37,7 +37,7 @@ namespace Npgsql
 	// [TODO] Implement more Add methods that construct the Parameter object.
 	// [TODO] Remove dependency on ArrayList. Implement the interfaces by hand.
 	
-	public class NpgsqlParameterCollection : ArrayList, IDataParameterCollection
+	public sealed class NpgsqlParameterCollection : ArrayList, IDataParameterCollection
 	{
 		
     // Logging related values
@@ -50,7 +50,8 @@ namespace Npgsql
 			// Call the add version that receives a NpgsqlParameter as parameter
 			try
 			{
-				return Add((NpgsqlParameter) parameter);
+				Add((NpgsqlParameter) parameter);
+				return IndexOf(((NpgsqlParameter) parameter).ParameterName);
 			}
 			catch(InvalidCastException e)
 			{
@@ -58,14 +59,18 @@ namespace Npgsql
 			}
 		}
 		
-		public Int32 Add(NpgsqlParameter parameter)
+		public NpgsqlParameter Add(NpgsqlParameter parameter)
 		{
 		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Add()", LogLevel.Debug);
 		  
 			// Check if the parameter has at least a name.
 			if (parameter.ParameterName != null)
+			{
 				// Add the parameter
-				return base.Add(parameter);
+				base.Add(parameter);
+				// Return the parameter added.
+				return parameter;
+			}
 			else
 				throw new NpgsqlException("A parameter must have a name when added to collection");
 			
