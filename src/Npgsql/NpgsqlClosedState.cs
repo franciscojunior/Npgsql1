@@ -54,13 +54,31 @@ namespace Npgsql
         }
 
 
+        /// <summary>
+        /// Resolve a host name or IP address.
+        /// This is needed because if you call Dns.Resolve() with an IP address, it will attempt
+        /// to resolve it as a host name, when it should just convert it to an IP address.
+        /// </summary>
+        /// <param name="HostName"></param>
+        private static IPAddress ResolveIPHost(String HostName)
+        {
+            try {
+                // Is it a raw IP address?
+                return IPAddress.Parse(HostName);
+            } catch {
+                // Not an IP, must be a host name...
+                return Dns.Resolve(HostName).AddressList[0];
+            }
+        }
+
         public override void Open(NpgsqlConnection context)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
-            
-            TcpClient tcpc = new TcpClient(context.ServerName, context.ServerPort);
+
+            TcpClient tcpc = new TcpClient();
+            tcpc.Connect(new IPEndPoint(ResolveIPHost(context.ServerName), context.ServerPort));
             Stream stream = tcpc.GetStream();
-            
+
             // If the PostgreSQL server has SSL connections enabled Open SslClientStream if (response == 'S') {
             if (context.SSL)
             {
