@@ -61,16 +61,24 @@ namespace Npgsql
 			
 			Byte[] input_buffer = new Byte[300]; //[FIXME] Is this enough??
 			
+			Array.Clear(null_map_array, 0, null_map_array.Length);
+			
 			// Read the null fields bitmap.
 			inputStream.Read(null_map_array, 0, null_map_array.Length );
-									
+			
 			// Get the data.
 			for (Int16 field_count = 0; field_count < num_fields; field_count++)
 			{
+				
 				// Check if this field isn't null
 				if (IsNull(field_count))
+				{
 					// Field is null just keep next field.
+					
+					//[FIXME] See this[] method.
+					data.Add(null);
 					continue;
+				}
 				
 				// Read the first data of the first row.
 								
@@ -88,13 +96,14 @@ namespace Npgsql
 				data.Add(result);
 				
 			}
+			
 		}
 		
 		
 		public Boolean IsNull(Int32 index)
 		{
 			// [FIXME] Check more optimized way of doing this.
-			// Should this be public or private?
+			// Should this be public or internal?
 			
 			// Check valid index range.
 			if ((index < 0) || (index >= num_fields))
@@ -121,7 +130,18 @@ namespace Npgsql
 					throw new ArgumentOutOfRangeException("this[] index value");
 				// [FIXME] Should return null or something else
 				// more meaningful?
-				return (IsNull(index) ? null : data[index]);
+				
+				//[FIXME] This code assumes that the data arraylist has the null and non null values
+				// in order, but just the non-null values are added. 
+				// It is necessary to map the index value with the elements in the array list.
+				// For now, the workaround is to insert the null values in the array list. 
+				// But this is a hack. :)
+				
+				//return (IsNull(index) ? null : data[index]);
+				return data[index];
+				
+				
+				
 			}
 		}
 	}
