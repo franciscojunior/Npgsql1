@@ -26,7 +26,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Resources;
-using System.Security.Tls;
+using Mono.Security.Protocol.Tls;
 
 namespace Npgsql
 {
@@ -56,25 +56,6 @@ namespace Npgsql
 		{
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
             
-			IPEndPoint serverEndPoint;
-			// Open the connection to the backend.
-			// context.TcpClient = new TcpClient();		    			    	
-			// If it was specified an IP address in doted notation 
-			// (i.e.:192.168.0.1), there may be a long delay trying
-			// resolve it when it is not necessary.
-			// So, try first connect as if it was a dotted ip address.	    
-			try
-			{
-				IPAddress ipserver = IPAddress.Parse(context.ServerName);
-				serverEndPoint = new IPEndPoint(ipserver, Int32.Parse(context.ServerPort));
-			}
-			catch(FormatException)	// The exception isn't used.
-			{
-				// Server isn't in dotted decimal format. Just connect using DNS resolves.
-				IPHostEntry serverHostEntry = Dns.GetHostByName(context.ServerName);
-				serverEndPoint = new IPEndPoint(serverHostEntry.AddressList[0], Int32.Parse(context.ServerPort));	
-			}
-			
 			// Connect to the server.
             TlsSessionSettings tlsSettings = new TlsSessionSettings();
 
@@ -85,24 +66,19 @@ namespace Npgsql
             // Create a new TLS Session
 			try 
 			{
-				TlsSession session = new TlsSession(tlsSettings);
-				BufferedStream stream = new BufferedStream(session.NetworkStream);
-				context.setNormalStream(session.NetworkStream);
-				context.setStream(stream);
-				BinaryReader receive = new BinaryReader(session.NetworkStream);
-				BinaryWriter send = new BinaryWriter(session.NetworkStream);
-
+				context.TlsSession = new TlsSession(tlsSettings);
+				
 				// If the PostgreSQL server has SSL connections enabled Open TLS session if (response == 'S') {
 				if (context.SSL=="yes")
 				{
-					PGUtil.WriteInt32(session.NetworkStream, 8);
-					PGUtil.WriteInt32(session.NetworkStream,80877103);
+					PGUtil.WriteInt32(context.TlsSession.NetworkStream, 8);
+					PGUtil.WriteInt32(context.TlsSession.NetworkStream, 80877103);
 					// Receive response
-					Char response = (Char)session.NetworkStream.ReadByte();
+					Char response = (Char)context.TlsSession.NetworkStream.ReadByte();
 
 					if (response == 'S') 
 					{
-						session.Open(); // open TLS session
+						context.TlsSession.Open(); // open TLS session
 					} 
 					
 				} 
@@ -114,7 +90,7 @@ namespace Npgsql
 			}
 			// Create objects for read & write
    		    // context.TcpClient.Connect(serverEndPoint);	
-            NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, serverEndPoint.Address, serverEndPoint.Port);
+            NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, tlsSettings.ServerName, tlsSettings.ServerPort);
 					
 			ChangeState( context, NpgsqlConnectedState.Instance );
 			context.Startup();

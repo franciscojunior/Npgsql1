@@ -24,7 +24,7 @@
 
 using System;
 using System.IO;
-using System.Security.Tls;
+using Mono.Security.Protocol.Tls;
 
 
 namespace Npgsql
@@ -62,7 +62,7 @@ namespace Npgsql
   																   "",
   																   "");
   		  
-  			startupPacket.WriteToStream( context.getStream(), context.Encoding );
+  			startupPacket.WriteToStream( new BufferedStream(context.TlsSession.NetworkStream), context.Encoding );
   			ProcessBackendResponses( context );
 		  }
 		  else if (context.BackendProtocolVersion == ProtocolVersion.Version2)
@@ -77,7 +77,7 @@ namespace Npgsql
   																   "",
   																   "");
   		  
-  			startupPacket.WriteToStream( new BufferedStream(context.getStream()), context.Encoding );
+  			startupPacket.WriteToStream( new BufferedStream(context.TlsSession.NetworkStream), context.Encoding );
   			ProcessBackendResponses( context );
 		    
 		    

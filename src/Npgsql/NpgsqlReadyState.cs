@@ -27,7 +27,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Resources;
-using System.Security.Tls;
+using Mono.Security.Protocol.Tls;
 
 namespace Npgsql
 {
@@ -72,7 +72,7 @@ namespace Npgsql
 			// Send the query request to backend.
 						
 			NpgsqlQuery query = new NpgsqlQuery(commandText, context.BackendProtocolVersion);
-			BufferedStream stream = context.getStream();
+			BufferedStream stream = new BufferedStream(context.TlsSession.NetworkStream);
 			query.WriteToStream(stream, context.Encoding);
 			stream.Flush();
 						
@@ -83,7 +83,7 @@ namespace Npgsql
 		public override void Parse(NpgsqlConnection context, NpgsqlParse parse)
 		{
 		    NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Parse");
-		    BufferedStream stream = context.getStream();
+		    BufferedStream stream = new BufferedStream(context.TlsSession.NetworkStream);
 			parse.WriteToStream(stream, context.Encoding);
 			stream.Flush();
 			
@@ -94,21 +94,21 @@ namespace Npgsql
 		public override void Sync(NpgsqlConnection context)
 		{
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Sync");
-		    _syncMessage.WriteToStream(context.getNormalStream(), context.Encoding);
+		    _syncMessage.WriteToStream(context.TlsSession.NetworkStream, context.Encoding);
 		    ProcessBackendResponses(context);
 		}
 		
 		public override void Flush(NpgsqlConnection context)
 		{
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Flush");
-            _flushMessage.WriteToStream(context.getNormalStream(), context.Encoding);
+            _flushMessage.WriteToStream(context.TlsSession.NetworkStream, context.Encoding);
             ProcessBackendResponses(context);
 		}
 		
 		public override void Bind(NpgsqlConnection context, NpgsqlBind bind)
 		{
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Bind");
-		    BufferedStream stream = context.getStream();
+		    BufferedStream stream = new BufferedStream(context.TlsSession.NetworkStream);
 			bind.WriteToStream(stream, context.Encoding);
 			stream.Flush();
 		  
@@ -119,8 +119,8 @@ namespace Npgsql
             
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Execute");
 		    NpgsqlDescribe describe = new NpgsqlDescribe('P', execute.PortalName);
-		    describe.WriteToStream(context.getNormalStream(), context.Encoding);
-		    execute.WriteToStream(context.getNormalStream(), context.Encoding);
+		    describe.WriteToStream(context.TlsSession.NetworkStream, context.Encoding);
+		    execute.WriteToStream(context.TlsSession.NetworkStream, context.Encoding);
 		    Sync(context);
 		}
 	

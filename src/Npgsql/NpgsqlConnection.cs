@@ -34,7 +34,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using NpgsqlTypes;
 using Npgsql.Design;
-using System.Security.Tls;
+using Mono.Security.Protocol.Tls;
 
 
 namespace Npgsql {
@@ -69,7 +69,7 @@ namespace Npgsql {
 		// as I didn't want to add another interface for internal access
 		// --brar
 		// In the connection string
-    internal readonly Char CONN_DELIM 		= ';';  // Delimeter
+        internal readonly Char CONN_DELIM 		= ';';  // Delimeter
 		internal readonly Char CONN_ASSIGN 	= '=';
 		internal readonly String CONN_SERVER 	= "SERVER";
 		internal readonly String CONN_USERID 	= "USER ID";
@@ -96,9 +96,7 @@ namespace Npgsql {
 		// Logging related values
 		private readonly String CLASSNAME = "NpgsqlConnection";
   		
-		private TcpClient				connection;
-        private TlsNetworkStream		secstream;
-        private BufferedStream			stream;
+		private TlsSession              _tlsSession;
 
 		private Encoding				connection_encoding;
   	
@@ -407,11 +405,7 @@ namespace Npgsql {
 			      		    			    		
 			      }
       	
-      	
-      		    			    		
-			
-			
-			catch(IOException e) {
+      		catch(IOException e) {
 				// This exception was thrown by StartupPacket handling functions.
 				// So, close the connection and throw the exception.
 				// [TODO] Better exception handling. :)
@@ -438,8 +432,8 @@ namespace Npgsql {
 			}
 			finally {
 				// Even if an exception occurs, let object in a consistent state.
-				if (TcpClient != null)
-					TcpClient.Close();
+				if (TlsSession != null)
+					TlsSession.Close();
 				connection_state = ConnectionState.Closed;
 			}
 		}
@@ -547,32 +541,17 @@ namespace Npgsql {
 			
 		}
     
-        internal BufferedStream getStream()
-		{
-			return stream;
-		}
-		internal void setStream(BufferedStream bs)
-		{
-			stream=bs;
-		}
-		internal TlsNetworkStream getNormalStream()
-		{
-			return secstream;
-		}
-		internal void setNormalStream(TlsNetworkStream tns)
-		{
-			secstream=tns;
-		}
-        
-		/*
-		public bool useSSL() 
-		{
-			if (SSL_ENABLED=="yes")
-				return true;
-
-			return false;
-		}
-		*/
+        internal TlsSession TlsSession
+        {
+            get
+            {
+                return _tlsSession;
+            }
+            set
+            {
+                _tlsSession = value;
+            }    
+        }
 
 		// State 
 		internal void Query( NpgsqlCommand queryCommand ) {
@@ -663,23 +642,6 @@ namespace Npgsql {
 
 		}
 
-		internal TcpClient TcpClient {
-			get {
-				return connection;
-			}
-			set {
-				connection = value;
-			}
-		}
-        
-        internal TlsNetworkStream SecuredStream 
-		{
-			get 
-			{
-				return SecuredStream;
-			}
-		}
-        
 		internal Encoding Encoding {
 			get {
 				return connection_encoding;
