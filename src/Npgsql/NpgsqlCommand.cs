@@ -219,9 +219,9 @@ namespace Npgsql {
 			set {
 				NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Transaction" ,value);
 				//throw new NotImplementedException();
-				if (this.connection != null && this.connection.InTransaction == true){
+				/*if (this.connection != null && this.connection.InTransaction == true){
 					throw new NpgsqlException(resman.GetString("Exception_SetTransactionInTransaction"));
-				}
+				}*/
 				this.transaction = (NpgsqlTransaction) value;
 			}
 		}
