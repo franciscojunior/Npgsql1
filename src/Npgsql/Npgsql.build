@@ -76,7 +76,7 @@
 		<copy tofile="${assemblyname}.NpgsqlDataAdapter.bmp" file="NpgsqlDataAdapter.bmp"/>
 	</target>
 
-	<target name="build" depends="init,resources">
+	<target name="build" depends="resources">
 		<csc target="library" output="${ms.build.dir}/${assemblyname}.dll" debug="${debug}">
 			<references>
 				<includes name="System.Data.dll" />
