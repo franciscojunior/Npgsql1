@@ -28,6 +28,7 @@ using System.Resources;
 using System.IO;
 using System.Text;
 using System.Collections;
+using System.Runtime.Serialization;
 
 namespace Npgsql
 {
@@ -35,13 +36,17 @@ namespace Npgsql
     /// The exception that is thrown when the PostgreSQL backend reports errors.
     /// </summary>
     [Serializable]
-    public sealed class NpgsqlException : Exception
+    public sealed class NpgsqlException : ApplicationException
     {
         private IList errors;
 
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlException";
         private static ResourceManager resman = new ResourceManager(typeof(NpgsqlException));
+
+        // To allow deserialization.
+        private NpgsqlException(SerializationInfo info, StreamingContext context) : base(info, context)
+        {}
 
         /// <summary>
         /// Construct a backend error exception based on a list of one or more
@@ -52,6 +57,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMsg(resman, "Log_ExceptionOccured", LogLevel.Normal, Message);
             this.errors = errors;
+
         }
 
         /// <summary>
@@ -63,9 +69,9 @@ namespace Npgsql
             {
                 return (NpgsqlError)errors[Index];
             }
-        }   
-        
-        
+        }
+
+
         /// <summary>
         /// Severity code.  All versions.
         /// </summary>
@@ -175,7 +181,7 @@ namespace Npgsql
                 return this[0].Routine;
             }
         }
-        
+
         /// <summary>
         /// Returns the entire list of errors provided by the PostgreSQL backend.
         /// </summary>
@@ -197,7 +203,7 @@ namespace Npgsql
 
             S.WriteLine("{0}:", this.GetType().FullName);
 
-            foreach (NpgsqlError PgError in Errors) 
+            foreach (NpgsqlError PgError in Errors)
             {
                 AppendString(S, "{0}", PgError.Message);
                 AppendString(S, "Severity: {0}", PgError.Severity);
@@ -208,7 +214,7 @@ namespace Npgsql
             S.Write(StackTrace);
 
             return S.ToString();
-            
+
         }
 
         /// <summary>
@@ -216,10 +222,11 @@ namespace Npgsql
         /// </summary>
         private static void AppendString(StringWriter Stream, string Format, string Str)
         {
-            if (Str.Length > 0) {
+            if (Str.Length > 0)
+            {
                 Stream.WriteLine(Format, Str);
             }
-				}
+        }
 
     }
 
