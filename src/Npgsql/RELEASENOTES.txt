@@ -1,4 +1,51 @@
 
+
+2003-05-31
+    Npgsql 0.5 development release.
+    
+    What's new in this version:
+    
+      - New datatypes supported: bool, int2, int4, int8, numeric, timestamp, date, time and text data types.
+      These types are mapped to DbTtype enum: Boolean, Int16, Int32, Int64, Decimal,
+      DateTime, Date, Time and String.
+      
+      - NpgsqlParameter now supports those types through the DbType enumeration and not just Int32, Int64
+      
+      - NpgsqlDataAdapter now has more helper contructors. Thanks stevenao for reporting this (Bug 455)
+      
+      - MD5 Authentication is now supported. Thanks Brar Piening. 
+        Mono MD5 implementation is being used. Thanks Sebastien Pouliot.
+        
+      - NpgsqlDataAdapter can be used to select, insert, update and delete data with DataSets.
+      
+      - StrongType datasets generated with xsd can be used.
+      
+      - Support for Listen/Notify events through the NotificationEventHandler delegate and
+        NpgsqlConnection.OnNotification event. Thanks Wojtek Wierzbicki. Now applications can 
+        hook on it to receive notification messages from server. This notification is asynchronous which means they will
+        be delivered to client apps in the next interaction of Npgsql with backend.
+        
+	- NUnit20 tests were added. There are 48 tests which can also be used as a source of references of new Npgsql functionality.
+	Of course, new tests are very welcome :)
+       
+    
+    Bugfixes:
+    
+      - Large resultsets are now correctly handled(Bug id 467). Thanks Chris Wenneman.
+      - Null values handling are now fixed. Thanks Stuart Ballard for showing this problem.
+      - Quotes in strings are now *actually* working. 
+    
+    
+    This release is very stable and have a lot of immediate functionality is now working.
+    It can be used in production environments. Please, get the non-debug releases to production use.
+    Thanks all for help debugging and sending your bug reports and patches! :)
+
+    fxjr
+    
+    
+    
+    
+
 2002-06-10
     Npgsql 0.2 development release.
     
