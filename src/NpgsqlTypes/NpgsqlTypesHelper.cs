@@ -142,8 +142,9 @@ namespace NpgsqlTypes
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
 			
-			if (oidToNameMapping.Count == 0)
-				return (String) (NpgsqlString)data;					
+			if (!oidToNameMapping.ContainsKey(typeOid))
+				return (String) (NpgsqlString)data;
+			
 			
 			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
@@ -183,7 +184,7 @@ namespace NpgsqlTypes
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
 			
-			if (oidToNameMapping.Count == 0)
+			if (!oidToNameMapping.ContainsKey(typeOid))
 				return new NpgsqlString(data);
 			
 			switch ((NpgsqlDbType)oidToNameMapping[typeOid])
@@ -266,8 +267,10 @@ namespace NpgsqlTypes
     	//[TODO] Find a way to eliminate this checking. It is just used at bootstrap time
 			// when connecting because we don't have yet loaded typeMapping. The switch below
 			// crashes with NullPointerReference when it can't find the typeOid.
-    	if (oidToNameMapping.Count == 0)
+    	
+    	if (!oidToNameMapping.ContainsKey(typeOid))
 				return "System.String";
+			
     	
     	switch ((NpgsqlDbType)oidToNameMapping[typeOid])
 			{
@@ -311,13 +314,14 @@ namespace NpgsqlTypes
 					return oidToNameMapping;
 				}
 				
+				
 				oidToNameMapping = new Hashtable();
 				//conn.OidToNameMapping = oidToNameMapping;
 				
 				// Bootstrap value as the datareader below will use ConvertStringToNpgsqlType above.
 				//oidToNameMapping.Add(26, "oid");
 								
-				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type", conn);
+				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'int2', 'int4', 'int8', 'numeric', 'text', 'timestamp');", conn);
 				
 				NpgsqlDataReader dr = command.ExecuteReader();
 				
