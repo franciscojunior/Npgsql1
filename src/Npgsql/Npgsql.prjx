@@ -31,6 +31,8 @@
     <File name=".\NpgsqlStartupState.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\NpgsqlState.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\NpgsqlTransaction.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name=".\NpgsqlFunctionResultResponse.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name=".\MD5.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
   </Contents>
   <References />
   <DeploymentInformation target="" script="" strategy="File" />
