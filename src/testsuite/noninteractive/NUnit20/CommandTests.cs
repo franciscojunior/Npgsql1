@@ -33,6 +33,12 @@ using NpgsqlTypes;
 namespace NpgsqlTests
 {
 
+    public enum EnumTest : short
+    {
+        Value1 = 0,
+        Value2 = 1
+    };
+
     [TestFixture]
     public class CommandTests
     {
@@ -166,7 +172,7 @@ namespace NpgsqlTests
 
         }
         
-        
+               
         
         [Test]
         public void UseStringParameterWithNoNpgsqlDbType()
@@ -615,6 +621,31 @@ namespace NpgsqlTests
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Byte));
 
             command.Parameters[0].Value = 2;
+
+            Int32 rowsAdded = command.ExecuteNonQuery();
+
+            Assert.AreEqual(1, rowsAdded);
+
+            command.Parameters.Clear();
+            command.CommandText = "delete from tableb where field_serial = (select max(field_serial) from tableb);";
+            command.ExecuteNonQuery();
+        }
+        
+        
+		[Test]
+        public void EnumSupport()
+        {
+        
+            
+            _conn.Open();
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
+
+            command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Smallint));
+
+            command.Parameters[0].Value = EnumTest.Value1;
+            
 
             Int32 rowsAdded = command.ExecuteNonQuery();
 
