@@ -117,8 +117,15 @@ namespace Npgsql
 						
 						mediator.Errors.Add(errorMessage);
 					
-						// Return imediately if it is in the startup state.
-						if (context.CurrentState == NpgsqlStartupState.Instance)
+						// Return imediately if it is in the startup state or connected state as
+						// there is no more messages to consume.
+						// Possible error in the NpgsqlStartupState:
+						//		Invalid password.
+						// Possible error in the NpgsqlConnectedState:
+						//		No pg_hba.conf configured.
+						
+						if ((context.CurrentState == NpgsqlStartupState.Instance) ||
+						    (context.CurrentState == NpgsqlConnectedState.Instance))
 							return;
 						
 						break;
