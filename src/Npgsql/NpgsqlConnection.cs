@@ -63,7 +63,11 @@ namespace Npgsql
     // Values for possible CancelRequest messages.
     private Int32			cancel_proc_id;
     private Int32			cancel_secret_key;
-  		
+  	
+  	// Logging related values
+  	private String    logfile;
+  	private Int32     loglevel;
+  	private readonly String CLASSNAME = "NpgsqlConnection";
   		
     private TcpClient 		connection;
     private BufferedStream	output_stream;
@@ -79,14 +83,16 @@ namespace Npgsql
     private readonly Int32 AUTH_CLEARTEXT_PASSWORD = 3;
   		
   		
-    public NpgsqlConnection() : this(""){}
-	    	
-	    
-	    
-    public NpgsqlConnection(String ConnectionString)
+    public NpgsqlConnection() : this("", 0, "Npgsql.log"){}
+    public NpgsqlConnection(String ConnectionString) : this(ConnectionString, 0, "Npgsql.log"){}
+    public NpgsqlConnection(String ConnectionString, Int32 LogLevel) : this(ConnectionString, LogLevel, "Npgsql.log"){}
+    
+    public NpgsqlConnection(String ConnectionString, Int32 LogLevel, String LogFile)
     {
       connection_state = ConnectionState.Closed;
       connection_string = ConnectionString;
+      loglevel = LogLevel;
+      logfile = LogFile;
       connection_string_values = new ListDictionary();
       connection_encoding = Encoding.Default;
       ParseConnectionString();
@@ -101,6 +107,7 @@ namespace Npgsql
       set
       {
         connection_string = value;
+        LogMsg("Set " + CLASSNAME + ".ConnectionString = " + value, 1);
         ParseConnectionString();
       }
     }
@@ -130,24 +137,63 @@ namespace Npgsql
         return connection_state; 
       }
     }
+    
+    ///<summary>
+    /// Sets/Returns the level of information to log to the logfile.
+    /// 0 - None
+    /// 1 - Normal
+    /// 2 - Complete
+    /// </summary>	
+    public Int32 LogLevel
+    {
+      get
+      {
+        return loglevel;
+      }
+      set
+      {
+        loglevel = value;
+        LogMsg("Set " + CLASSNAME + ".LogLevel = " + value, 1);
+      }
+    }
+    
+    ///<summary>
+    /// Sets/Returns the filename to use for logging.
+    /// </summary>	
+    public String LogFile
+    {
+      get
+      {
+        return logfile;
+      }
+      set
+      {
+        logfile = value;
+        LogMsg("Set " + CLASSNAME + ".LogFile = " + value, 1);
+      }
+    }
 		
     public IDbTransaction BeginTransaction()
     {
+      LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", 2);
       throw new NotImplementedException();
     }
 	
     public IDbTransaction BeginTransaction(IsolationLevel level)
     {
+      LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", 2);
       throw new NotImplementedException();
     }
 
     public void ChangeDatabase(String dbName)
     {
+      LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", 2);
       throw new NotImplementedException();
     }
 	
     public void Open()
     {
+      LogMsg("Entering " + CLASSNAME + ".Open()", 2);
 	    	
       try
       {
@@ -174,7 +220,6 @@ namespace Npgsql
         {
           IPAddress ipserver = IPAddress.Parse((String)connection_string_values[CONN_SERVER]);
           ep_server = new IPEndPoint(ipserver, Int32.Parse((String)connection_string_values[CONN_PORT]));
-		    		
         }
         catch(FormatException)	// The exception isn't used.
         {
@@ -184,8 +229,9 @@ namespace Npgsql
         }
 		    	
         // Connect to the server.
-        connection.Connect(ep_server);
-		    	
+        connection.Connect(ep_server);	
+		    LogMsg("Connected to: " + ep_server.Address + ":" + ep_server.Port, 1);
+		    
         output_stream = new BufferedStream(connection.GetStream());
         input_buffer = new Byte[8192];
 		    	
@@ -219,7 +265,10 @@ namespace Npgsql
     }
 	
     public void Close()
+    
     {
+      LogMsg("Entering " + CLASSNAME + ".Close()", 2);
+    
       try
       {
         if (connection_state == ConnectionState.Open)
@@ -244,11 +293,13 @@ namespace Npgsql
 	    
     public IDbCommand CreateCommand()
     {
+      LogMsg("Entering " + CLASSNAME + ".CreateCommand()", 2);
       throw new NotImplementedException();
     }
     // Implement the IDisposable interface.
     public void Dispose()
     {
+      LogMsg("Entering " + CLASSNAME + ".Dispose()", 2);
 	    		    	
     }
 	    
@@ -266,6 +317,7 @@ namespace Npgsql
     /// </summary>
     private void ParseConnectionString()
     {
+      LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", 2);
 	    	
       // Get the key-value pairs delimited by CONN_DELIM
       String[] pairs = connection_string.Split(new char[] {CONN_DELIM});
@@ -295,6 +347,7 @@ namespace Npgsql
 	    	// Add the pair to the dictionary. The key is shifted to upper
 	    	// case for case insensitivity.
 	    	
+	    	LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], 1);
         connection_string_values.Add(keyvalue[0], keyvalue[1]);
       }
 	    	
@@ -315,6 +368,7 @@ namespace Npgsql
 	    
     private void WriteStartupPacket()
     {
+      LogMsg("Entering " + CLASSNAME + ".WritestartupPacket()", 2);
 	    	
       // Packet length = 296
       output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)296)), 0, 4);
@@ -344,6 +398,7 @@ namespace Npgsql
 	    
     private void HandleStartupPacketResponse()
     {
+      LogMsg("Entering " + CLASSNAME + ".HandleStartupPacketResponse()", 2);
 	    	
       // The startup packet was sent.
       // Handle possible error messages or password requests.
@@ -384,6 +439,8 @@ namespace Npgsql
 		    			
             if (auth_type == AUTH_CLEARTEXT_PASSWORD)
             {
+              LogMsg("Server requested cleartext password authentication.", 1);
+              
               // Send the PasswordPacket.
               String password = ((String) connection_string_values[CONN_PASSWORD]);
               // Add the null string terminator
@@ -435,6 +492,17 @@ namespace Npgsql
         }
       }
 	    	    	
+    }
+    
+    // Event/Debug Logging
+    internal void LogMsg(String message, Int32 level) 
+    {
+      if (level > loglevel)
+        return;
+        
+      StreamWriter writer = new StreamWriter(logfile, true);
+      writer.WriteLine("[" + level + "] " + System.DateTime.Now + " - " + message);
+      writer.Close(); 
     }
 	    
     // Internal properties
