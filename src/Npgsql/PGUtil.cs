@@ -81,5 +81,21 @@ namespace Npgsql
 			network_stream.Write(encoding.GetBytes(the_string + '\x00') , 0, the_string.Length + 1);
 		}
 		
+		///<summary>
+		/// This method writes a C NULL terminated string limited in length to the 
+		/// backend server.
+		/// It pads the string with null bytes to the size specified.
+		/// </summary>
+		
+		public static void WriteLimString(String the_string, Int32 n, Stream network_stream, Encoding encoding)
+		{
+			// [FIXME] Parameters should be validated. And what about strings
+			// larger than or equal to n?
+			
+			// Pad the string to the specified value.
+			String string_padded = the_string.PadRight(n, '\x00');
+      
+      network_stream.Write(encoding.GetBytes(string_padded), 0, n);
+		}
 	}
 }
