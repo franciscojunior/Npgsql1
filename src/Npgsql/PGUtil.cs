@@ -110,14 +110,16 @@ namespace Npgsql
 		
 		public static void CheckedStreamRead(Stream stream, Byte[] buffer, Int32 offset, Int32 size)
 		{
-			Int32 bytes_read = 0;
-			do
-			{
-				bytes_read = stream.Read(buffer, offset + bytes_read, size);
-				size = size - bytes_read;
-			}
-			while(size > 0);
-			
+      Int32 bytes_from_stream = 0;
+      Int32 total_bytes_read = 0;
+      do
+      {
+        bytes_from_stream = stream.Read(buffer, offset + total_bytes_read, size);
+        total_bytes_read += bytes_from_stream;
+        size -= bytes_from_stream;
+      }
+      while(size > 0);
+
 		}
 		
 		public static void WriteQueryToStream( String query, Stream stream, Encoding encoding )
