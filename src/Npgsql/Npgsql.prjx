@@ -32,6 +32,24 @@
     <File name=".\NpgsqlState.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\NpgsqlTransaction.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\MD5.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlTypesHelper.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlBinary.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlBoolean.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlByte.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlDbType.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlDecimal.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlDouble.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlInt16.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlInt32.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlInt64.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlMoney.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlNullValueException.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlSingle.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlString.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlTypeException.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\INullable.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name=".\NpgsqlBinaryRow.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name="..\NpgsqlTypes\NpgsqlDateTime.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
   </Contents>
   <References />
   <DeploymentInformation target="" script="" strategy="File" />
