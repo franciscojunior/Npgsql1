@@ -5,7 +5,7 @@
 // Author:
 //	Francisco Jr. (fxjrlists@yahoo.com.br)
 //
-//	Copyright (C) 2002 Francisco Jr.
+//	Copyright (C) 2002 The Npgsql Development Team
 //
 
 // This library is free software; you can redistribute it and/or
@@ -113,6 +113,7 @@ namespace Npgsql
 			get
 			{
 				// return base[IndexOf(parameterName)];
+				NpgsqlEventLog.LogMsg("Get " + CLASSNAME + ".this[]", LogLevel.Normal);
 				return this[IndexOf(parameterName)];
 			}
 			set
