@@ -26,6 +26,7 @@
 using System;
 using System.Data;
 using System.Collections;
+using NpgsqlTypes;
 
 
 namespace Npgsql
@@ -200,7 +201,7 @@ namespace Npgsql
 	  public String GetDataTypeName(Int32 i)
 	  {
 	  	// FIXME: have a type name instead of the oid
-		return (_currentResultset.RowDescription[i].type_oid).ToString();
+			return (_currentResultset.RowDescription[i].type_oid).ToString();
 	  }
 	  
 	  public Type GetFieldType(Int32 i)
@@ -209,17 +210,37 @@ namespace Npgsql
 	    //throw new NotImplementedException();
 	  	//[FIXME] hack
 	  	  	
-	  	return Type.GetType(PGUtil.GetSystemTypeFromDbType(_currentResultset.RowDescription[i].type_oid));
+	  	return Type.GetType(NpgsqlTypesHelper.GetNpgsqlTypeNameFromTypeOid(_connection.OidToNameMapping, _currentResultset.RowDescription[i].type_oid));
 	  }
 	  
 	  public Object GetValue(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValue(Int32)", LogLevel.Debug);
-	  	if (i < 0 || _rowIndex < 0)
+	  	/*if (i < 0 || _rowIndex < 0)
 	  		throw new InvalidOperationException("Cannot read data.");
-	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];
+	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];*/
+	  	
+	  	Object npgsqlValue = GetNpgsqlValue(i);
+	  	if (npgsqlValue == null)
+	  		return null;
+	  	
+	  	return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(_connection.OidToNameMapping, npgsqlValue, _currentResultset.RowDescription[i].type_oid);
 	  }
 	  
+	  
+	  /// <summary>
+	  /// This method is reponsible to get the value in its original form (NpgsqlType).
+	  /// The GetValue(Int32) returns the NpgsqlType converted in the SystemType.
+	  /// </summary>
+	  private Object GetNpgsqlValue(Int32 i)
+	  {
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetNpgsqlValue(Int32)", LogLevel.Debug);
+	  	if (i < 0 || _rowIndex < 0)
+	  		throw new InvalidOperationException("Cannot read data.");
+	  	
+	  		  	
+	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];
+	  }
 	  public Int32 GetValues(Object[] values)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValues(Object[])", LogLevel.Debug);
@@ -265,7 +286,7 @@ namespace Npgsql
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBoolean(Int32)", LogLevel.Debug);
 	  	
-  		switch ((String) this[i])
+  		/*switch ((String) this[i])
   		{
   			case "t":
   				return true;
@@ -276,7 +297,9 @@ namespace Npgsql
   			default:
   				throw new System.InvalidCastException();
   			
-  		}
+  		}*/
+  		
+  		return (Boolean) GetNpgsqlBoolean(i);
 	  	
 	  }
 	  
@@ -317,45 +340,52 @@ namespace Npgsql
 	    // Should this be done using the GetValue directly and not by converting to String
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt16(Int32)", LogLevel.Debug);
-	  	try
+	  	/*try
 	  	{
 		    return Int16.Parse((String) this[i]);
 	  	} catch (System.FormatException)
 	  	{
 	  		throw new System.InvalidCastException();
-	  	}
+	  	}*/
+	  	
+	  	return (Int16) GetNpgsqlInt16(i);
 	  	
 
 	  }
+	  
 	  
 	  public Int32 GetInt32(Int32 i)
 	  {
 	    // Should this be done using the GetValue directly and not by converting to String
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt32(Int32)", LogLevel.Debug);
-	  	try
+	  	/*try
 	  	{
 		    return Int32.Parse((String) this[i]);
 	  	} catch (System.FormatException)
 	  	{
 	  		throw new System.InvalidCastException();
-	  	}
+	  	}*/
 	  	
-
+	  	
+	  	return (Int32) GetNpgsqlInt32(i);
+	  
 	  }
+	  
 	  
 	  public Int64 GetInt64(Int32 i)
 	  {
 	    // Should this be done using the GetValue directly and not by converting to String
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt64(Int32)", LogLevel.Debug);
-	  	try
+	  	/*try
 	  	{
 		    return Int64.Parse((String) this[i]);
 	  	} catch (System.FormatException)
 	  	{
 	  		throw new System.InvalidCastException();
-	  	}
+	  	}*/
+	  	return (Int64) GetNpgsqlInt64(i);
 	  }
 	  
 	  public Single GetFloat(Int32 i)
@@ -365,7 +395,7 @@ namespace Npgsql
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetFloat(Int32)", LogLevel.Debug);
 	  	try
 	  	{
-		    return Single.Parse((String) this[i]);
+	  		return Single.Parse((String) this[i]);
 	  	} catch (System.FormatException)
 	  	{
 	  		throw new System.InvalidCastException();
@@ -389,7 +419,7 @@ namespace Npgsql
 	  public String GetString(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetString(Int32)", LogLevel.Debug);
-	    return (String) GetValue(i);
+	    return (String) GetNpgsqlString(i);
 	  }
 	  
 	  public Decimal GetDecimal(Int32 i)
@@ -397,18 +427,21 @@ namespace Npgsql
 	    // Should this be done using the GetValue directly and not by converting to String
 	  	// and parsing from there?
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetDecimal(Int32)", LogLevel.Debug);
-	  	try
+	  	/*try
 	  	{
 		    return Decimal.Parse((String) this[i]);
 	  	} catch (System.FormatException)
 	  	{
 	  		throw new System.InvalidCastException();
-	  	}
+	  	}*/
+	  	
+	  	return (Decimal) GetNpgsqlDecimal(i);
 	  }
 	  
 	  public DateTime GetDateTime(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    //throw new NotImplementedException();
+	  	return (DateTime) GetNpgsqlDateTime(i);
 	  }
 	  
 	  public IDataReader GetData(Int32 i)
@@ -422,6 +455,51 @@ namespace Npgsql
 	  	
 	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex]).IsNull(i);
 	  }
+
+
+		public NpgsqlBoolean GetNpgsqlBoolean(Int32 i)
+	  {
+	  	return (NpgsqlBoolean) GetNpgsqlValue(i);
+	  	
+	  }
+		public NpgsqlInt16 GetNpgsqlInt16(Int32 i)
+	  {
+	  	return (NpgsqlInt16) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  public NpgsqlInt32 GetNpgsqlInt32(Int32 i)
+	  {
+	  	return (NpgsqlInt32) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  public NpgsqlInt64 GetNpgsqlInt64(Int32 i)
+	  {
+	  	return (NpgsqlInt64) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  public NpgsqlDateTime GetNpgsqlDateTime(Int32 i)
+	  {
+	  	return (NpgsqlDateTime) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  public NpgsqlDecimal GetNpgsqlDecimal(Int32 i)
+	  {
+	  	return (NpgsqlDecimal) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  
+	  public NpgsqlString GetNpgsqlString(Int32 i)
+	  {
+	  	return (NpgsqlString) GetNpgsqlValue(i);
+	  	
+	  }
+	  
+	  
 
 		private DataTable GetResultsetSchema()
 		{
@@ -495,7 +573,9 @@ namespace Npgsql
 
 		}
 		
-		IEnumerator IEnumerable.GetEnumerator ()
+		
+		
+		IEnumerator IEnumerable.GetEnumerator () 
 		{
 			return new System.Data.Common.DbEnumerator (this);
 		}

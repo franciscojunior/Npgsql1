@@ -28,6 +28,8 @@ using System.Collections;
 using System.IO;
 using System.Text;
 using System.Net;
+using NpgsqlTypes;
+
 
 namespace Npgsql
 {
@@ -46,14 +48,20 @@ namespace Npgsql
 		private Byte[]								null_map_array;
 		private Int16									num_fields;
 		private readonly Int16	READ_BUFFER_SIZE = 300; //[FIXME] Is this enough??
+		private NpgsqlRowDescription row_desc;
+		private Hashtable							oid_to_name_mapping;
 		
-		public NpgsqlAsciiRow(Int16 numFields)
+		public NpgsqlAsciiRow(NpgsqlRowDescription rowDesc, Hashtable oidToNameMapping)
 		{
 			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlAsciiRow()", LogLevel.Debug);
 			
 			data = new ArrayList();
-			null_map_array = new Byte[(numFields + 7)/8];
-			num_fields = numFields;
+			row_desc = rowDesc;
+			null_map_array = new Byte[(row_desc.NumFields + 7)/8];
+			oid_to_name_mapping = oidToNameMapping;
+			//num_fields = numFields;
+				
+			
 		}
 		
 		
@@ -69,7 +77,7 @@ namespace Npgsql
 			inputStream.Read(null_map_array, 0, null_map_array.Length );
 			
 			// Get the data.
-			for (Int16 field_count = 0; field_count < num_fields; field_count++)
+			for (Int16 field_count = 0; field_count < row_desc.NumFields; field_count++)
 			{
 				
 				// Check if this field isn't null
@@ -111,7 +119,7 @@ namespace Npgsql
 				
 				
 				// Add them to the AsciiRow data.
-				data.Add(result.ToString());
+				data.Add(NpgsqlTypesHelper.ConvertBackendStringToNpgsqlType(oid_to_name_mapping, result.ToString(), row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
 				
 			}
 			
@@ -124,7 +132,7 @@ namespace Npgsql
 			// Should this be public or internal?
 			
 			// Check valid index range.
-			if ((index < 0) || (index >= num_fields))
+			if ((index < 0) || (index >= row_desc.NumFields))
 					throw new ArgumentOutOfRangeException("index");
 			
 			// Check if the value (index) of the field is null 
@@ -144,7 +152,7 @@ namespace Npgsql
 			get
 			{
 				
-				if ((index < 0) || (index >= num_fields))
+				if ((index < 0) || (index >= row_desc.NumFields))
 					throw new ArgumentOutOfRangeException("this[] index value");
 				// [FIXME] Should return null or something else
 				// more meaningful?

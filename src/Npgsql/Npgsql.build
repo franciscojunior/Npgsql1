@@ -27,12 +27,13 @@
         <csc target="library" output="${ms.build.dir}\${assemblyname}.dll" debug="${debug}">
             <sources>
                 <includes name="*.cs" />
+		<includes name="..\NpgsqlTypes\*.cs" />
             </sources>
         </csc>
     </target>
     
     <target name="monobuild" depends="init">
-      <exec program="${mcs.bat}" commandline="-t:library -r ${mono.home}\lib\System.Data.dll -out:${mono.build.dir}\${assemblyname}.dll *.cs" />
+      <exec program="${mcs.bat}" commandline="-t:library -r ${mono.home}\lib\System.Data.dll -out:${mono.build.dir}\${assemblyname}.dll *.cs ..\NpgsqlTypes\*.cs" />
     </target>
 </project>
 

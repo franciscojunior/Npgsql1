@@ -31,6 +31,7 @@ using System.Net.Sockets;
 using System.IO;
 using System.Text;
 using System.Collections;
+using NpgsqlTypes;
 
 namespace Npgsql
 {
@@ -166,11 +167,13 @@ namespace Npgsql
 		{
 			get
 			{
+				NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".get_Transaction()", LogLevel.Debug);
 				throw new NotImplementedException();
 			}
 			
 			set
 			{
+				NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".set_Transaction()", LogLevel.Debug);
 				throw new NotImplementedException();	
 			}
 		}
@@ -352,7 +355,7 @@ namespace Npgsql
 			// For while only int4 and string are strong typed.
 			// Any other type will be returned as string.
 			
-			switch (rd[0].type_oid)
+			/*switch (rd[0].type_oid)
 			{
 				case 20:	// int8, integer.
 					result = Convert.ToInt64(ascii_row[0]);
@@ -371,7 +374,10 @@ namespace Npgsql
 					break;
 			}
 			
-			return result;
+			
+			return result;*/
+			return NpgsqlTypesHelper.ConvertNpgsqlTypeToSystemType(connection.OidToNameMapping, ascii_row[0], rd[0].type_oid);
+			
 			
 		}
 		
@@ -467,7 +473,8 @@ namespace Npgsql
 			for (Int32 i = 0; i < parameters.Count; i++)
 			{
 				parameterName = parameters[i].ParameterName;
-				result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
+				//result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
+				result = result.Replace(":" + parameterName, NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i]));
 			}
 			
 			return result;
@@ -490,7 +497,8 @@ namespace Npgsql
 			
 			for (Int32 i = 0; i < parameters.Count; i++)
 			{
-				result.Append(parameters[i].Value.ToString() + ',');
+				//result.Append(parameters[i].Value.ToString() + ',');
+				result.Append(NpgsqlTypesHelper.ConvertNpgsqlParameterToBackendStringValue(parameters[i]) + ',');
 				//result = result.Replace(":" + parameterName, parameters[i].Value.ToString());
 			}
 			
@@ -528,7 +536,7 @@ namespace Npgsql
 				{
 					//[TODO] Add support for all types. 
 					
-					switch (parameters[i].DbType)
+					/*switch (parameters[i].DbType)
 					{
 						case DbType.Int32:
 							command.Append("int4");
@@ -541,7 +549,8 @@ namespace Npgsql
 						default:
 							throw new InvalidOperationException("Only DbType.Int32, DbType.Int64 datatypes supported");
 							
-					}
+					}*/
+					command.Append(NpgsqlTypesHelper.GetBackendTypeNameFromNpgsqlDbType(parameters[i].NpgsqlDbType));
 					
 					command.Append(',');
 				}
