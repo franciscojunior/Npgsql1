@@ -142,18 +142,31 @@ namespace Npgsql
       }
     }
     		
-    public IDbTransaction BeginTransaction()
+    IDbTransaction IDbConnection.BeginTransaction()
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LogLevel.Debug);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction()", LogLevel.Debug);
       throw new NotImplementedException();
     }
 	
-    public IDbTransaction BeginTransaction(IsolationLevel level)
+    IDbTransaction IDbConnection.BeginTransaction(IsolationLevel level)
     {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LogLevel.Debug);
+      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction(" + level + ")", LogLevel.Debug);
       throw new NotImplementedException();
     }
 
+		
+		public NpgsqlTransaction BeginTransaction()
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LogLevel.Debug);
+			return new NpgsqlTransaction(this);
+		}
+		
+		public NpgsqlTransaction BeginTransaction(IsolationLevel level)
+		{
+			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LogLevel.Debug);
+			return new NpgsqlTransaction(this, level);
+		}
+	
     public void ChangeDatabase(String dbName)
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", LogLevel.Debug);
