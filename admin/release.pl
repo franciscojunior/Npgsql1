@@ -57,11 +57,15 @@ chdir "..";
 #
 # Here we go, checking starts here...
 #
-banner();         # Hello, this is a release script
-check_compiles(); # Check if npgsql compiles
-check_tests();    # Run all tests
-clean();          # Clean up the mess we made so far
-changelog();      # Create a ChangeLog
+banner();                     # Hello, this is a release script
+
+# Gather some input
+my ($npgsql_host) = gather_input();
+
+check_compiles();             # Check if npgsql compiles
+check_tests($npgsql_host);    # Run all tests
+clean();                      # Clean up the mess we made so far
+changelog();                  # Create a ChangeLog
 
 # Figure out the release info and release tag
 my ($rel_version, $version, $RELEASE_TAG) = get_release_info();
@@ -103,6 +107,22 @@ print "-------------------------------------------------------------------------
 }
 
 ######################################################################
+# Gather some input from the user
+######################################################################
+sub gather_input() {
+    my $npgsql_host;
+
+    print "Please enter the IP address of the npgsql host database used for running the non-interactive test suite[default=127.0.0.1]: ";
+    chomp ($npgsql_host = <STDIN>);
+
+    if ($npgsql_host eq "") {
+	$npgsql_host = "127.0.0.1";
+    }
+
+    return $npgsql_host;
+}
+
+######################################################################
 # Make sure that npgsql compiles correctly
 ######################################################################
 sub check_compiles() {
@@ -118,8 +138,10 @@ sub check_compiles() {
 # Make sure that all noninteractive tests pass
 ######################################################################
 sub check_tests() {
+    my ($npgsql_host) = ( @_ );
+
     print "Checking if all non-interactive tests pass...";
-    if (system("(cd src/testsuite/noninteractive; make 2>&1 > /dev/null)") == 0) {
+    if (system("(cd src/testsuite/noninteractive; make $npgsql_host 2>&1 > /dev/null)") == 0) {
 	print $OK;
     } else {
 	failed($ERROR_NONINTERACTIVE_TEST_DONT_PASS);
