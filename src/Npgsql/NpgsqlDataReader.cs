@@ -77,7 +77,8 @@ namespace Npgsql
 
         private void CheckHaveResultSet()
         {
-            if (! HaveResultSet()) {
+            if (! HaveResultSet())
+            {
                 throw new InvalidOperationException("Cannot read data. No result set.");
             }
         }
@@ -86,9 +87,12 @@ namespace Npgsql
         {
             CheckHaveResultSet();
 
-            if (_rowIndex < 0) {
+            if (_rowIndex < 0)
+            {
                 throw new InvalidOperationException("DataReader positioned before beginning of result set. Did you call Read()?");
-            } else if (_rowIndex >= _currentResultset.Count) {
+            }
+            else if (_rowIndex >= _currentResultset.Count)
+            {
                 throw new InvalidOperationException("DataReader positioned beyond end of result set.");
             }
         }
@@ -147,19 +151,32 @@ namespace Npgsql
             {
                 NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "RecordsAffected");
 
-                if (HaveResultSet()) {
+                if (HaveResultSet())
+                {
                     return -1;
                 }
 
                 String[] _returnStringTokens = ((String)_responses[_resultsetIndex]).Split(null);	// whitespace separator.
 
-                try {
+                try
+                {
                     return Int32.Parse(_returnStringTokens[_returnStringTokens.Length - 1]);
                 }
-                catch (FormatException) {
+                catch (FormatException)
+                {
                     return -1;
                 }
             }
+        }
+
+        /// <summary>
+        /// Indicates if NpgsqlDatareader has rows to be read.
+        /// </summary>
+
+        public Boolean HasRows()
+        {
+            return _currentResultSet.Count > 0;
+
         }
 
         /// <summary>
@@ -170,8 +187,10 @@ namespace Npgsql
             if ((_behavior & CommandBehavior.CloseConnection) == CommandBehavior.CloseConnection)
             {
                 _connection.Close();
-                _isClosed = true;
+
             }
+
+            _isClosed = true;
         }
 
         /// <summary>
@@ -204,10 +223,13 @@ namespace Npgsql
 
             CheckHaveResultSet();
 
-            if (_rowIndex < _currentResultset.Count) {
+            if (_rowIndex < _currentResultset.Count)
+            {
                 _rowIndex++;
                 return (_rowIndex < _currentResultset.Count);
-            } else {
+            }
+            else
+            {
                 return false;
             }
         }
@@ -282,9 +304,12 @@ namespace Npgsql
 
             NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
-            if (TI == null) {
+            if (TI == null)
+            {
                 return _currentResultset.RowDescription[Index].type_oid.ToString();
-            } else {
+            }
+            else
+            {
                 return TI.Name;
             }
         }
@@ -300,9 +325,12 @@ namespace Npgsql
 
             NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
-            if (TI == null) {
+            if (TI == null)
+            {
                 return typeof(String);  //Default type is string.
-            } else {
+            }
+            else
+            {
                 return TI.Type;
             }
         }
@@ -318,9 +346,12 @@ namespace Npgsql
 
             NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
-            if (TI == null) {
+            if (TI == null)
+            {
                 return DbType.String;
-            } else {
+            }
+            else
+            {
                 return TI.DBType;
             }
         }
@@ -332,7 +363,8 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetValue");
 
-            if (Index < 0 || Index >= _currentResultset.RowDescription.NumFields) {
+            if (Index < 0 || Index >= _currentResultset.RowDescription.NumFields)
+            {
                 throw new IndexOutOfRangeException("Column index out of range");
             }
 
@@ -355,7 +387,8 @@ namespace Npgsql
             // It's also possible to pass an array with more that FieldCount elements.
             Int32 maxColumnIndex = (Values.Length < FieldCount) ? Values.Length : FieldCount;
 
-            for (Int32 i = 0; i < maxColumnIndex; i++) {
+            for (Int32 i = 0; i < maxColumnIndex; i++)
+            {
                 Values[i] = GetValue(i);
             }
 
