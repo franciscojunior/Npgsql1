@@ -33,7 +33,7 @@ ifeq ($(OS),"Windows_NT")
 else
 	CC=mcs -g 
 	RESGEN=monoresgen
-	LDFLAGS=-r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -r System.Design.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources -resource:Npgsql.NpgsqlCommand.resources -resource:Npgsql.NpgsqlConnection.resources -resource:Npgsql.NpgsqlEventLog.resources -resource:Npgsql.NpgsqlParameter.resources -resource:Npgsql.NpgsqlParameterCollection.resources -resource:Npgsql.NpgsqlTransaction.resources -resource:Npgsql.NpgsqlState.resources -resource:Npgsql.NpgsqlConnectedState.resources -resource:Npgsql.NpgsqlReadyState.resources -resource:Npgsql.NpgsqlClosedState.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
+	LDFLAGS=-doc:Npgsql.xml -r System.Data.dll -r System.Windows.Forms.dll -r System.Drawing.dll -r Mono.Security.dll -r System.Design.dll -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources -resource:Npgsql.NpgsqlCommand.resources -resource:Npgsql.NpgsqlConnection.resources -resource:Npgsql.NpgsqlEventLog.resources -resource:Npgsql.NpgsqlParameter.resources -resource:Npgsql.NpgsqlParameterCollection.resources -resource:Npgsql.NpgsqlTransaction.resources -resource:Npgsql.NpgsqlState.resources -resource:Npgsql.NpgsqlConnectedState.resources -resource:Npgsql.NpgsqlReadyState.resources -resource:Npgsql.NpgsqlClosedState.resources --target library -o $(MONO_BUILD_DIR)/$(NPGSQL_LIB)
 endif
 CVS2CL=cvs2cl.pl
 OBJECTS:=$(shell ls *.cs ../NpgsqlTypes/*.cs ./Design/*.cs)
