@@ -445,8 +445,6 @@ namespace Npgsql
                     //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", this);
                     //String clientEncoding = (String)commandEncoding1.ExecuteScalar();
                     
-                    Console.WriteLine(clientEncoding);
-
                     if (ConnectStringValueToString(CONN_ENCODING).ToUpper() == "UNICODE") 
                     {
                         connection_encoding = Encoding.UTF8;
