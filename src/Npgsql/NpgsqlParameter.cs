@@ -135,6 +135,7 @@ namespace Npgsql
 			set
 			{
 				db_type = value;
+				npgsql_type = NpgsqlTypesHelper.GetNpgsqlDbTypeFromDbType(db_type);
 				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".DbType = " + value, LogLevel.Normal);
 			}
 		}
@@ -150,6 +151,7 @@ namespace Npgsql
 			set
 			{
 				npgsql_type = value;
+				db_type = NpgsqlTypesHelper.GetDbTypeFromNpgsqlDbType(npgsql_type);
 				NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".NpgsqlDbType = " + value, LogLevel.Normal);
 			}
 		}
