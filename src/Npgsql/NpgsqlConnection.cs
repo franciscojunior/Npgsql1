@@ -363,6 +363,9 @@ namespace Npgsql
             if (connection_string_values[CONN_USERID] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_USERID);
 
+            if (MaxPoolSize < 0)
+                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", MAX_POOL_SIZE);
+
             // If ConnectionString specifies a protocol version, we will 
             // not try to fall back to version 2 on failure.
             if (connection_string_values.Contains(CONN_PROTOCOL)) {
@@ -374,12 +377,7 @@ namespace Npgsql
 
             lock(ConnectorPool.ConnectorPoolMgr)
             {
-                _connector = ConnectorPool.ConnectorPoolMgr.
-                    RequestConnector (ConnectionString, MaxPoolSize, ConnectionTimeout, false);
-            }
-
-            if (_connector == null) {
-                throw new Exception("Internal: Unable to obtain a connector from the connection pool.");
+                _connector = ConnectorPool.ConnectorPoolMgr.RequestConnector (this);
             }
 
             if (! _connector.IsInitialized)
@@ -393,9 +391,6 @@ namespace Npgsql
 
                     CurrentState.Open(this);
 
-                    // Change the state of connection to open.
-                    connection_state = ConnectionState.Open;
-
                     // Check if there were any errors.
                     if (_mediator.Errors.Count > 0 && ! ForcedProtocolVersion)
                     {
@@ -407,14 +402,17 @@ namespace Npgsql
                         {
                             // Try using the 2.0 protocol.
                             _mediator.ResetResponses();
-                            CurrentState = NpgsqlClosedState.Instance;
                             _connector.BackendProtocolVersion = ProtocolVersion.Version2;
+                            CurrentState = NpgsqlClosedState.Instance;
                             CurrentState.Open(this);
                         }
                     }
 
                     // Check for errors and do the Right Thing.
                     CheckErrors();
+
+                    // Change the state of connection to open.
+                    connection_state = ConnectionState.Open;
 
                     String       ServerVersionString = String.Empty;
 
@@ -450,17 +448,21 @@ namespace Npgsql
                     }
                 }
                 catch {
-                    Close();
+                    // We do this instead of Close(), because this is a new connector
+                    // and it is in an inconsistent state, so we can't just
+                    // release it back to the pool.
+                    _connector.Close();
+                    _connector = null;
+                    CurrentState = NpgsqlClosedState.Instance;
                     throw;
                 }
+
+                // The connector is now fully initialized. Beyond this point, it is
+                // safe to release it back to the pool.
+                _connector.IsInitialized = true;
             }
 
-            // Connector was obtained from pool.
-            // Do a mini initialization in the state machine.
-
-            _connector.IsInitialized = true;
             connection_state = ConnectionState.Open;
-
             CurrentState = NpgsqlReadyState.Instance;
 
             ProcessServerVersion();
@@ -512,22 +514,15 @@ namespace Npgsql
                 // managed resources.
                 NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Dispose", disposing);
 
-                try
-                {
-                    if ((connection_state == ConnectionState.Open))
-                    {
-                        CurrentState.Close(this);
-                    }
-
-                }
-                catch {}
-
                 lock(ConnectorPool.ConnectorPoolMgr)
                 {
                     ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
                 }
 
+                _connector = null;
+
                 connection_state = ConnectionState.Closed;
+                CurrentState = NpgsqlClosedState.Instance;
             }
             base.Dispose (disposing);
         }

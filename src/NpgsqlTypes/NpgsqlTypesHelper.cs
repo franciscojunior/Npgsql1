@@ -33,11 +33,6 @@ using Npgsql;
 using System.Resources;
 
 
-
-/// <summary>
-///	This class contains helper methods for type conversion between
-/// the .Net type system and postgresql.
-/// </summary>
 namespace NpgsqlTypes
 {
 
@@ -59,6 +54,10 @@ namespace NpgsqlTypes
     }*/
 
 
+    /// <summary>
+    ///	This class contains helper methods for type conversion between
+    /// the .Net type system and postgresql.
+    /// </summary>
     internal class NpgsqlTypesHelper
     {
 

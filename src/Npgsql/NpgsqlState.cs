@@ -112,7 +112,7 @@ namespace Npgsql
 
             // CHECKME!!!
             // The close logic is pretty messed up I think.  Needs lots of work.
-
+/*
             if (! context.Connector.Shared) {
                 if (context.Connector.Stream != null) {
                     try {
@@ -120,7 +120,7 @@ namespace Npgsql
                     } catch {}
                 }
             }
-
+*/
             //ChangeState( context, NpgsqlClosedState.Instance );
         }
 
