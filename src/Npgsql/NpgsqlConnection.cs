@@ -40,6 +40,12 @@ using Npgsql.Design;
 namespace Npgsql
 {
     /// <summary>
+    /// Represents the method that handles the <see cref="Npgsql.NpgsqlConnection.Notification">Notice</see> events.
+    /// </summary>
+    /// <param name="e">A <see cref="Npgsql.NpgsqlNoticeEventArgs">NpgsqlNoticeEventArgs</see> that contains the event data.</param>
+    public delegate void NoticeEventHandler(Object sender, NpgsqlNoticeEventArgs e);
+
+    /// <summary>
     /// Represents the method that handles the <see cref="Npgsql.NpgsqlConnection.Notification">Notification</see> events.
     /// </summary>
     /// <param name="sender">The source of the event.</param>
@@ -56,6 +62,12 @@ namespace Npgsql
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlConnection";
         private static ResourceManager resman = new System.Resources.ResourceManager(typeof(NpgsqlConnection));
+
+        /// <summary>
+        /// Occurs on NoticeResponses from the PostgreSQL backend.
+        /// </summary>
+        public event NoticeEventHandler			           Notice;
+        internal NoticeEventHandler                    NoticeDelegate;
 
         /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
@@ -111,6 +123,7 @@ namespace Npgsql
             connection_string = NpgsqlConnectionString.ParseConnectionString(ConnectionString);
             LogConnectionString();
 
+            NoticeDelegate = new NoticeEventHandler(OnNotice);
             NotificationDelegate = new NotificationEventHandler(OnNotification);
 
             CertificateValidationCallbackDelegate = new CertificateValidationCallback(DefaultCertificateValidationCallback);
@@ -348,6 +361,7 @@ namespace Npgsql
             // Get a Connector.  The connector returned is guaranteed to be connected and ready to go.
             connector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
 
+            connector.Notice += NoticeDelegate;
             connector.Notification += NotificationDelegate;
         }
 
@@ -392,6 +406,7 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
 
             connector.Notification -= NotificationDelegate;
+            connector.Notice -= NoticeDelegate;
 
             NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(this, connector);
             connector = null;
@@ -452,6 +467,12 @@ namespace Npgsql
         //
         // Internal methods and properties
         //
+        internal void OnNotice(object O, NpgsqlNoticeEventArgs E)
+        {
+            if (Notice != null) {
+                Notice(this, E);
+            }
+        }
 
         internal void OnNotification(object O, NpgsqlNotificationEventArgs E)
         {

@@ -51,6 +51,11 @@ namespace Npgsql
         internal NpgsqlConnectionString                ConnectionString;
 
         /// <summary>
+        /// Occurs on NoticeResponses from the PostgreSQL backend.
+        /// </summary>
+        internal event NoticeEventHandler			         Notice;
+
+        /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
         internal event NotificationEventHandler        Notification;
@@ -231,6 +236,20 @@ namespace Npgsql
         }
 
         /// <summary>
+        /// Check for notices and fire the appropiate events.
+        /// This needs to be called after every interaction
+        /// with the backend.
+        /// </summary>
+        internal void CheckNotices()
+        {
+            if (Notice != null) {
+                foreach (NpgsqlError E in _mediator.Notices) {
+                    Notice(this, new NpgsqlNoticeEventArgs(E));
+                }
+            }
+        }
+
+        /// <summary>
         /// Check for notifications and fire the appropiate events.
         /// This needs to be called after every interaction
         /// with the backend.
@@ -249,8 +268,9 @@ namespace Npgsql
         /// </summary>
         internal void CheckErrorsAndNotifications()
         {
-            CheckErrors();
+            CheckNotices();
             CheckNotifications();
+            CheckErrors();
         }
 
         /// <summary>
