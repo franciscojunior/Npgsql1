@@ -344,8 +344,10 @@ namespace Npgsql {
 			      	if (_mediator.Errors.Count > 0)
 			      	{
 			      	  // Check if there is an error of protocol not supported...
-			      	       	  
-			      	  if (((String)_mediator.Errors[0]).StartsWith("FATAL:  unsupported frontend protocol"))
+			      	  // As the message can be localized, just check the initial unlocalized part of the 
+                      // message. If it is an error other than protocol error, when connecting using
+                      // version 2.0 we shall catch the error again.                      
+			      	  if (((String)_mediator.Errors[0]).StartsWith("FATAL"))
 			      	  {
 			      	    // Try using the 2.0 protocol.
 			      	    _mediator.Reset();
@@ -693,6 +695,3 @@ namespace Npgsql {
 		}
 	}
 }
-
-
-
