@@ -778,7 +778,7 @@ namespace Npgsql
 
         private Boolean IsNullable(Int32 FieldIndex)
         {
-            return false;
+            return true;
         }
 
 
