@@ -1,6 +1,6 @@
 NPGSQL_LIB=Npgsql.dll
 # Allow compiling under Cygwin
-ifeq ($(OS_TYPE),"WINDOWS_NT")
+ifeq ($(OS),"Windows_NT")
 	CC=csc.exe
 	LDFLAGS=/r:System.Data.dll /target:library /out:$(NPGSQL_LIB)
 else
