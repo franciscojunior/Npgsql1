@@ -138,5 +138,17 @@ namespace NpgsqlTests
 		  Assertion.AssertEquals("field_numeric", ds.Tables[0].Columns[3].ColumnName);
 		  
 		}
+        
+        [Test]
+        public void FillWithDuplicateColumnName()
+        {
+            _conn.Open();
+            DataSet ds = new DataSet();
+
+			NpgsqlDataAdapter da = new NpgsqlDataAdapter("select field_serial, field_serial from tableb", _conn);
+		  
+		    da.Fill(ds);
+            
+        }
 	}
 }
