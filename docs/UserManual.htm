@@ -105,10 +105,11 @@ using Npgsql;
 <h3> Establishing a connection </h3>
 <p>To establish a connection to a server located at ip 127.0.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
 <pre class="CodeBox">
+using System;
 using System.Data;
 using Npgsql;
 
-public static class NpgsqlUserManual
+public class NpgsqlUserManual
 {
   public static void Main(String[] args)
   {
@@ -250,7 +251,7 @@ public static class NpgsqlUserManual
     NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = :column1", conn);
     
     // Now add the parameter to the parameter collection of the command specifying its type.
-    command.Parameters.Add(new NpgsqlParameter("column1", DbType.Int32);
+    command.Parameters.Add(new NpgsqlParameter("column1", DbType.Int32));
 
     // Now, add a value to it and later execute the command as usual.
     command.Parameters[0].Value = 4;
