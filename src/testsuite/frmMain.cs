@@ -56,6 +56,10 @@ using Npgsql;
     private System.Windows.Forms.Label lblScalar;
     private System.Windows.Forms.TextBox txtScalar;
     private System.Windows.Forms.Button cmdDisconnect;
+    private System.Windows.Forms.TabPage ExecuteReader;
+    private System.Windows.Forms.Button cmdReader;
+    private System.Windows.Forms.TextBox txtReader;
+    private System.Windows.Forms.Label lblReader;
     private NpgsqlConnection cnDB;
 
     public frmMain()
@@ -68,6 +72,7 @@ using Npgsql;
       cmdDisconnect.Click += new System.EventHandler(cmdDisconnect_Click);
       cmdNonQuery.Click += new System.EventHandler(cmdNonQuery_Click);
       cmdScalar.Click += new System.EventHandler(cmdScalar_Click);
+      cmdReader.Click += new System.EventHandler(cmdReader_Click);
     }
 
     /// <summary>
@@ -306,10 +311,92 @@ using Npgsql;
       } 
       log("Finished executing Scalar!\r\n"); 
     }
+    
+    private void cmdReader_Click(object sender, System.EventArgs e) 
+    {
+      log("Executing Reader...");
+      log("Query: " + txtReader.Text);
+      
+      // Check the connection state
+      if (cnDB == null) 
+      {
+        log("Error: The connection has not been opened.");
+        log("Finished executing Reader!\r\n"); 
+        return;
+      }
+      else
+      {
+        if (cnDB.State != ConnectionState.Open)
+        {
+          log("Error: The connection has not been opened.");
+          log("Finished executing Reader!\r\n");
+          return;  
+        }
+      }
+      
+      // Attempt to execute the query
+      NpgsqlDataReader objRdr = null;
+      try
+      {
+        NpgsqlCommand cmdNQ = new NpgsqlCommand(txtReader.Text, cnDB);
+        objRdr = cmdNQ.ExecuteReader();
+      }
+      catch(NpgsqlException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Reader!\r\n"); 
+        return;
+      } 
+      catch(InvalidOperationException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Reader!\r\n"); 
+        return;
+      } 
+      
+      // Output some basic info
+      log("Columns: " + objRdr.FieldCount + "\r\n");
+    
+      // Iterate through the rows, adding them to the output
+      int y = 0;
+      try 
+      { 
+        while (objRdr.Read()) 
+        {
+          y++;
+          log("Record: " + y); 
+          for(int x=0; x<objRdr.FieldCount; x++){
+            log(objRdr.GetName(x) + " (" + objRdr.GetFieldType(x) + ") = \"" + objRdr.GetValue(x) + "\""); 
+          }
+          log("");
+        }
+      }
+      catch(NpgsqlException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Reader!\r\n"); 
+        return;
+      } 
+      catch(InvalidOperationException ex)
+      {
+        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
+        log("Finished executing Reader!\r\n"); 
+        return;
+      } 
+      finally 
+      {
+        objRdr.Close();
+      }
+      log("Finished executing Reader!\r\n"); 
+    }
       
     public void log(String szMessage)
     {
-      txtLog.AppendText(System.DateTime.Now + " - " + szMessage + "\r\n");
+      if (szMessage == "") {
+        txtLog.AppendText("\r\n");
+      } else {
+        txtLog.AppendText(System.DateTime.Now + " - " + szMessage + "\r\n");
+      }  
       txtLog.SelectionStart = txtLog.Text.Length;
     }
 
@@ -324,6 +411,7 @@ using Npgsql;
     {
       this.tabset = new System.Windows.Forms.TabControl();
       this.Connection = new System.Windows.Forms.TabPage();
+      this.cmdDisconnect = new System.Windows.Forms.Button();
       this.cmdConnect = new System.Windows.Forms.Button();
       this.txtPassword = new System.Windows.Forms.TextBox();
       this.txtUsername = new System.Windows.Forms.TextBox();
@@ -342,11 +430,15 @@ using Npgsql;
       this.txtScalar = new System.Windows.Forms.TextBox();
       this.lblScalar = new System.Windows.Forms.Label();
       this.txtLog = new System.Windows.Forms.TextBox();
-      this.cmdDisconnect = new System.Windows.Forms.Button();
+      this.ExecuteReader = new System.Windows.Forms.TabPage();
+      this.cmdReader = new System.Windows.Forms.Button();
+      this.txtReader = new System.Windows.Forms.TextBox();
+      this.lblReader = new System.Windows.Forms.Label();
       this.tabset.SuspendLayout();
       this.Connection.SuspendLayout();
       this.ExecuteNonQuery.SuspendLayout();
       this.ExecuteScalar.SuspendLayout();
+      this.ExecuteReader.SuspendLayout();
       this.SuspendLayout();
       // 
       // tabset
@@ -354,7 +446,8 @@ using Npgsql;
       this.tabset.Controls.AddRange(new System.Windows.Forms.Control[] {
                                                                          this.Connection,
                                                                          this.ExecuteNonQuery,
-                                                                         this.ExecuteScalar});
+                                                                         this.ExecuteScalar,
+                                                                         this.ExecuteReader});
       this.tabset.Location = new System.Drawing.Point(8, 8);
       this.tabset.Name = "tabset";
       this.tabset.SelectedIndex = 0;
@@ -379,6 +472,14 @@ using Npgsql;
       this.Connection.Size = new System.Drawing.Size(592, 62);
       this.Connection.TabIndex = 0;
       this.Connection.Text = "Connection";
+      // 
+      // cmdDisconnect
+      // 
+      this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
+      this.cmdDisconnect.Name = "cmdDisconnect";
+      this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
+      this.cmdDisconnect.TabIndex = 28;
+      this.cmdDisconnect.Text = "&Disconnect";
       // 
       // cmdConnect
       // 
@@ -547,13 +648,44 @@ using Npgsql;
       this.txtLog.TabIndex = 11;
       this.txtLog.Text = "";
       // 
-      // cmdDisconnect
+      // ExecuteReader
       // 
-      this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
-      this.cmdDisconnect.Name = "cmdDisconnect";
-      this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
-      this.cmdDisconnect.TabIndex = 28;
-      this.cmdDisconnect.Text = "&Disconnect";
+      this.ExecuteReader.Controls.AddRange(new System.Windows.Forms.Control[] {
+                                                                                this.cmdReader,
+                                                                                this.txtReader,
+                                                                                this.lblReader});
+      this.ExecuteReader.Location = new System.Drawing.Point(4, 22);
+      this.ExecuteReader.Name = "ExecuteReader";
+      this.ExecuteReader.Size = new System.Drawing.Size(592, 62);
+      this.ExecuteReader.TabIndex = 3;
+      this.ExecuteReader.Text = "ExecuteReader";
+      // 
+      // cmdReader
+      // 
+      this.cmdReader.Location = new System.Drawing.Point(488, 16);
+      this.cmdReader.Name = "cmdReader";
+      this.cmdReader.Size = new System.Drawing.Size(88, 32);
+      this.cmdReader.TabIndex = 34;
+      this.cmdReader.Text = "&Execute Reader";
+      // 
+      // txtReader
+      // 
+      this.txtReader.Location = new System.Drawing.Point(80, 8);
+      this.txtReader.Multiline = true;
+      this.txtReader.Name = "txtReader";
+      this.txtReader.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+      this.txtReader.Size = new System.Drawing.Size(392, 48);
+      this.txtReader.TabIndex = 33;
+      this.txtReader.Text = "SELECT * FROM pg_database";
+      // 
+      // lblReader
+      // 
+      this.lblReader.AutoSize = true;
+      this.lblReader.Location = new System.Drawing.Point(8, 16);
+      this.lblReader.Name = "lblReader";
+      this.lblReader.Size = new System.Drawing.Size(41, 13);
+      this.lblReader.TabIndex = 32;
+      this.lblReader.Text = "Reader";
       // 
       // frmMain
       // 
@@ -569,6 +701,7 @@ using Npgsql;
       this.Connection.ResumeLayout(false);
       this.ExecuteNonQuery.ResumeLayout(false);
       this.ExecuteScalar.ResumeLayout(false);
+      this.ExecuteReader.ResumeLayout(false);
       this.ResumeLayout(false);
 
     }
