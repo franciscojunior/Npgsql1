@@ -59,6 +59,8 @@ namespace Npgsql
 				
 		private ArrayList	fields_data = new ArrayList();
 		
+		private Hashtable fields_index = new Hashtable();
+		
 		
 		public void ReadFromStream(Stream input_stream, Encoding encoding)
 		{
@@ -91,6 +93,8 @@ namespace Npgsql
 				
 				// Add field data to array.
 				fields_data.Add(fd);
+				
+				fields_index.Add(fd.name, i);
 			}
 						
 		}
@@ -110,6 +114,11 @@ namespace Npgsql
 			{
 				return (Int16)fields_data.Count;
 			}
+		}
+		
+		public Int16 FieldIndex(String fieldName)
+		{
+			return (Int16) fields_index[fieldName];
 		}
 		
 	}
