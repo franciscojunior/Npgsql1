@@ -145,13 +145,15 @@ namespace Npgsql
     IDbTransaction IDbConnection.BeginTransaction()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction()", LogLevel.Debug);
-      throw new NotImplementedException();
+      //throw new NotImplementedException();
+    	return (NpgsqlTransaction) BeginTransaction();
     }
 	
     IDbTransaction IDbConnection.BeginTransaction(IsolationLevel level)
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction(" + level + ")", LogLevel.Debug);
-      throw new NotImplementedException();
+      //throw new NotImplementedException();
+    	return (NpgsqlTransaction) BeginTransaction(level);
     }
 
 		
@@ -167,10 +169,35 @@ namespace Npgsql
 			return new NpgsqlTransaction(this, level);
 		}
 	
+		///
+		/// <summary>
+		/// This method changes the current database by disconnecting from the actual 
+		/// database and connecting to the specified.
+		/// </summary>
+		
+		 
     public void ChangeDatabase(String dbName)
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", LogLevel.Debug);
-      throw new NotImplementedException();
+      //throw new NotImplementedException();
+    	
+    	if (dbName == null)
+    		throw new ArgumentNullException("dbName");
+    	
+    	if (dbName == String.Empty)
+    		throw new ArgumentException("Invalid database name", "dbName");
+    	
+    	
+    	String oldDatabaseName = (String)connection_string_values[CONN_DATABASE];
+    	
+    	Close();
+    	    	
+    	connection_string_values[CONN_DATABASE] = dbName;
+    	
+    	Open();
+    	    	
+
+    
     }
 	
     public void Open()
