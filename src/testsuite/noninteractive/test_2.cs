@@ -32,9 +32,7 @@ public class test_executereader
   public static void Main(String[] args)
   {
 	  NpgsqlConnection conn = null;
-	NpgsqlEventLog.Level = LogLevel.Debug;
-		  //NpgsqlEventLog.LogName = "testsuite.log";
-		  NpgsqlEventLog.EchoMessages = true;
+	
 		try
 		{
 			conn = new NpgsqlConnection(NpgsqlTests.getConnectionString());
