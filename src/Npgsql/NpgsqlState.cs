@@ -43,10 +43,10 @@ namespace Npgsql
  	{
  		public virtual void Open(NpgsqlConnection context) {}
  		public virtual void Startup(NpgsqlConnection context) {}
- 		public virtual void Authenticate(NpgsqlConnection context){}
+ 		public virtual void Authenticate(NpgsqlConnection context, string password){}
  		public virtual void Query(NpgsqlConnection context, NpgsqlCommand command) {}
  		public virtual void Ready( NpgsqlConnection context ) {}
- 		public virtual void FunctionCall(NpgsqlConnection context){}
+ 		public virtual void FunctionCall(NpgsqlConnection context, NpgsqlCommand command){}
 		
 		
 		public virtual void Close( NpgsqlConnection context )
@@ -79,7 +79,7 @@ namespace Npgsql
 		///<summary>
 		/// This method is responsible to handle all protocol messages sent from the backend.
 		/// It holds all the logic to do it.
-		/// To exchange data, it uses a Mediator object from which it read/write information
+		/// To exchange data, it uses a Mediator object from which it reads/writes information
 		/// to handle backend requests.
 		/// </summary>
 		/// 
@@ -98,10 +98,7 @@ namespace Npgsql
 			mediator.Reset();
 			
 			Int16 rowDescNumFields = 0;
-			
-			//NpgsqlRowDescription 	rd = null;		
-			//ArrayList							rows = null;	// Rows associated with the row description.
-			
+						
 			Byte[] inputBuffer = new Byte[ 500 ];
 			
 			NpgsqlEventLog.LogMsg( this.ToString(), LogLevel.Debug);
@@ -152,16 +149,36 @@ namespace Npgsql
 							// Send the PasswordPacket.
 
 							ChangeState( context, NpgsqlStartupState.Instance );
-							context.Authenticate();
+							context.Authenticate(context.ServerPassword);
 							
 					  	break;
 						}
 					
 						
-						// Only AuthenticationClearTextPassword supported for now.
-						mediator.Errors.Add("Only AuthenticationClearTextPassword supported for now.");
-						return;
-						
+						if ( authType == NpgsqlMessageTypes.AuthenticationMD5Password )
+						{
+							NpgsqlEventLog.LogMsg("Server requested MD5 password authentication.", LogLevel.Debug);
+							// Now do the "MD5-Thing"
+							// for this the Password has to be:
+							// 1. md5-hashed with the username as salt
+							// 2. md5-hashed again with the salt we get from the backend
+							string prehash =	MD5.EncryptMD5(
+								context.Encoding.GetBytes(context.ServerPassword),
+							    context.Encoding.GetBytes(context.UserName)
+							    );
+							byte[] Salt = new byte[4];
+							stream.Read(Salt, 0, 4);
+							// Send the PasswordPacket.
+							ChangeState( context, NpgsqlStartupState.Instance );
+							// the prehash.Substring(3) is used as we need the prehash-password without prefixed "md5"
+							context.Authenticate(MD5.EncryptMD5(context.Encoding.GetBytes(prehash.Substring(3)), Salt));
+					  	break;
+						}
+
+						// Only AuthenticationClearTextPassword and AuthenticationMD5Password supported for now.
+						mediator.Errors.Add("Only AuthenticationClearTextPassword and AuthenticationMD5Password supported for now.");
+ 						return;
+												
 					case NpgsqlMessageTypes.RowDescription:
 						// This is the RowDescription message.
 						
@@ -262,6 +279,8 @@ namespace Npgsql
 						//GetStringFromNetStream(networkStream);
 						PGUtil.ReadString(stream, context.Encoding);
 						break;
+					
+										
 				}
 			}
 			

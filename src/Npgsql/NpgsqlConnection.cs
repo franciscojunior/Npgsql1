@@ -394,9 +394,9 @@ namespace Npgsql
 		{
 			CurrentState.Query( this, queryCommand );
 		}
-		internal void Authenticate()
+		internal void Authenticate(string password)
 		{
-			CurrentState.Authenticate( this );
+			CurrentState.Authenticate( this, password );
 		}
 		internal void Startup()
 		{
