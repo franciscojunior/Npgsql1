@@ -49,7 +49,8 @@ namespace Npgsql
 		{
 			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 			
-			this.password = password;	
+			this.password = password;
+			this.protocolVersion = protocolVersion;
 		}
 		
 		public void WriteToStream(Stream outputStream, Encoding encoding)
