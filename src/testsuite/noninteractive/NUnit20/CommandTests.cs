@@ -701,7 +701,7 @@ namespace NpgsqlTests
 			
 			NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
 			
-			command.Parameters.Add(new NpgsqlParameter("a", DbType.Guid));
+			command.Parameters.Add(new NpgsqlParameter("a", DbType.AnsiString));
 			
 			command.Parameters[0].Value = "TesteAnsiString";
 			
