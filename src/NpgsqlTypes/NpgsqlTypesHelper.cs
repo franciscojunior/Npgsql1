@@ -85,7 +85,7 @@ namespace NpgsqlTypes
 				case DbType.DateTime:
 					return "timestamp";
 				default:
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", dbType));
+					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", dbType));
 				
 			}
 		}
@@ -114,24 +114,12 @@ namespace NpgsqlTypes
 				
 				case DbType.DateTime:
 				{
-					// Value of parameter should be DateTime or NpgsqlDateTime.
+					return "'" + ((DateTime)parameter.Value).ToString("yyyy-MM-dd HH:mm:ss.fff") + "'";
 					
-					if (parameter.Value is DateTime)
-						return "'" + ((DateTime)parameter.Value).ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff") + "'";
-					
-					if (parameter.Value == DBNull.Value)
-						return "Null";
-					
-					NpgsqlDateTime value = (NpgsqlDateTime) parameter.Value;
-					
-					if (value.IsNull)
-						return "Null";
-					else
-					return "'" + value.Value.ToString("yyyy'-'MM'-'dd HH':'mm':'ss'.'fff") + "'";
 				}
 				default:
 					// This should not happen!
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", parameter.DbType));
+					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", parameter.DbType));
 					
 				
 			}
@@ -223,7 +211,7 @@ namespace NpgsqlTypes
 				case NpgsqlDbType.Text:
 					return (String)(NpgsqlString)data;
 				default:
-						throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
+						throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
 				
 				
 					
@@ -269,14 +257,16 @@ namespace NpgsqlTypes
 				
 				case DbType.DateTime:
 					
-					return DateTime.Parse(data,
-					                      DateTimeFormatInfo.InvariantInfo,
-					                      DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
+					// Get the date time parsed in all expected formats for timestamp.
+					return DateTime.ParseExact(data,
+					                           new String[] {"yyyy-MM-dd HH:mm:ss.fff", "yyyy-MM-dd HH:mm:ss.ff", "yyyy-MM-dd HH:mm:ss.f", "yyyy-MM-dd HH:mm:ss"}, 
+					                           DateTimeFormatInfo.InvariantInfo,
+					                           DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AllowWhiteSpaces);
 					                        
 				case DbType.String:
 					return data;
 				default:
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
+					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
 				
 			
 			}
@@ -321,7 +311,7 @@ namespace NpgsqlTypes
 				case DbType.String:
 					return Type.GetType("System.String");
 				default:
-					throw new NpgsqlException(String.Format("Internal error. This type {0} shouldn't be allowed.", oidToNameMapping[typeOid]));
+					throw new NpgsqlException(String.Format("This type {0} isn't supported yet.", oidToNameMapping[typeOid]));
 			
 			}
 			
