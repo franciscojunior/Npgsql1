@@ -92,6 +92,8 @@ guidelines specified in the .Net docs.</p>
 Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
 <p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
 
+<h3> Adding required namespaces to your source file </h3>
+
 <p> First, to use Npgsql objects more easily, you have to tell the compiler to use the Npgsql namespace. It will also be needed to use the
 System.Data namespace as a lot of classes used for data manipulation reside in it. To do that, in C#, you use the using directive: </p>
 
@@ -100,7 +102,8 @@ using System.Data;
 using Npgsql;
 </pre>
 
-<p>For example, to establish a connection to a server located at ip 172.16.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
+<h3> Establishing a connection </h3>
+<p>To establish a connection to a server located at ip 127.0.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
 <pre class="CodeBox">
 using System.Data;
 using Npgsql;
@@ -109,16 +112,17 @@ public static class NpgsqlUserManual
 {
   public static void Main(String[] args)
   {
-    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
     conn.Open();
     conn.Close();
   }
 }
 </pre>
 
-<p>This source doesn't do anything useful. It only connects to the database and disconnects. If there is an error, a NpgsqlException is thrown.
+<h3> Using NpgsqlCommand to add a row in a table </h3>
+<p>The previous example doesn't do anything useful. It only connects to the database and disconnects. If there is an error, a NpgsqlException is thrown.
 Now, suppose there is a table called table1 with two fields a and b both of type int. If you want to add the tuple (1, 1) in this table you could send the 
-insert statement as follows:
+insert statement as follows:</p>
 
 <pre class="CodeBox">
 using System;
@@ -129,7 +133,7 @@ public static class NpgsqlUserManual
 {
   public static void Main(String[] args)
   {
-    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
     conn.Open();
     
     NpgsqlCommand command = new NpgsqlCommand("insert into table1 values(1, 1)", conn);
@@ -150,7 +154,8 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-<p> To execute statements which return just one value you use the ExecuteScalar() method of the Command object:
+<h3> Getting a single result using NpgsqlCommand.ExecuteScalar() method </h3>
+<p> To execute statements which return just one value you use the ExecuteScalar() method of the Command object:</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -160,7 +165,7 @@ public static class NpgsqlUserManual
 {
   public static void Main(String[] args)
   {
-    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
     conn.Open();
     
     NpgsqlCommand command = new NpgsqlCommand("select version()", conn);
@@ -183,6 +188,246 @@ public static class NpgsqlUserManual
 
 Other queries could also be used, for example "select count(*) from table1". Also, queries that don't return single values
 could be used, but only the first column of the first row would be returned.
+
+<h3> Getting full results from a query using NpgsqlCommand.ExecuteReader() method and NpgsqlDataReader object </h3>
+<p> To execute statements which return full results from a query you use the ExecuteReader() method of the NpgsqlCommand object:</p>
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+    NpgsqlCommand command = new NpgsqlCommand("select * from tablea", conn);
+
+    
+    try
+    {
+	NpgsqlDataReader dr = command.ExecuteReader();
+	while(dr.Read())
+	{
+  		for (i = 0; i < dr.FieldCount; i++)
+  		{
+  			Console.Write("{0} \t", dr[i]);
+  		}
+  		Console.WriteLine();
+	}
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+This code assumes there is a table called tablea in the database.
+
+
+<h3> Using parameters in a query </h3>
+<p> You can also send a parameterized query to the server using NpgsqlParamenter and NpgsqlParamenterCollection objects.
+A parameter is a string prefixed by : in the query string. The example below uses a parameter called column1.</p>
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+    // Declare the parameter in the query string
+    NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = :column1", conn);
+    
+    // Now add the parameter to the parameter collection of the command specifying its type.
+    command.Parameters.Add(new NpgsqlParameter("column1", DbType.Int32);
+
+    // Now, add a value to it and later execute the command as usual.
+    command.Parameters[0].Value = 4;
+
+    
+    try
+    {
+	NpgsqlDataReader dr = command.ExecuteReader();
+	while(dr.Read())
+	{
+  		for (i = 0; i < dr.FieldCount; i++)
+  		{
+  			Console.Write("{0} \t", dr[i]);
+  		}
+  		Console.WriteLine();
+	}
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+This code assumes a table called tablea with at least a column named column1 of type int4.
+
+<h3> Using prepared statements</h3>
+<p> The previous example can also be used to send prepared statements request to server. This way, the query plan is
+create just once and reused by subsequent calls. Note that this feature is only available in server 7.3+ versions. If
+you call it in a server which doesn't support it, Npgsql will silently ignore it. This is good as you can create code which
+calls it but it will only have effect when connected to the supported servers.
+To do it, you just call the Prepare() method of the command.</p>
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+    // Declare the parameter in the query string
+    NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = :column1", conn);
+    
+    // Now add the parameter to the parameter collection of the command specifying its type.
+    command.Parameters.Add(new NpgsqlParameter("column1", DbType.Int32);
+
+    // Now, prepare the statement.
+    command.Prepare();
+
+    // Now, add a value to it and later execute the command as usual.
+    command.Parameters[0].Value = 4;
+
+    
+    try
+    {
+	NpgsqlDataReader dr = command.ExecuteReader();
+	while(dr.Read())
+	{
+  		for (i = 0; i < dr.FieldCount; i++)
+  		{
+  			Console.Write("{0} \t", dr[i]);
+  		}
+  		Console.WriteLine();
+	}
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+This code assumes a table called tablea with at least a column named column1 of type int4.
+
+
+<h3> Function calling</h3>
+<p> To call a function, you just set the CommandType property of the NpgsqlCommand object to CommandType.StoredProcedure
+and pass the name of the function you want to call as the query string.</p>
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+
+// This example uses a function called funcC() with the following definition:
+// create function funcC() returns int8 as '
+// select count(*) from tablea;
+// ' language 'sql';
+
+// Note that the return type of select count(*) changed from int4 to int8 in 7.3+ versions. To use this function
+// in a 7.2 server, change the return type from int8 to int4.
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+      
+    try
+    {
+        NpgsqlCommand command = new NpgsqlCommand("funcC()", _conn);
+        command.CommandType = CommandType.StoredProcedure;
+  					
+        Object result = command.ExecuteScalar();
+  		
+        Console.WriteLine(result);
+
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+<p>In the same way as clear queries, you can specify parameters to function calls.</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+
+// This example uses a function called funcC() with the following definition:
+// create function funcC(int4) returns int8 as '
+// select count(*) from tablea where field_int4 = $1;
+// ' language 'sql';
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+      
+    try
+    {
+        NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
+        command.CommandType = CommandType.StoredProcedure;
+        
+        command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
+  					
+        command.Parameters[0].Value = 4;
+		
+        Object result = command.ExecuteScalar();
+  		
+        Console.WriteLine(result);
+
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+<p> This code assumes a table called tablea with at least a field called field_int4 of type int4.
+
 
 <h3> 2.1 Npgsql.dll file location </h3>
 
@@ -228,7 +473,7 @@ public static class NpgsqlUserManual
     NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
     NpgsqlEventLog.EchoMessages = true;
 	  
-    NpgsqlConnection conn = new NpgsqlConnection("Server=172.16.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
     conn.Open();
     conn.Close();
   }
@@ -241,11 +486,11 @@ Set NpgsqlEventLog.EchoMessages = True
 Entering NpgsqlConnection.NpgsqlConnection()
 Entering NpgsqlConnection.ParseConnectionString()
 Connection string option: DATABASE = joedata
-Connection string option: SERVER = 172.16.0.1
+Connection string option: SERVER = 127.0.0.1
 Connection string option: USER ID = joe
 Connection string option: PASSWORD = secret
 Entering NpgsqlConnection.Open()
-Connected to: 172.16.0.1:5432
+Connected to: 127.0.0.1:5432
 Entering NpgsqlConnection.WritestartupPacket()
 Entering NpgsqlStartupPacket.NpgsqlStartupPacket()
 Entering NpgsqlStartupPacket.WriteToStream()
