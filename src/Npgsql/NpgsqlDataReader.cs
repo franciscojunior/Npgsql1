@@ -286,7 +286,9 @@ namespace Npgsql
 	  
 	  public Boolean IsDBNull(Int32 i)
 	  {
-	  	throw new NotImplementedException();
+	  	//throw new NotImplementedException();
+	  	
+	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex]).IsNull(i);
 	  }
 
 		private DataTable GetResultsetSchema()
