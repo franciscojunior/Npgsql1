@@ -102,6 +102,7 @@ using Npgsql;
 		  // Setup the logging
 		  NpgsqlEventLog.Level = LogLevel.Normal;
 		  NpgsqlEventLog.LogName = "testsuite.log";
+		  NpgsqlEventLog.EchoMessages = true;
 		  
 		  if (cnDB != null)
 		  {
