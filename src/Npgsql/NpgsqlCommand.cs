@@ -776,7 +776,9 @@ namespace Npgsql
                         (result[paramEnd] == ' ' ||
                          result[paramEnd] == ',' ||
                          result[paramEnd] == ')' ||
-                         result[paramEnd] == ';'))
+                         result[paramEnd] == ';' ||
+                         result[paramEnd] == '\n' ||
+                         result[paramEnd] == '\t'))
                 {
                     result = result.Substring(0, paramStart) + paramVal + result.Substring(paramEnd);
                     found = true;
