@@ -1,5 +1,19 @@
+2002-06-03
+    fxjr:
+        NpgsqlConnection.cs
+            - Some code cleanup.
+            - Fixed handling of AuthenticationRequest message to read the exact number of 
+            bytes (4). connection.ReceiveBufferSize crashed in Mono.
+        
+        NpgsqlParameterCollection.cs
+        	- Changed indexer this[String] implementation to call this[Int32] instead of
+        	base[Int32] because Mono didn't compile it.
+        	
+        - Now, Npgsql can be compiled and run in Mono. But just the connection estabilishment
+        is working.
 
 2002-06-01
+	
 	fxjr:
 		NpgsqlCommand.cs
 			- Fixed bug that prevented queries like 'select field, field from table' to
@@ -17,6 +31,7 @@
 		
 		
 2002-05-26
+	
 	fxjr:
 		NpgsqlCommand.cs
 			- When a message is not handled in ExecuteScalar, the exception shows it.
