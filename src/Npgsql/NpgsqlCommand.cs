@@ -123,6 +123,9 @@ namespace Npgsql
             this.connector = connector;
             type = CommandType.Text;
             commandBehavior = CommandBehavior.Default;
+            
+            parameters = new NpgsqlParameterCollection();
+            timeout = 20;
         }
 
         // Public properties.
@@ -443,6 +446,7 @@ namespace Npgsql
         private void UpdateOutputParameters()
         {
             // Check if there was some resultset returned. If so, put the result in output parameters.
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "UpdateOutputParameters");
             
             // Get ResultSets.
             ArrayList resultSets = Connector.Mediator.ResultSets;
@@ -569,6 +573,8 @@ namespace Npgsql
             commandBehavior = cb;
 
             ExecuteCommand();
+            
+            UpdateOutputParameters();
 
             // Get the resultsets and create a Datareader with them.
             return new NpgsqlDataReader(Connector.Mediator.ResultSets, Connector.Mediator.CompletedResponses, connection, cb);
