@@ -196,7 +196,7 @@ namespace Npgsql
 		{
 		  NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".IDbCommand.CreateParameter()", LogLevel.Debug);
 		  
-			return CreateParameter();
+			return (NpgsqlParameter) CreateParameter();
 		}
 		
 		public NpgsqlParameter CreateParameter()
@@ -241,9 +241,8 @@ namespace Npgsql
 				{
 					case 'C':
 						// This is the CompletedResponse message.
-						// Get the string returned.
 						
-						// String ret_string = GetStringFromNetStream(network_stream);
+						// Get the string returned.
 						String ret_string = PGUtil.ReadString(network_stream, connection.encoding);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
 						
@@ -278,18 +277,15 @@ namespace Npgsql
 
 					case 'I':
 						// This is the EmptyQueryResponse.
+						
 						// [FIXME] Just ignore it this way?
-						// network_stream.Read(input_buffer, 0, 1);
-						//GetStringFromNetStream(network_stream);
 						PGUtil.ReadString(network_stream, connection.encoding);
 						break;
 					
 					case 'E':
 						// This is the ErrorResponse.
+						
 						// Get the string error returned and throw a NpgsqlException.
-						
-						
-						// error_message = GetStringFromNetStream(network_stream);
 						error_message = PGUtil.ReadString(network_stream, connection.encoding);
 					
 						// Even when there is an error, the backend send the ReadyForQuery message.
@@ -309,13 +305,8 @@ namespace Npgsql
 						// isn't specified! 
 						
 						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery.");
-				
-					
 				}
 			}
-			
-			// [TODO] Finish method implementation.
-			//throw new NotImplementedException();
 			
 			if (error_message != null)
 				throw new NpgsqlException(error_message);
@@ -351,7 +342,6 @@ namespace Npgsql
 			// Check the connection state.
 			CheckConnectionState();
 			
-			
 			// [FIXME] This code was copied from ExecuteNonQuery.
 			// Maybe should it be put in a private util method?? 
 			
@@ -368,22 +358,16 @@ namespace Npgsql
 			
 			// Send bytes.
 			output_stream.Flush();
-						
-			// [FIXME] Is it really necessary? How big?
-			Byte[] input_buffer = new Byte[1500];
 			
 			// Now, enter in the loop to process the response.
 			
 			Boolean ready_for_query = false;
 			String error_message = null;			
 			
-			Int16 num_fields = 0;
-			
 			Object result = null;
 			
-			// [FIXME] Change from Int32 to NpgsqlDbType enum when ready.
-			Int32 result_type = 0;
-			
+			// Used in the RowDescription, AsciiRow and BinaryRow messages.
+			NpgsqlRowDescription rd = null;
 			
 			Int32 message;
 			
@@ -396,7 +380,6 @@ namespace Npgsql
 						// This is the CompletedResponse message.
 						// Get the string returned.
 						
-						//String ret_string = GetStringFromNetStream(network_stream);
 						String ret_string = PGUtil.ReadString(network_stream, connection.encoding);
 						String[] ret_string_tokens = ret_string.Split(null);	// whitespace separator.
 						
@@ -413,7 +396,6 @@ namespace Npgsql
 						// [FIXME] Get another name for this function.
 						// String cursor_name = GetStringFromNetStream(network_stream);
 						String cursor_name = PGUtil.ReadString(network_stream, connection.encoding);
-					
 						
 						// Continue wainting for ReadyForQuery message.
 						break;
@@ -421,38 +403,8 @@ namespace Npgsql
 					case 'T':
 						// This is the RowDescription message.
 						
-						// Get the number of fields in a row.
-						network_stream.Read(input_buffer, 0, 2);
-						num_fields = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(input_buffer, 0));
-						
-						// [FIXME] Just ignore for now the RowDescription message data.
-						// We only care about the first field of the first row.
-						String field_name;
-						Int32 field_type_oid;
-						Int16 field_type_size;
-						Int32 field_type_modifier;
-						
-						field_name = PGUtil.ReadString(network_stream, connection.encoding);
-							
-						network_stream.Read(input_buffer, 0, 4 + 2 + 4);
-						
-						field_type_oid = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
-						field_type_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(input_buffer, 4));
-						field_type_modifier = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 6));
-					
-						// Cache the result type of 
-						result_type = field_type_oid;
-					
-						// Ignore other fields.
-						// [FIXME] Change to a single Read method ??
-						// Note that we are starting from the second field if it exists.
-						for (Int16 i = 1; i < num_fields; i++)
-						{
-							//field_name = GetStringFromNetStream(network_stream);
-							field_name = PGUtil.ReadString(network_stream, connection.encoding);
-							
-							network_stream.Read(input_buffer, 0, 4 + 2 + 4);
-						}
+						rd = new NpgsqlRowDescription();
+						rd.ReadFromStream(network_stream, connection.encoding);
 						
 						// Now wait for the AsciiRow messages.
 						break;
@@ -460,62 +412,40 @@ namespace Npgsql
 					case 'D':
 						// This is the AsciiRow message.
 						
-						// Read the bitmap of null fields of the row.
+						NpgsqlAsciiRow ascii_row = new NpgsqlAsciiRow(rd);
+						ascii_row.ReadFromStream(network_stream, connection.encoding);
 						
-						// The expression gets the number of bytes necessary to
-						// hold the number of num_fields as a number of bits.
-						// In reality, this should be almost always 1, because it
-						// is the only field that must be processed.
-						
-						// [FIXME] For now, ignore the field mask. 
-						network_stream.Read(input_buffer, 0, (num_fields + 7)/8 );
+						// Just get the first row.
+						if(result == null)
+							// Now convert the string to the field type.
+							// [FIXME] Hardcoded values for int types and string.
+							// Change to NpgsqlDbType.
+							// For while only int4 and string are strong typed.
+							// Any other type will be returned as string.
 							
-						for (Int32 field_count = 0; field_count < num_fields; field_count++)
-						{
-							
-							// Read the first data of the first row.
-							// Read the size of the field + sizeof(Int32)
-							network_stream.Read(input_buffer, 0, 4);
-							Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
-							
-							// Now, read just the field value.
-							network_stream.Read(input_buffer, 0, field_value_size - 4);
-					
-							// Get only the first value.
-							if (result == null)
+							switch (rd[0].type_oid)
 							{
-								
-								// Read the bytes as string.
-								result = new String(connection.encoding.GetChars(input_buffer, 0, field_value_size - 4));
-								
-								// Now convert the string to the field type.
-								// [FIXME] Hardcoded values for int types and string.
-								// Change to NpgsqlDbType.
-								// For while only int4 and string are strong typed.
-								// Any other type will be returned as string.
-								switch (result_type)
-								{
-									case 23:	// int4, integer.
-										result = Convert.ToInt32(result);
-										break;
-									
-								}
+								case 23:	// int4, integer.
+									result = Convert.ToInt32(ascii_row[0]);
+									break;
+								case 25:  // text
+									// Get only the first column.
+									result = ascii_row[0];
+									break;
+								default:
+									NpgsqlEventLog.LogMsg("Unrecognized datatype returned by ExecuteScalar():" + 
+									                      rd[0].type_oid + " Returning String...", LogLevel.Debug);
+									result = ascii_row[0];
+									break;
 							}
-							else 
-							{
-								// Just ignore the fields values.
-								connection.encoding.GetChars(input_buffer, 0, field_value_size - 4);
-							}
-						}
 						
 						// Now wait for CompletedResponse message.
 						break;
 					
 					case 'I':
 						// This is the EmptyQueryResponse.
+						
 						// [FIXME] Just ignore it this way?
-						// network_stream.Read(input_buffer, 0, 1);
-						// GetStringFromNetStream(network_stream);
 						PGUtil.ReadString(network_stream, connection.encoding);
 						break;
 					
@@ -523,10 +453,6 @@ namespace Npgsql
 						// This is the ErrorResponse.
 						// Get the string error returned and throw a NpgsqlException.
 						
-						// [FIXME] The function GetStringFromNetStream should be used in NpgsqlConnection class too.
-						// So, this function is a cadidate in potential to be a static method in a util class.
-						
-						// error_message = GetStringFromNetStream(network_stream);
 						error_message = PGUtil.ReadString(network_stream, connection.encoding);
 					
 						// Even when there is an error, the backend send the ReadyForQuery message.
@@ -544,13 +470,8 @@ namespace Npgsql
 						// [FIXME] Better exception handling. Close the connection???
 												
 						throw new NpgsqlException("Bug! A message should be handled in ExecuteNonQuery. Message as Int32 = " + message);
-				
-					
 				}
 			}
-			
-			// [TODO] Finish method implementation.
-			//throw new NotImplementedException();
 			
 			if (error_message != null)
 				throw new NpgsqlException(error_message);
