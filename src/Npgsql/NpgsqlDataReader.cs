@@ -252,10 +252,9 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetName");
 
-            if (! HaveResultSet())
-                return String.Empty;
-            else
-                return _currentResultset.RowDescription[Index].name;
+            CheckHaveResultSet();
+
+            return _currentResultset.RowDescription[Index].name;
         }
 
         /// <summary>
@@ -263,11 +262,17 @@ namespace Npgsql
         /// </summary>
         public String GetDataTypeName(Int32 Index)
         {
-            // FIXME: have a type name instead of the oid
-            if (! HaveResultSet())
-                return String.Empty;
-            else
-                return (_currentResultset.RowDescription[Index].type_oid).ToString();
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDataTypeName");
+
+            CheckHaveResultSet();
+
+            NpgsqlTypeInfo  TI = GetTypeInfo(Index);
+
+            if (TI == null) {
+                return _currentResultset.RowDescription[Index].type_oid.ToString();
+            } else {
+                return TI.Name;
+            }
         }
 
         /// <summary>
@@ -277,11 +282,9 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetFieldType");
 
+            CheckHaveResultSet();
 
-            if (! HaveResultSet())
-                return null;
-            else
-                return NpgsqlTypesHelper.GetSystemTypeFromTypeOid(_connection.Connector.OidToNameMapping, _currentResultset.RowDescription[Index].type_oid);
+            return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[Index].GetType();
         }
 
         /// <summary>
@@ -522,6 +525,11 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "IsDBNull");
 
             return (GetValue(i) == DBNull.Value);
+        }
+
+        internal NpgsqlTypeInfo GetTypeInfo(Int32 FieldIndex)
+        {
+            return _currentResultset.RowDescription[FieldIndex].type_info;
         }
 
         private DataTable GetResultsetSchema()

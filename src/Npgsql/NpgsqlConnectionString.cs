@@ -35,14 +35,13 @@ namespace Npgsql
     /// <summary>
     /// Represents a connection string.
     /// </summary>
-    internal sealed class NpgsqlConnectionString : ICloneable, IEnumerable
+    internal sealed class NpgsqlConnectionString : IEnumerable
     {
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlConnectionString";
         private static System.Resources.ResourceManager resman;
 
-        private String                                 connection_string;
-        private Boolean                                connection_string_clean;
+        private String                                 connection_string = null;
         private ListDictionary                         connection_string_values;
 
         static NpgsqlConnectionString()
@@ -50,25 +49,18 @@ namespace Npgsql
             resman = new System.Resources.ResourceManager(typeof(NpgsqlConnectionString));
         }
 
+        private NpgsqlConnectionString(NpgsqlConnectionString Other)
+        {
+            connection_string = Other.connection_string;
+            connection_string_values = new ListDictionary(CaseInsensitiveComparer.Default);
+            foreach (DictionaryEntry DE in Other.connection_string_values) {
+                connection_string_values.Add(DE.Key, DE.Value);
+            }
+        }
+
         private NpgsqlConnectionString(ListDictionary Values)
         {
             connection_string_values = Values;
-            connection_string_clean = false;
-        }
-
-        private NpgsqlConnectionString(ListDictionary Values, string Raw)
-        {
-            connection_string_values = Values;
-            connection_string = Raw;
-            connection_string_clean = true;
-        }
-
-        /// <summary>
-        /// Return an exact copy of this NpgsqlConnectionString.
-        /// </summary>
-        object ICloneable.Clone()
-        {
-            return (object)Clone();
         }
 
         /// <summary>
@@ -76,13 +68,7 @@ namespace Npgsql
         /// </summary>
         public NpgsqlConnectionString Clone()
         {
-            ListDictionary      ND = new ListDictionary(CaseInsensitiveComparer.Default);
-
-            foreach (DictionaryEntry DE in this) {
-                ND.Add(DE.Key, DE.Value);
-            }
-
-            return new NpgsqlConnectionString(ND, ToString());
+            return new NpgsqlConnectionString(this);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -164,7 +150,7 @@ namespace Npgsql
             set
             {
                 connection_string_values[Key] = value;
-                connection_string_clean = false;
+                connection_string = null;
             }
         }
 
@@ -181,7 +167,7 @@ namespace Npgsql
         /// </summary>
         public override String ToString()
         {
-            if (! connection_string_clean) {
+            if (connection_string == null) {
                 StringBuilder      S = new StringBuilder();
 
                 foreach (DictionaryEntry DE in this) {
@@ -189,7 +175,6 @@ namespace Npgsql
                 }
 
                 connection_string = S.ToString();
-                connection_string_clean = true;
             }
 
             return connection_string;

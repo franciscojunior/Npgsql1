@@ -39,7 +39,7 @@ namespace Npgsql
     /// </summary>
     public enum ProtocolVersion
     {
-				Unknown,
+        Unknown,
         Version2,
         Version3
     }

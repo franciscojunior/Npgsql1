@@ -86,11 +86,11 @@ namespace Npgsql
 
         // Flag for transaction status.
 //        private Boolean                         _inTransaction = false;
-        private NpgsqlTransaction               _transaction = null;
+        private NpgsqlTransaction                _transaction = null;
 
         private Boolean                          _supportsPrepare = false;
 
-        private Hashtable                        _oidToNameMapping;
+        private NpgsqlTypeMapping                _oidToNameMapping = null;
 
         private Encoding                         _encoding;
 
@@ -116,7 +116,7 @@ namespace Npgsql
             _isInitialized = false;
             _state = NpgsqlClosedState.Instance;
             _mediator = new NpgsqlMediator();
-            _oidToNameMapping = new Hashtable();
+            _oidToNameMapping = new NpgsqlTypeMapping();
         }
 
 
@@ -403,7 +403,7 @@ namespace Npgsql
             }
         }
 
-        internal Hashtable OidToNameMapping {
+        internal NpgsqlTypeMapping OidToNameMapping {
             get
             {
                 return _oidToNameMapping;
@@ -558,13 +558,16 @@ namespace Npgsql
                 commandEncoding.ExecuteNonQuery();
             }
 
-
-            _oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+            // Make a shallow copy of the type mapping that the connector will own.
+            // It is possible that the connector may add types to its private
+            // mapping that will not be valid to another connector, even
+            // if connected to the same backend version.
+            _oidToNameMapping = NpgsqlTypesHelper.LoadInitialTypesMapping(this).Clone();
 
             ProcessServerVersion();
 
             // The connector is now fully initialized. Beyond this point, it is
-            // safe to release it back to the pool.
+            // safe to release it back to the pool rather than closing it.
             IsInitialized = true;
         }
 

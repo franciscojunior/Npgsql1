@@ -44,14 +44,11 @@ namespace Npgsql
         private static readonly String CLASSNAME = "NpgsqlAsciiRow";
 
         private readonly Int16        READ_BUFFER_SIZE = 300; //[FIXME] Is this enough??
-        private Hashtable             oid_to_name_mapping;
 
-        public NpgsqlAsciiRow(NpgsqlRowDescription rowDesc, Hashtable oidToNameMapping, ProtocolVersion protocolVersion)
+        public NpgsqlAsciiRow(NpgsqlRowDescription rowDesc, ProtocolVersion protocolVersion)
         : base(rowDesc, protocolVersion)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
-
-            oid_to_name_mapping = oidToNameMapping;
         }
 
         public override void ReadFromStream(Stream inputStream, Encoding encoding)
@@ -94,6 +91,7 @@ namespace Npgsql
 
                 PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, 4);
 
+                NpgsqlRowDescriptionFieldData field_descr = row_desc[field_count];
                 Int32 field_value_size = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(input_buffer, 0));
                 field_value_size -= 4;
                 Int32 bytes_left = field_value_size;
@@ -119,7 +117,7 @@ namespace Npgsql
 
 
                 // Add them to the AsciiRow data.
-                data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(oid_to_name_mapping, result.ToString(), row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
+                data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_modifier));
 
             }
         }
@@ -144,6 +142,7 @@ namespace Npgsql
                     continue;
                 }
 
+                NpgsqlRowDescriptionFieldData field_descr = row_desc[field_count];
                 Int32           bytes_left = field_value_size;
                 StringBuilder   result = new StringBuilder();
 
@@ -166,10 +165,10 @@ namespace Npgsql
                     // Read the bytes as string.
                     result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
                     // Add them to the AsciiRow data.
-                    data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(oid_to_name_mapping, result.ToString(), row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
+                    data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_modifier));
                 }
                 else
-                    data.Add(NpgsqlTypesHelper.ConvertBackendBytesToStytemType(oid_to_name_mapping, input_buffer, encoding, field_value_size, row_desc[field_count].type_oid, row_desc[field_count].type_modifier));
+                    data.Add(NpgsqlTypesHelper.ConvertBackendBytesToSystemType(field_descr.type_info, input_buffer, encoding, field_value_size, field_descr.type_modifier));
             }
         }
 

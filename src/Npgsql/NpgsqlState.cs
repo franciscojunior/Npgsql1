@@ -279,7 +279,7 @@ namespace Npgsql
 
                     {
                         NpgsqlRowDescription rd = new NpgsqlRowDescription(context.BackendProtocolVersion);
-                        rd.ReadFromStream(stream, context.Encoding);
+                        rd.ReadFromStream(stream, context.Encoding, context.OidToNameMapping);
 
                         // Initialize the array list which will contain the data from this rowdescription.
                         mediator.AddRowDescription(rd);
@@ -293,7 +293,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "AsciiRow");
 
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.
@@ -546,7 +546,7 @@ namespace Npgsql
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "RowDescription");
                     {
                         NpgsqlRowDescription rd = new NpgsqlRowDescription(context.BackendProtocolVersion);
-                        rd.ReadFromStream(stream, context.Encoding);
+                        rd.ReadFromStream(stream, context.Encoding, context.OidToNameMapping);
 
                         mediator.AddRowDescription(rd);
                     }
@@ -558,7 +558,7 @@ namespace Npgsql
                     // This is the AsciiRow message.
                     NpgsqlEventLog.LogMsg(resman, "Log_ProtocolMessage", LogLevel.Debug, "DataRow");
                     {
-                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.OidToNameMapping, context.BackendProtocolVersion);
+                        NpgsqlAsciiRow asciiRow = new NpgsqlAsciiRow(context.Mediator.LastRowDescription, context.BackendProtocolVersion);
                         asciiRow.ReadFromStream(stream, context.Encoding);
 
                         // Add this row to the rows array.
