@@ -91,8 +91,8 @@ do
     echo -n "Compiling test file test_$file.cs..." && \
     ( ${CC} ${CPPFLAGS} test_${file}.cs >> ${NPGSQL_TESTS_LOG} 2>&1 && echo "OK") || echo "FAILED"
     echo -n "Running test file test_${file}.exe..." && \
-    ( ${MONO} test_${file}.exe 2>&1 > out_$file);
-    if diff out_$file expected_$file 2>&1 >> ${NPGSQL_TESTS_LOG}
+    ( ${MONO} test_${file}.exe 2>&1 |tee out_$file 2>&1 > /dev/null);
+    if diff out_$file expected_$file 2>&1 > /dev/null
     then
 	echo "OK"
     else
