@@ -74,7 +74,13 @@ namespace Npgsql
 
             Array.Clear(null_map_array, 0, null_map_array.Length);
 
-	    Decoder decoder = encoding.GetDecoder();
+            
+            // Decoders used to get decoded chars when using unicode like encodings which may have chars crossing the byte buffer bounds.
+            
+            Decoder decoder = encoding.GetDecoder();
+            Char[] chars = null;
+            Int32 charCount;
+            
 	    
             // Read the null fields bitmap.
             PGUtil.CheckedStreamRead(inputStream, null_map_array, 0, null_map_array.Length );
@@ -105,11 +111,11 @@ namespace Npgsql
                     // Now, read just the field value.
                     PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
 
-                    int charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
+                    charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
 
-                    char[] chars = new char[charCount];
+                    chars = new Char[charCount];
                     
-		    int charLen = decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
+                    decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
 
                     result.Append(new String(chars));
 
@@ -119,8 +125,12 @@ namespace Npgsql
                 // Now, read just the field value.
                 PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, bytes_left);
 
-                // Read the bytes as string.
-                result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
+                
+                charCount = decoder.GetCharCount(input_buffer, 0, bytes_left);
+                chars = new Char[charCount];
+                decoder.GetChars(input_buffer, 0, bytes_left, chars, 0);
+
+                result.Append(new String(chars));
 
 
                 // Add them to the AsciiRow data.
@@ -137,9 +147,10 @@ namespace Npgsql
 
             PGUtil.ReadInt32(inputStream, input_buffer);
             Int16 numCols = PGUtil.ReadInt16(inputStream, input_buffer);
-	    
-	    Decoder decoder = encoding.GetDecoder();
-	    
+
+            Decoder decoder = encoding.GetDecoder();
+            Char[] chars = null;
+            Int32 charCount;
 
             for (Int16 field_count = 0; field_count < numCols; field_count++)
             {
@@ -164,17 +175,17 @@ namespace Npgsql
 
                     // Read the bytes as string.
                     //result.Append(new String(encoding.GetChars(input_buffer, 0, READ_BUFFER_SIZE)));
-                    int charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
+                    charCount = decoder.GetCharCount(input_buffer, 0, READ_BUFFER_SIZE);
 
-                    char[] chars = new char[charCount];
+                    chars = new Char[charCount];
                     
-		    int charLen = decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
+                    decoder.GetChars(input_buffer, 0, READ_BUFFER_SIZE, chars, 0);
 
                     result.Append(new String(chars));
 
                     bytes_left -= READ_BUFFER_SIZE;
-		    
-		    // Now, read just the field value.
+
+                    // Now, read just the field value.
                     /*PGUtil.CheckedStreamRead(inputStream, input_buffer, 0, READ_BUFFER_SIZE);
 
                     // Read the bytes as string.
@@ -189,11 +200,21 @@ namespace Npgsql
                 if (row_desc[field_count].format_code == FormatCode.Text)
                 {
                     // Read the bytes as string.
-                    result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
+                    //result.Append(new String(encoding.GetChars(input_buffer, 0, bytes_left)));
+
+
+                    charCount = decoder.GetCharCount(input_buffer, 0, bytes_left);
+                    chars = new Char[charCount];
+                    decoder.GetChars(input_buffer, 0, bytes_left, chars, 0);
+
+                    result.Append(new String(chars));
+
                     // Add them to the AsciiRow data.
                     data.Add(NpgsqlTypesHelper.ConvertBackendStringToSystemType(field_descr.type_info, result.ToString(), field_descr.type_size, field_descr.type_modifier));
+                    
                 }
                 else
+                    // FIXME: input_buffer isn't holding all the field value. This code isn't handling binary data correctly.
                     data.Add(NpgsqlTypesHelper.ConvertBackendBytesToSystemType(field_descr.type_info, input_buffer, encoding, field_value_size, field_descr.type_modifier));
             }
         }
