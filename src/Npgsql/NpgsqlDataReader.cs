@@ -175,7 +175,7 @@ namespace Npgsql
 
         public Boolean HasRows()
         {
-            return _currentResultSet.Count > 0;
+            return _currentResultset.Count > 0;
 
         }
 
