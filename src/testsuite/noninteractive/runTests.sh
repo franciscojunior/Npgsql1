@@ -61,11 +61,6 @@ namespace Npgsql
 	    return     \"Server=${NPGSQL_HOST};User Id=${NPGSQL_UID};Password=${NPGSQL_PWD};Database=${NPGSQL_DB}\";
 	}
 
-	public static String getConnectionStringMD5()
-	{
-	    return     \"Server=${NPGSQL_HOST};User Id=${NPGSQL_UID};Password=${NPGSQL_PWD_MD5};Database=${NPGSQL_DB}\";
-	}
-
     }
 }
 " > ${NPGSQL_TESTS_SHARED_SRC}

@@ -35,13 +35,11 @@ endif
 NPGSQL_PORT=5432
 NPGSQL_UID=npgsql_tests
 NPGSQL_PWD=npgsql_tests
-# This was generated with grub-md5-crypt
-NPGSQL_PWD_MD5=$1$tD4Ed/$rAfFRHoNmfne9b8KPlfMX1
 NPGSQL_TEST_STRING=-U $(NPGSQL_UID) -h $(NPGSQL_HOST) -d $(NPGSQL_DB)
 NPGSQL_TESTS_LOG=npgsql_tests.log
 NPGSQL_TESTS_SHARED_SRC=NpgsqlTests.cs
 NPGSQL_TESTS_SHARED_LIB=NpgsqlTests.dll
-NPGSQL_TEST_STATUS_FILE=npqsql_tests_status
+NPGSQL_TEST_STATUS_FILE=npgsql_tests_status
 
 export CC CPPFLAGS NPGSQL_template_DB NPGSQL_TEST_STRING NPGSQL_TESTS_LOG \
 	NPGSQL_DB_PREFIX NPGSQL_DB NPGSQL_HOST NPGSQL_UID NPGSQL_PWD PSQL \
@@ -60,9 +58,6 @@ db:
 	@($(PSQL) -U $(NPGSQL_UID) -h $(NPGSQL_HOST) -d $(NPGSQL_template_DB) \
 	-c "create database $(NPGSQL_DB) ;" > $(NPGSQL_TESTS_LOG) 2>&1 \
 	&& echo "OK") || (echo "FAILED" && exit 1)
-	@echo -n "Creating test tables..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
-	-f add_tables.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
-	(echo "FAILED" && exit 1)
 	@echo -n "Adding test tables..." && ($(PSQL) $(NPGSQL_TEST_STRING) \
 	-f add_tables.sql >> $(NPGSQL_TESTS_LOG) 2>&1 && echo "OK") || \
 	(echo "FAILED" && exit 1)
