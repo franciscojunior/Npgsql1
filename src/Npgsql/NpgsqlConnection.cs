@@ -878,6 +878,7 @@ namespace Npgsql
         /// Version of the PostgreSQL backend.
         /// This can only be called when there is an active connection.
         /// </summary>
+        [Browsable(false)]
         public ServerVersion ServerVersion {
             get
             {
@@ -885,6 +886,21 @@ namespace Npgsql
                     throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
                 }
                 return _connector.ServerVersion;
+            }
+        }
+
+        /// <summary>
+        /// Protocol version in use.
+        /// This can only be called when there is an active connection.
+        /// </summary>
+        [Browsable(false)]
+        public ProtocolVersion BackendProtocolVersion {
+            get
+            {
+                if (_connector == null) {
+                    throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
+                }
+                return _connector.BackendProtocolVersion;
             }
         }
 
@@ -898,20 +914,6 @@ namespace Npgsql
                 _oidToNameMapping = value;
             }
 
-        }
-
-        /// <summary>
-        /// Protocol version in use.
-        /// This can only be called when there is an active connection.
-        /// </summary>
-        public ProtocolVersion BackendProtocolVersion {
-            get
-            {
-                if (_connector == null) {
-                    throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
-                }
-                return _connector.BackendProtocolVersion;
-            }
         }
 
         internal Boolean Pooling {
