@@ -7,11 +7,15 @@ PSQL=psql
 NPGSQL_template_DB=template1
 NPGSQL_DB_PREFIX=npgsql_tests
 NPGSQL_DB:=$(NPGSQL_DB_PREFIX)_$(shell date +%Y%m%d_%H%M%S)
-NPGSQL_HOST=127.0.0.1
+
+ifndef $(NPGSQL_HOST)
+	NPGSQL_HOST=127.0.0.1
+endif
+
 NPGSQL_PORT=5432
 NPGSQL_UID=npgsql_tests
 NPGSQL_PWD=npgsql_tests
-NPGSQL_TEST_STRING=-U $(NPGSQL_UID) -h 127.0.0.1 -d $(NPGSQL_DB)
+NPGSQL_TEST_STRING=-U $(NPGSQL_UID) -h $(NPGSQL_HOST) -d $(NPGSQL_DB)
 NPGSQL_TESTS_LOG=npgsql_tests.log
 NPGSQL_TESTS_SHARED_SRC=NpgsqlTests.cs
 NPGSQL_TESTS_SHARED_LIB=NpgsqlTests.dll
