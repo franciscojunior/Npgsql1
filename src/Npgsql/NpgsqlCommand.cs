@@ -53,8 +53,8 @@ namespace Npgsql
 		{
 			text = cmdText;
 			this.connection = connection;
-			parameters = null;
-			timeout = 30;
+			parameters = new NpgsqlParameterCollection();
+			timeout = 20;
 			type = CommandType.Text;			
 		}
 				
@@ -130,7 +130,15 @@ namespace Npgsql
 			}
 		}
 		
-		public IDataParameterCollection Parameters
+		IDataParameterCollection IDbCommand.Parameters
+		{
+			get
+			{
+				return Parameters;
+			}
+		}
+		
+		public NpgsqlParameterCollection Parameters
 		{
 			get
 			{
