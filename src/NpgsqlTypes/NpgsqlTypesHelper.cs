@@ -161,12 +161,12 @@ namespace NpgsqlTypes
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBoolean));
 
                 NativeTypeMapping.AddTypeAlias("bool", typeof(Boolean));
-
+                                
                 NativeTypeMapping.AddType("int2", DbType.Int16, false,
                 null);
 
                 NativeTypeMapping.AddTypeAlias("int2", typeof(Int16));
-
+                
                 NativeTypeMapping.AddType("int4", DbType.Int32, false,
                 null);
 
@@ -284,6 +284,9 @@ namespace NpgsqlTypes
 
                     new NpgsqlBackendTypeInfo(0, "text", DbType.String, typeof(String),
                         null),
+                        
+                    new NpgsqlBackendTypeInfo(0, "name", DbType.String, typeof(String),
+                        null),
 
                     new NpgsqlBackendTypeInfo(0, "bytea", DbType.Binary, typeof(Byte[]),
                         new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToBinary)),
@@ -302,7 +305,7 @@ namespace NpgsqlTypes
                     new NpgsqlBackendTypeInfo(0, "int8", DbType.Int64, typeof(Int64),
                         null),
 
-                    new NpgsqlBackendTypeInfo(0, "oid", DbType.Int32, typeof(Int32),
+                    new NpgsqlBackendTypeInfo(0, "oid", DbType.Int64, typeof(Int64),
                         null),
 
 
