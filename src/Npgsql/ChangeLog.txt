@@ -1,4 +1,17 @@
 
+2002-05-25
+
+	fxjr:
+		NpgsqlConnection.cs
+			- Created the encoding property so that NpgsqlCommand class and maybe others
+			can use the encoding used in connection.
+		NpgsqlCommand.cs
+			- Finish a little functional ExecuteNonQuery() method.
+			Now, you can execute some queries that don't return rows like insert, delete
+			and update!! See status for more information.
+		
+		- Added STATUS.txt file.
+		
 2002-05-24
 
 	fxjr:
@@ -11,6 +24,7 @@
 			- Created constructors NpgsqlParameter() and NpgsqlParameter(String, DbType)
 		
 		NpgsqlConnection.cs
+			- Created internal property encoding to return the connection encoding.
 			- Changed implementation of NpgsqlConnection() to call the NpgsqlConnection(String)
 		
 		
