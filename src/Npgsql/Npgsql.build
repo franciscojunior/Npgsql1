@@ -1,96 +1,193 @@
 <?xml version="1.0"?>
-
 <!--
     This is the build file of Npgsql
 -->
-
 <project name="Npgsql" default="build" basedir=".">
+	<property name="build.dir" value="${nant.project.basedir}\build"/>
+	<property name="ms.build.dir" value="${build.dir}\ms"/>
+	<property name="ms.res.dir" value="${build.dir}\res\ms"/>
+	<property name="mono.build.dir" value="${build.dir}\mono"/>
+	<property name="nunit2tests.build.dir" value="${build.dir}\nunit2tests"/>
+	<property name="assemblyname" value="Npgsql"/>
+	<property name="debug" value="true"/>
+	<property name="mono.home" value="C:\Programme\mono-0.25"/>
+	<property name="mcs.bat" value="c:\windows\mcs.bat"/>
+	<!-- monoresgen doesn't work on my Windows-Computer no Problem with Linux - see Makefile Brar-->
+	<property name="monoresgen.bat" value="resgen"/>
+	<property name="testfiles.dir" value="..\testsuite\noninteractive\nunit20"/>
+	<property name="locales" value="de"/>
 
-    <property name="build.dir" value="build" />
-    <property name="ms.build.dir" value="${build.dir}/ms" />
-    <property name="mono.build.dir" value="${build.dir}/mono" />
-    <property name="nunit2tests.build.dir" value="${build.dir}/nunit2tests" />
-    <property name="assemblyname" value="Npgsql" />
-    <property name="debug" value="true" />
-    <property name="mono.home" value="c:\mono-0.19\install" />
-    <property name="mcs.bat" value="c:\winnt\mcs.bat" />
+	<target name="clean" description="cleans the build directory">
+		<delete dir="${build.dir}" verbose="true" failonerror="true"/>
+	</target>
 
-    <property name="testfiles.dir" value="..\testsuite\noninteractive\nunit20" />
-    
-    <target name="clean" description="cleans the build directory">
-        <delete dir="${build.dir}" verbose="true" failonerror="true"/>
-    </target>
-    
-    <target name="init">
-      <mkdir dir="${ms.build.dir}" />
-      <mkdir dir="${mono.build.dir}" />
-      <mkdir dir="${nunit2tests.build.dir}" />
-    </target>
-    <target name="build" depends="init">
-        
-        <csc target="library" output="${ms.build.dir}\${assemblyname}.dll" debug="${debug}" >
-            <sources>
-                <includes name="*.cs" />
-		<includes name="..\NpgsqlTypes\*.cs" />
-            </sources>
-        </csc>
-    </target>
-    
-    <target name="monobuild" depends="init">
-      <exec program="${mcs.bat}" commandline="-g -t:library -r ${mono.home}\lib\System.Data.dll -out:${mono.build.dir}\${assemblyname}.dll *.cs ..\NpgsqlTypes\*.cs" />-->
+	<target name="init">
+		<mkdir dir="${ms.build.dir}"/>
+		<mkdir dir="${ms.res.dir}"/>
+		<mkdir dir="${ms.res.dir}\Design"/>
+		<mkdir dir="${mono.build.dir}"/>
+		<mkdir dir="${nunit2tests.build.dir}"/>
+	</target>
 
-       <!-- <mcs target="library" output="${mono.build.dir}\${assemblyname}.dll" debug="${debug}">
-            <sources>
-                <includes name="*.cs" />
-		<includes name="..\NpgsqlTypes\*.cs" />
-            </sources>
-        </mcs>-->
+	<!--
+	Compiles the culture neutral resources that are linked into the main assembly
+	-->
+	<target name="resources" depends="init">
+		<!--
+		<resgen todir="${ms.res.dir}">
+			<resources>
+				<includes name="NpgsqlConnection.resx"/>
+			</resources>
+		</resgen>
+		-->
+		<resgen todir="${ms.res.dir}\Design">
+			<resources>
+				<includes name=".\Design\ConnectionStringEditorForm.resx"/>
+			</resources>
+		</resgen>
+	</target>
 
-    </target>
-    
-    <target name="tests" depends="build">
-      <nant buildfile="..\testsuite\noninteractive\nunit20\NpgsqlTests.build" inheritall="true" />
-      
-      <copy file="${ms.build.dir}/Npgsql.dll" todir="${nunit2tests.build.dir}" />
-      <nunit2>
-        <test assemblyname="${nunit2tests.build.dir}/NpgsqlTests.dll" />
-      </nunit2>
-    </target>
-    
-    
-    <target name="apidocs" depends="build">
-      <ndoc>
-        <assemblies basedir="${ms.build.dir}">
-                    <includes name="Npgsql.dll"/>
-                </assemblies>
-                <!--<summaries basedir="${build.dir}">
-                    <includes name="NamespaceSummary.xml"/>
-                </summaries>-->
-                <documenters>
-                    <documenter name="MSDN">
-                        <property name="OutputDirectory" value="${build.dir}\doc\MSDN" />
-                        <property name="IncludeFavorites" value="False" />
-                        <property name="Title" value="An NDoc Documented Class Library" />
-                        <property name="SplitTOCs" value="False" />
-                        <property name="DefaulTOC" value="" />
-                        <property name="ShowVisualBasic" value="True" />
-                        <property name="ShowMissingSummaries" value="True" />
-                        <property name="ShowMissingRemarks" value="True" />
-                        <property name="ShowMissingParams" value="True" />
-                        <property name="ShowMissingReturns" value="True" />
-                        <property name="ShowMissingValues" value="True" />
-                        <property name="DocumentInternals" value="False" />
-                        <property name="DocumentProtected" value="True" />
-                        <property name="DocumentPrivates" value="False" />
-                        <property name="DocumentEmptyNamespaces" value="False" />
-                        <property name="IncludeAssemblyVersion" value="False" />
-                        <property name="CopyrightText" value="" />
-                        <property name="CopyrightHref" value="" />
-                        <property name="HtmlHelpName" value="NAnt" />
-                        <property name="HtmlHelpCompilerFilename" value="hhc.exe" />
-                     </documenter>
-                </documenters> 
-      </ndoc>
-    </target>
+	<!--
+	Compiles the culture neutral resources that are linked into the main assembly using monoresgen
+	-->
+	<target name="monoresources" depends="init">
+		<exec program="${monoresgen.bat}" commandline="Design\ConnectionStringEditorForm.resx ${assemblyname}.Design.ConnectionStringEditorForm.resources"/>
+		<copy tofile="${assemblyname}.NpgsqlCommand.bmp" file="NpgsqlCommand.bmp"/>
+		<copy tofile="${assemblyname}.NpgsqlConnection.bmp" file="NpgsqlConnection.bmp"/>
+		<copy tofile="${assemblyname}.NpgsqlDataAdapter.bmp" file="NpgsqlDataAdapter.bmp"/>
+	</target>
+
+	<target name="build" depends="init,resources">
+		<csc target="library" output="${ms.build.dir}\${assemblyname}.dll" debug="${debug}">
+			<resources prefix="${assemblyname}.Design">
+				<includes name="${ms.res.dir}\Design\*.resources"/>
+			</resources>
+			<resources prefix="${assemblyname}">
+				<includes name="${ms.res.dir}\*.resources"/>
+				<includes name="*.bmp"/>
+			</resources>
+			<sources>
+				<includes name="*.cs"/>
+				<includes name="..\NpgsqlTypes\*.cs"/>
+				<includes name=".\Design\*.cs"/>
+			</sources>
+		</csc>
+	</target>
+
+	<!--
+	Compiles the resources for the cultures given in ${locale} and generates sattellite-assemblies
+	-->
+	<target name="locales" depends="init,build">
+		<foreach item="String" in="${locales}" delim="," property="locale">
+			<mkdir dir="${ms.build.dir}\${locale}"/>
+			<mkdir dir="${ms.res.dir}\${locale}"/>
+			<!--
+			<resgen todir="${ms.res.dir}\${locale}">
+				<resources">
+					<includes name="*.${locale}.resx"/>
+				</resources>
+			</resgen>
+			-->
+			<mkdir dir="${ms.res.dir}\Design\${locale}"/>
+			<resgen todir="${ms.res.dir}\Design\${locale}">
+				<resources>
+					<includes name=".\Design\*.${locale}.resx"/>
+				</resources>
+			</resgen>
+			<!--
+				This script-task is essential because neither the resgen-task nor the al-task can prefix the namespace to the resources-files.
+				Sooner or later this Nant-Issue will get fixed and render this part obsolete.
+			-->
+			<script language="C#">
+				<code><![CDATA[
+							public static void ScriptMain(Project project) {
+									DirectoryInfo di = new DirectoryInfo(Path.Combine(Path.Combine(project.BaseDirectory, project.Properties["ms.res.dir"]), project.Properties["locale"]));
+									foreach(FileInfo fi in di.GetFiles("*.resources")){
+										fi.MoveTo(Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".", fi.Name)));
+									}
+									di = new DirectoryInfo(Path.Combine(Path.Combine(Path.Combine(project.BaseDirectory, project.Properties["ms.res.dir"]), "Design"), project.Properties["locale"]));
+									foreach(FileInfo fi in di.GetFiles("*.resources")){
+										fi.MoveTo(Path.Combine(fi.DirectoryName, String.Concat(project.Properties["assemblyname"], ".Design.", fi.Name)));
+									}
+							}
+					]]></code>
+			</script>
+			<!--
+				Workarounds, workarounds, workarounds ...
+				I don't know why al looks for ..\Npgsql.snk but to make it find this file, the basedir has to step up one level.
+			-->
+			<property name="basedir_bkp" value="${nant.project.basedir}"/>
+			<property name="nant.project.basedir" value="${nant.project.basedir}\build"/>
+			<al culture="${locale}" output="${ms.build.dir}\${locale}\${assemblyname}.resources.dll" target="lib" template="${ms.build.dir}\${assemblyname}.dll">
+				<sources>
+					<includes name="${ms.res.dir}\${locale}\*.resources"/>
+					<includes name="${ms.res.dir}\Design\${locale}\*.resources"/>
+				</sources>
+			</al>
+			<property name="nant.project.basedir" value="${basedir_bkp}"/>
+		</foreach>
+	</target>
+
+	<target name="monobuild" depends="init,monoresources">
+		<exec program="${mcs.bat}" commandline='-g -t:library -r ${mono.home}\lib\System.Data.dll -r ${mono.home}\lib\System.Windows.Forms.dll -r ${mono.home}\lib\System.Drawing.dll -out:"${mono.build.dir}\${assemblyname}.dll" -resource:Npgsql.NpgsqlCommand.bmp -resource:Npgsql.NpgsqlConnection.bmp -resource:Npgsql.NpgsqlDataAdapter.bmp -resource:Npgsql.Design.ConnectionStringEditorForm.resources *.cs ..\NpgsqlTypes\*.cs .\Design\*.cs'/>
+		<delete file="${assemblyname}.Design.ConnectionStringEditorForm.resources"/>
+		<delete file="${assemblyname}.NpgsqlCommand.bmp"/>
+		<delete file="${assemblyname}.NpgsqlConnection.bmp"/>
+		<delete file="${assemblyname}.NpgsqlDataAdapter.bmp"/>
+		<!--
+		<mcs target="library" output="${mono.build.dir}\${assemblyname}.dll" debug="${debug}">
+			<sources>
+				<includes name="*.cs"/>
+				<includes name="..\NpgsqlTypes\*.cs"/>
+				<includes name=".\Design\*.cs"/>
+			</sources>
+		</mcs>
+		-->
+	</target>
+
+	<target name="tests" depends="build">
+		<nant buildfile="..\testsuite\noninteractive\nunit20\NpgsqlTests.build" inheritall="true"/>
+		<copy file="${ms.build.dir}\Npgsql.dll" todir="${nunit2tests.build.dir}"/>
+		<nunit2>
+			<test assemblyname="${nunit2tests.build.dir}\NpgsqlTests.dll"/>
+		</nunit2>
+	</target>
+
+	<target name="apidocs" depends="build">
+		<ndoc>
+			<assemblies basedir="${ms.build.dir}">
+				<includes name="${assemblyname}.dll"/>
+			</assemblies>
+			<!--
+			<summaries basedir="${ms.build.dir}">
+				<includes name="${assemblyname}.xml"/>
+			</summaries>
+			-->
+			<documenters>
+				<documenter name="MSDN">
+					<property name="OutputDirectory" value="${build.dir}\doc\MSDN"/>
+					<property name="IncludeFavorites" value="False"/>
+					<property name="Title" value="An NDoc Documented Class Library"/>
+					<property name="SplitTOCs" value="False"/>
+					<property name="DefaulTOC" value=""/>
+					<property name="ShowVisualBasic" value="True"/>
+					<property name="ShowMissingSummaries" value="True"/>
+					<property name="ShowMissingRemarks" value="True"/>
+					<property name="ShowMissingParams" value="True"/>
+					<property name="ShowMissingReturns" value="True"/>
+					<property name="ShowMissingValues" value="True"/>
+					<property name="DocumentInternals" value="False"/>
+					<property name="DocumentProtected" value="True"/>
+					<property name="DocumentPrivates" value="False"/>
+					<property name="DocumentEmptyNamespaces" value="False"/>
+					<property name="IncludeAssemblyVersion" value="False"/>
+					<property name="CopyrightText" value=""/>
+					<property name="CopyrightHref" value=""/>
+					<property name="HtmlHelpName" value="NAnt"/>
+					<property name="HtmlHelpCompilerFilename" value="hhc.exe"/>
+				</documenter>
+			</documenters>
+		</ndoc>
+	</target>
+
 </project>
-

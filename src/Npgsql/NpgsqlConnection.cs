@@ -28,6 +28,7 @@
 
 
 using System;
+using System.ComponentModel;
 using System.Data;
 using System.Net;
 using System.Net.Sockets;
@@ -36,6 +37,7 @@ using System.Text;
 using System.Collections;
 using System.Collections.Specialized;
 using NpgsqlTypes;
+using Npgsql.Design;
 
 
 namespace Npgsql
@@ -50,7 +52,8 @@ namespace Npgsql
   /// 
   /// <remarks> remarks test </remarks>
   /// 
-  public sealed class NpgsqlConnection : IDbConnection
+	[System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlConnection))]
+	public sealed class NpgsqlConnection : Component, IDbConnection
   {
   	public event NotificationEventHandler OnNotification;
     
@@ -59,23 +62,28 @@ namespace Npgsql
   	
     private ConnectionState	connection_state;
     private String					connection_string;
-    private ListDictionary	connection_string_values;
+    internal ListDictionary	connection_string_values;
+
+	// some of the following constants are needed
+	// for designtime support so I made them 'internal'
+	// as I didn't want to add another interface for internal access
+	// --brar
 
     // In the connection string
-    private readonly Char		CONN_DELIM 		= ';';  // Delimeter
-    private readonly Char 	CONN_ASSIGN 	= '=';
-    private readonly String CONN_SERVER 	= "SERVER";
-    private readonly String CONN_USERID 	= "USER ID";
-    private readonly String CONN_PASSWORD = "PASSWORD";
-    private readonly String CONN_DATABASE = "DATABASE";
-    private readonly String CONN_PORT 		= "PORT";
+    internal readonly Char		CONN_DELIM 		= ';';  // Delimeter
+    internal readonly Char 	CONN_ASSIGN 	= '=';
+    internal readonly String CONN_SERVER 	= "SERVER";
+    internal readonly String CONN_USERID 	= "USER ID";
+    internal readonly String CONN_PASSWORD = "PASSWORD";
+    internal readonly String CONN_DATABASE = "DATABASE";
+    internal readonly String CONN_PORT 		= "PORT";
 
 		// Postgres default port
-    private readonly String PG_PORT = "5432";
+    internal readonly String PG_PORT = "5432";
 		
     // These are for ODBC connection string compatibility
-    private readonly String ODBC_USERID 	= "UID";
-    private readonly String ODBC_PASSWORD = "PWD";
+    internal readonly String ODBC_USERID 	= "UID";
+    internal readonly String ODBC_PASSWORD = "PWD";
       		
     // Values for possible CancelRequest messages.
     private NpgsqlBackEndKeyData backend_keydata;
@@ -122,7 +130,9 @@ namespace Npgsql
     }
 
 		///<value> This is the ConnectionString value </value>
-    public String ConnectionString
+		[Editor(typeof(ConnectionStringEditor), typeof(System.Drawing.Design.UITypeEditor))]
+		[Description("Information used to connect to a PostgreSQL Database, such as 'Server=X;Port=X;Database=X;User Id=X;Password=X;'"), Category("Data")]
+		public String ConnectionString
     {
       get
       {
@@ -137,7 +147,8 @@ namespace Npgsql
       }
     }
 	
-    public Int32 ConnectionTimeout
+		[Description("Current connection timeout value, 'Connect Timeout=X' in the connection string")]
+		public Int32 ConnectionTimeout
     {
       get
       {
@@ -148,7 +159,8 @@ namespace Npgsql
     ///<summary>
     /// 
     /// </summary>	
-    public String Database
+		[Description("Current PostgreSQL database, 'Database=X' in the connection string")]
+		public String Database
     {
       get
       {
@@ -156,7 +168,8 @@ namespace Npgsql
       }
     }
 	
-    public ConnectionState State
+		[Browsable(false)]
+		public ConnectionState State
     {
       get 
       {	    		
@@ -239,6 +252,27 @@ namespace Npgsql
     public void Open()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Open()", LogLevel.Debug);
+
+		// I moved this here from ParseConnectionString as there is no need to validate the
+		// ConnectionString before we open the connection.
+		// See: http://gborg.postgresql.org/pipermail/npgsql-hackers/2003-March/000019.html
+		// In fact it makes it possible to parse incomplete ConnectionStrings for designtime support
+		// -- brar
+		//
+		// Now check if there is any missing argument.
+		if (connection_string_values[CONN_SERVER] == null)
+			throw new ArgumentException("Connection string argument missing!", CONN_SERVER);
+		if ((connection_string_values[CONN_USERID] == null) & (connection_string_values[ODBC_USERID] == null))
+			throw new ArgumentException("Connection string argument missing!", CONN_USERID);
+		if ((connection_string_values[CONN_PASSWORD] == null) & (connection_string_values[ODBC_PASSWORD] == null))
+			throw new ArgumentException("Connection string argument missing!", CONN_PASSWORD);
+		if (connection_string_values[CONN_DATABASE] == null)
+			// Database is optional. "[...] defaults to the user name if empty"
+			connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
+		if (connection_string_values[CONN_PORT] == null)
+			// Port is optional. Defaults to PG_PORT.
+			connection_string_values[CONN_PORT] = PG_PORT;
+    	
 	    	
       try
       {
@@ -336,7 +370,7 @@ namespace Npgsql
     }
     
     // Implement the IDisposable interface.
-    public void Dispose()
+    public new void Dispose()
     {
       NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", LogLevel.Debug);
 	    		    	
@@ -391,21 +425,6 @@ namespace Npgsql
 				NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LogLevel.Normal);
         connection_string_values.Add(keyvalue[0], keyvalue[1]);
       }
-	    	
-      // Now check if there is any missing argument.
-      if (connection_string_values[CONN_SERVER] == null)
-        throw new ArgumentException("Connection string argument missing!", CONN_SERVER);
-      if ((connection_string_values[CONN_USERID] == null) & (connection_string_values[ODBC_USERID] == null))
-        throw new ArgumentException("Connection string argument missing!", CONN_USERID);
-      if ((connection_string_values[CONN_PASSWORD] == null) & (connection_string_values[ODBC_PASSWORD] == null))
-        throw new ArgumentException("Connection string argument missing!", CONN_PASSWORD);
-      if (connection_string_values[CONN_DATABASE] == null)
-        // Database is optional. "[...] defaults to the user name if empty"
-        connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
-      if (connection_string_values[CONN_PORT] == null)
-        // Port is optional. Defaults to PG_PORT.
-        connection_string_values[CONN_PORT] = PG_PORT;
-    	
     }
 
 
@@ -576,3 +595,4 @@ namespace Npgsql
 		
   }
 }
+
