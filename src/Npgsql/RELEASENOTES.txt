@@ -1,5 +1,41 @@
 
-
+2005-01-23
+    
+    Npgsql 0.7beta4 development release
+    
+    Features added:
+    
+        gborg 971 & 1068: Added support for ParameterDirection.Output and ParameterDirection.InputOutput parameters. Now you can use these types of parameters to get results. Thanks Ivan (ivan-sun1 at mail dot ru) and (teste at aslls dot ss) for heads up.
+        
+        gborg 1079, 1082: Added support for implicit parameter stored procedure call. Parameters are added in order they were added to NpgsqlCommand Parameters collection.
+        
+        gborg 1099: Added support for record return type functions. Thanks neri and Michel for heads up and tests.
+        
+        Added Varchar support. Thanks Peter and Gustav for heads up.
+        
+        Fixed a problem with record return type support checking. Thanks Neri (nerips at bol dot com dot br) for heads up.
+        
+        Npgsql doesn't depend on System.Drawing and System.Windows.Forms (a.k.a SWF) when compiled with Mono. This dependency is only necessary to add design time support for VS.NET and so only enabled when compiling with csc.
+        
+    Bug fixes:
+        
+        Fixed NpgsqlConnector.IsValid. Now, clean mediator after get a connection from pool and test it for validity. This fix a bug which some times occured which made available this test resultset to user when it shouldn't.
+        
+        gborg 1080, 1088: Thanks Neri (neri at gborg dot postgresql dot org) for help. Now mapped output parameters are correctly updated regardless their position in Parameters collection.
+        
+        Npgsql/NpgsqlConnector.cs: Changed name of portal and prepare prefixes to be all lower case in order to not have case problems when deallocating them.
+        
+        gborg 1098: Updated Npgsqlbuild file to use latest nant. 0.85  Thanks Mike 
+        
+        Fixed Npgsql.build. monobuild target can now be used on windows with mono. Thanks Eric van der Gutten (ericvdg at ananzi dot co dot za)
+        
+        gborg 1095: Fixed NpgsqlCommandBuilder and NpgsqlDataAdapter support. Thanks Eric van der Gutten (ericvdg at ananzi dot co dot za)
+        
+        gborg 1110: Fixed problem when calling stored procedures with implicit parameter support. Parameters weren't being comma separated.
+        
+        gborg 1121: Applied patch. Thanksregmaster (regmaster at gmx dot li) and torben (torben-spam-npsql at nehmer dotnet) for patch.
+        
+        
 2004-11-21
 
     Npgsql 0.7beta3 development release
