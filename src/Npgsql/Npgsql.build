@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <!--
     This is the build file of Npgsql
 -->
@@ -31,15 +31,19 @@
 
 	<!--
 	Compiles the culture neutral resources that are linked into the main assembly
+	New culture neutral resources files must be added manually (not so for culture specific resources files)!
 	-->
 	<target name="resources" depends="init">
-		<!--
 		<resgen todir="${ms.res.dir}">
 			<resources>
+				<includes name="NpgsqlCommand.resx"/>
 				<includes name="NpgsqlConnection.resx"/>
+				<includes name="NpgsqlEventLog.resx"/>
+				<includes name="NpgsqlParameter.resx"/>
+				<includes name="NpgsqlParameterCollection.resx"/>
+				<includes name="NpgsqlTransaction.resx"/>
 			</resources>
 		</resgen>
-		-->
 		<resgen todir="${ms.res.dir}\Design">
 			<resources>
 				<includes name=".\Design\ConnectionStringEditorForm.resx"/>
@@ -81,13 +85,11 @@
 		<foreach item="String" in="${locales}" delim="," property="locale">
 			<mkdir dir="${ms.build.dir}\${locale}"/>
 			<mkdir dir="${ms.res.dir}\${locale}"/>
-			<!--
 			<resgen todir="${ms.res.dir}\${locale}">
-				<resources">
+				<resources>
 					<includes name="*.${locale}.resx"/>
 				</resources>
 			</resgen>
-			-->
 			<mkdir dir="${ms.res.dir}\Design\${locale}"/>
 			<resgen todir="${ms.res.dir}\Design\${locale}">
 				<resources>

@@ -39,563 +39,588 @@ using System.Collections.Specialized;
 using NpgsqlTypes;
 using Npgsql.Design;
 
+namespace Npgsql {
 
-namespace Npgsql
-{
+	/// <summary>
+	/// Represents the method that handles the <see cref="Npgsql.NpgsqlConnection.Notification">Notification</see> events.
+	/// </summary>
+	/// <param name="sender">The source of the event.</param>
+	/// <param name="e">A <see cref="Npgsql.NpgsqlNotificationEventArgs">NpgsqlNotificationEventArgs</see> that contains the event data.</param>
+	public delegate void NotificationEventHandler(Object sender, NpgsqlNotificationEventArgs e);  
   
-  public delegate void NotificationEventHandler(Object sender, NpgsqlNotificationEventArgs e);  
-  
-  /// <summary>
-  /// This class represents a connection to 
-  /// PostgreSQL Server.
-  /// </summary>
-  /// 
-  /// <remarks> remarks test </remarks>
-  /// 
+	/// <summary>
+	/// This class represents a connection to a 
+	/// PostgreSQL server.
+	/// </summary>
 	[System.Drawing.ToolboxBitmapAttribute(typeof(NpgsqlConnection))]
-	public sealed class NpgsqlConnection : Component, IDbConnection
-  {
-  	public event NotificationEventHandler OnNotification;
+	public sealed class NpgsqlConnection : Component, IDbConnection, IDisposable {
+
+		//Changed the Name of this event because events usually don't start with 'On' in the .Net-Framework
+		// (but their handlers do ;-)
+		/// <summary>
+		/// Occurs on NotificationResponses from the PostgreSQL backend.
+		/// </summary>
+		public event NotificationEventHandler Notification;
     
     
-  	private NpgsqlState			state;
+		private NpgsqlState			state;
   	
-    private ConnectionState	connection_state;
-    private String					connection_string;
-    internal ListDictionary	connection_string_values;
+		private ConnectionState	connection_state;
+		private String					connection_string;
+		internal ListDictionary	connection_string_values;
 
-	// some of the following constants are needed
-	// for designtime support so I made them 'internal'
-	// as I didn't want to add another interface for internal access
-	// --brar
+		// some of the following constants are needed
+		// for designtime support so I made them 'internal'
+		// as I didn't want to add another interface for internal access
+		// --brar
 
-    // In the connection string
-    internal readonly Char		CONN_DELIM 		= ';';  // Delimeter
-    internal readonly Char 	CONN_ASSIGN 	= '=';
-    internal readonly String CONN_SERVER 	= "SERVER";
-    internal readonly String CONN_USERID 	= "USER ID";
-    internal readonly String CONN_PASSWORD = "PASSWORD";
-    internal readonly String CONN_DATABASE = "DATABASE";
-    internal readonly String CONN_PORT 		= "PORT";
+		// In the connection string
+    internal readonly Char CONN_DELIM 		= ';';  // Delimeter
+		internal readonly Char CONN_ASSIGN 	= '=';
+		internal readonly String CONN_SERVER 	= "SERVER";
+		internal readonly String CONN_USERID 	= "USER ID";
+		internal readonly String CONN_PASSWORD = "PASSWORD";
+		internal readonly String CONN_DATABASE = "DATABASE";
+		internal readonly String CONN_PORT 		= "PORT";
 
 		// Postgres default port
-    internal readonly String PG_PORT = "5432";
+		internal readonly String PG_PORT = "5432";
 		
-    // These are for ODBC connection string compatibility
-    internal readonly String ODBC_USERID 	= "UID";
-    internal readonly String ODBC_PASSWORD = "PWD";
+		// These are for ODBC connection string compatibility
+		internal readonly String ODBC_USERID 	= "UID";
+		internal readonly String ODBC_PASSWORD = "PWD";
       		
-    // Values for possible CancelRequest messages.
-    private NpgsqlBackEndKeyData backend_keydata;
+		// Values for possible CancelRequest messages.
+		private NpgsqlBackEndKeyData backend_keydata;
   	
-  	// Flag for transaction status.
-  	private Boolean							_inTransaction = false;
+		// Flag for transaction status.
+		private Boolean							_inTransaction = false;
     
-    // Mediator which will hold data generated from backend
-    private NpgsqlMediator	_mediator;
+		// Mediator which will hold data generated from backend
+		private NpgsqlMediator	_mediator;
         
-    // Logging related values
-    private readonly String CLASSNAME = "NpgsqlConnection";
+		// Logging related values
+		private readonly String CLASSNAME = "NpgsqlConnection";
   		
-    private TcpClient				connection;
-    /*private BufferedStream	output_stream;
-    private Byte[]					input_buffer;*/
-    private Encoding				connection_encoding;
+		private TcpClient				connection;
+		/*private BufferedStream	output_stream;
+		private Byte[]					input_buffer;*/
+		private Encoding				connection_encoding;
   	
-  	private Boolean					_supportsPrepare = false;
+		private Boolean					_supportsPrepare = false;
   	
-  	private String 					_serverVersion; // Contains string returned from select version();
+		private String 					_serverVersion; // Contains string returned from select version();
   	
-  	private Hashtable				_oidToNameMapping; 
+		private Hashtable				_oidToNameMapping; 
   	
-  	
-    public NpgsqlConnection() : this(String.Empty){}
+		private System.Resources.ResourceManager resman;
 
-    public NpgsqlConnection(String ConnectionString)
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".NpgsqlConnection()", LogLevel.Debug);
+		/// <summary>
+		/// Initializes a new instance of the 
+		/// <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> class.
+		/// </summary>
+		public NpgsqlConnection() : this(String.Empty){}
+
+		/// <summary>
+		/// Initializes a new instance of the 
+		/// <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> class
+		/// and sets the <see cref="Npgsql.NpgsqlConnection.ConnectionString">ConnectionString</see>.
+		/// </summary>
+		/// <param name="ConnectionString">The connection used to open the PostgreSQL database.</param>
+		public NpgsqlConnection(String ConnectionString) {
+			resman = new System.Resources.ResourceManager(typeof(NpgsqlConnection));
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, ConnectionString);
       
-      connection_state = ConnectionState.Closed;
-    	state = NpgsqlClosedState.Instance;
-    	connection_string = ConnectionString;
-      connection_string_values = new ListDictionary();
-      connection_encoding = Encoding.Default;
+			connection_state = ConnectionState.Closed;
+			state = NpgsqlClosedState.Instance;
+			connection_string = ConnectionString;
+			connection_string_values = new ListDictionary();
+			connection_encoding = Encoding.Default;
     	
-    	_mediator = new NpgsqlMediator();
+			_mediator = new NpgsqlMediator();
+			_oidToNameMapping = new Hashtable();
     	
-    	_oidToNameMapping = new Hashtable();
-    	
-    	if (connection_string != String.Empty)
+			if (connection_string != String.Empty)
 				ParseConnectionString();
-    }
+		}
 
-		///<value> This is the ConnectionString value </value>
+		/// <summary>
+		/// Gets or sets the string used to open a SQL Server database.
+		/// </summary>
+		/// <value>The connection string that includes the server name, 
+		/// the database name, and other parameters needed to establish 
+		/// the initial connection. The default value is an empty string.
+		/// </value>
+		[RefreshProperties(RefreshProperties.All), DefaultValue(""), RecommendedAsConfigurable(true)]
+		[NpgsqlSysDescription("Description_ConnectionString", typeof(NpgsqlConnection)), Category("Data")]
 		[Editor(typeof(ConnectionStringEditor), typeof(System.Drawing.Design.UITypeEditor))]
-		[Description("Information used to connect to a PostgreSQL Database, such as 'Server=X;Port=X;Database=X;User Id=X;Password=X;'"), Category("Data")]
-		public String ConnectionString
-    {
-      get
-      {
-        return connection_string;
-      }
-      set
-      {
-        connection_string = value;
-        NpgsqlEventLog.LogMsg("Set " + CLASSNAME + ".ConnectionString = " + value, LogLevel.Normal);
-      	if (connection_string != String.Empty)
-        	ParseConnectionString();
-      }
-    }
-	
-		[Description("Current connection timeout value, 'Connect Timeout=X' in the connection string")]
-		public Int32 ConnectionTimeout
-    {
-      get
-      {
-        return 0;
-      }
-    }
+		public String ConnectionString {
+			get {
+				return connection_string;
+			}
+			set {
+				NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "ConnectionString", value);
+				connection_string = value;
+				if (connection_string != String.Empty)
+					ParseConnectionString();
+			}
+		}
 
-    ///<summary>
-    /// 
-    /// </summary>	
-		[Description("Current PostgreSQL database, 'Database=X' in the connection string")]
-		public String Database
-    {
-      get
-      {
-        return DatabaseName;
-      }
-    }
-	
+		/// <summary>
+		/// Gets the time to wait while trying to establish a connection 
+		/// before terminating the attempt and generating an error.
+		/// </summary>
+		/// <value>The time (in seconds) to wait for a connection to open. The default value is 15 seconds.</value>
+		/// <remarks>This property currently always returns zero</remarks>
+		[NpgsqlSysDescription("Description_ConnectionTimeout", typeof(NpgsqlConnection))]
+		public Int32 ConnectionTimeout {
+			get {
+				return 0;
+			}
+		}
+
+		///<summary>
+		/// Gets the name of the current database or the database to be used after a connection is opened.
+		/// </summary>	
+		/// <value>The name of the current database or the name of the database to be 
+		/// used after a connection is opened. The default value is an empty string.</value>
+		[NpgsqlSysDescription("Description_Database", typeof(NpgsqlConnection))]
+		public String Database {
+			get {
+				return DatabaseName;
+			}
+		}
+
+		/// <summary>
+		/// Gets the current state of the connection.
+		/// </summary>
+		/// <value>A bitwise combination of the <see cref="System.Data.ConnectionState">ConnectionState</see> values. The default is <b>Closed</b>.</value>
 		[Browsable(false)]
-		public ConnectionState State
-    {
-      get 
-      {	    		
-        return connection_state; 
-      }
-    }
-    		
-    IDbTransaction IDbConnection.BeginTransaction()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction()", LogLevel.Debug);
-      //throw new NotImplementedException();
-    	return (NpgsqlTransaction) BeginTransaction();
-    }
+		public ConnectionState State {
+			get {	    		
+				return connection_state; 
+			}
+		}
+
+		/// <summary>
+		/// Begins a database transaction.
+		/// </summary>
+		/// <returns>An <see cref="System.Data.IDbTransaction">IDbTransaction</see> 
+		/// object representing the new transaction.</returns>
+		/// <remarks>
+		/// Currently there's no support for nested transactions.
+		/// </remarks>
+		IDbTransaction IDbConnection.BeginTransaction() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "IDbConnection.BeginTransaction");
+			//throw new NotImplementedException();
+			return BeginTransaction();
+		}
 	
-    IDbTransaction IDbConnection.BeginTransaction(IsolationLevel level)
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + "IDbConnection.BeginTransaction(" + level + ")", LogLevel.Debug);
-      //throw new NotImplementedException();
-    	return (NpgsqlTransaction) BeginTransaction(level);
-    }
+		/// <summary>
+		/// Begins a database transaction with the specified isolation level.
+		/// </summary>
+		/// <param name="level">The <see cref="System.Data.IsolationLevel">isolation level</see> under which the transaction should run.</param>
+		/// <returns>An <see cref="System.Data.IDbTransaction">IDbTransaction</see> 
+		/// object representing the new transaction.</returns>
+		/// <remarks>
+		/// Currently the IsolationLevel ReadCommitted and Serializable are supported by the PostgreSQL backend.
+		/// There's no support for nested transactions.
+		/// </remarks>
+		IDbTransaction IDbConnection.BeginTransaction(IsolationLevel level) {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "IDbConnection.BeginTransaction", level);
+			//throw new NotImplementedException();
+			return BeginTransaction(level);
+		}
 
 		
-		
-		internal void Notification(NpgsqlNotificationEventArgs e)
- 	  {
- 		  if (OnNotification != null)
- 			  OnNotification(this, e);
- 	  }
+		// I had to rename this Method from Notification to Notify due to the renaming of OnNotification to Notification
+		/// <summary>
+		/// Creates a Notification event
+		/// </summary>
+		/// <param name="e">The <see cref="Npgsql.NpgsqlNotificationEventArgs">NpgsqlNotificationEventArgs</see> that contains the event data.</param>
+		internal void Notify(NpgsqlNotificationEventArgs e) {
+			if (Notification != null)
+				Notification(this, e);
+		}
 
-
-		public NpgsqlTransaction BeginTransaction()
-		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction()", LogLevel.Debug);
+		/// <summary>
+		/// Begins a database transaction.
+		/// </summary>
+		/// <returns>A <see cref="Npgsql.NpgsqlTransaction">NpgsqlTransaction</see> 
+		/// object representing the new transaction.</returns>
+		/// <remarks>
+		/// Currently there's no support for nested transactions.
+		/// </remarks>
+		public NpgsqlTransaction BeginTransaction() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "BeginTransaction");
 			return this.BeginTransaction(IsolationLevel.ReadCommitted);
 		}
-		
-		public NpgsqlTransaction BeginTransaction(IsolationLevel level)
-		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".BeginTransaction(" + level + ")", LogLevel.Debug);
+
+		/// <summary>
+		/// Begins a database transaction with the specified isolation level.
+		/// </summary>
+		/// <param name="level">The <see cref="System.Data.IsolationLevel">isolation level</see> under which the transaction should run.</param>
+		/// <returns>A <see cref="Npgsql.NpgsqlTransaction">NpgsqlTransaction</see> 
+		/// object representing the new transaction.</returns>
+		/// <remarks>
+		/// Currently the IsolationLevel ReadCommitted and Serializable are supported by the PostgreSQL backend.
+		/// There's no support for nested transactions.
+		/// </remarks>
+		public NpgsqlTransaction BeginTransaction(IsolationLevel level) {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "BeginTransaction", level);
 			
 			if (_inTransaction)
-				throw new InvalidOperationException("Nested/Concurrent transactions aren't supported.");
+				throw new InvalidOperationException(resman.GetString("Exception_NoNestedTransactions"));
 			
 			InTransaction = true;
 			
 			return new NpgsqlTransaction(this, level);
 		}
-	
-		///
+
 		/// <summary>
 		/// This method changes the current database by disconnecting from the actual 
 		/// database and connecting to the specified.
 		/// </summary>
-		
-		 
-    public void ChangeDatabase(String dbName)
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ChangeDatabase(" + dbName + ")", LogLevel.Debug);
-      //throw new NotImplementedException();
+		/// <param name="dbName">The name of the database to use in place of the current database.</param>
+		public void ChangeDatabase(String dbName) {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ChangeDatabase", dbName);
+			//throw new NotImplementedException();
     	
-    	if (dbName == null)
-    		throw new ArgumentNullException("dbName");
+			if (dbName == null)
+				throw new ArgumentNullException("dbName");
     	
-    	if (dbName == String.Empty)
-    		throw new ArgumentException("Invalid database name", "dbName");
+			if (dbName == String.Empty)
+				throw new ArgumentException(String.Format(resman.GetString("Exception_InvalidDbName"), dbName), "dbName");
     	
+			if(this.connection_state != ConnectionState.Open)
+				throw new InvalidOperationException(resman.GetString("Exception_ChangeDatabaseOnOpenConn"));
     	
-    	String oldDatabaseName = (String)connection_string_values[CONN_DATABASE];
-    	
-    	Close();
+			String oldDatabaseName = (String)connection_string_values[CONN_DATABASE];
+			Close();
     	    	
-    	connection_string_values[CONN_DATABASE] = dbName;
+			connection_string_values[CONN_DATABASE] = dbName;
     	
-    	Open();
+			Open();
     	    	
 
     
-    }
-	
-    public void Open()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Open()", LogLevel.Debug);
+		}
 
-		// I moved this here from ParseConnectionString as there is no need to validate the
-		// ConnectionString before we open the connection.
-		// See: http://gborg.postgresql.org/pipermail/npgsql-hackers/2003-March/000019.html
-		// In fact it makes it possible to parse incomplete ConnectionStrings for designtime support
-		// -- brar
-		//
-		// Now check if there is any missing argument.
-		if (connection_string_values[CONN_SERVER] == null)
-			throw new ArgumentException("Connection string argument missing!", CONN_SERVER);
-		if ((connection_string_values[CONN_USERID] == null) & (connection_string_values[ODBC_USERID] == null))
-			throw new ArgumentException("Connection string argument missing!", CONN_USERID);
-		if ((connection_string_values[CONN_PASSWORD] == null) & (connection_string_values[ODBC_PASSWORD] == null))
-			throw new ArgumentException("Connection string argument missing!", CONN_PASSWORD);
-		if (connection_string_values[CONN_DATABASE] == null)
-			// Database is optional. "[...] defaults to the user name if empty"
-			connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
-		if (connection_string_values[CONN_PORT] == null)
-			// Port is optional. Defaults to PG_PORT.
-			connection_string_values[CONN_PORT] = PG_PORT;
+		/// <summary>
+		/// Opens a database connection with the property settings specified by the 
+		/// <see cref="Npgsql.NpgsqlConnection.ConnectionString">ConnectionString</see>.
+		/// </summary>
+		public void Open() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
+
+			// I moved this here from ParseConnectionString as there is no need to validate the
+			// ConnectionString before we open the connection.
+			// See: http://gborg.postgresql.org/pipermail/npgsql-hackers/2003-March/000019.html
+			// In fact it makes it possible to parse incomplete ConnectionStrings for designtime support
+			// -- brar
+			//
+			// Now check if there is any missing argument.
+			if (connection_string == String.Empty)
+				throw new InvalidOperationException(resman.GetString("Exception_ConnStrEmpty"));
+			if (connection_string_values[CONN_SERVER] == null)
+				throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_SERVER);
+			if ((connection_string_values[CONN_USERID] == null) & (connection_string_values[ODBC_USERID] == null))
+				throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_USERID);
+			if ((connection_string_values[CONN_PASSWORD] == null) & (connection_string_values[ODBC_PASSWORD] == null))
+				throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_PASSWORD);
+			if (connection_string_values[CONN_DATABASE] == null)
+				// Database is optional. "[...] defaults to the user name if empty"
+				connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
+			if (connection_string_values[CONN_PORT] == null)
+				// Port is optional. Defaults to PG_PORT.
+				connection_string_values[CONN_PORT] = PG_PORT;
     	
 	    	
-      try
-      {
+			try {
 		    		    	
-        // Check if the connection is already open.
-        if (connection_state == ConnectionState.Open)
-          throw new NpgsqlException("Connection already open");
-		    		    
-		   	if (connection_string == String.Empty)
-		   		throw new InvalidOperationException("ConnectionString cannot be empty.");
+				// Check if the connection is already open.
+				if (connection_state == ConnectionState.Open)
+					throw new NpgsqlException(resman.GetString("Exception_ConnOpen"));
       	
-		    CurrentState.Open(this);
+				CurrentState.Open(this);
       	
-      	// Check if there were any errors.
-      	if (_mediator.Errors.Count > 0)
-      	{
-      		StringWriter sw = new StringWriter();
-      		sw.WriteLine("There have been errors on Open()");
-      		uint i = 1;
-      		foreach(string error in _mediator.Errors){
-      			sw.WriteLine("{0}. {1}", i++, error);
-      		}
-      		CurrentState = NpgsqlClosedState.Instance;
-      		_mediator.Reset();
-      		throw new NpgsqlException(sw.ToString());
-      	}
+				// Check if there were any errors.
+				if (_mediator.Errors.Count > 0) {
+					StringWriter sw = new StringWriter();
+					sw.WriteLine(resman.GetString("Exception_OpenError"));
+					uint i = 1;
+					foreach(string error in _mediator.Errors){
+						sw.WriteLine("{0}. {1}", i++, error);
+					}
+					CurrentState = NpgsqlClosedState.Instance;
+					_mediator.Reset();
+					throw new NpgsqlException(sw.ToString());
+				}
       	
-      	backend_keydata = _mediator.GetBackEndKeyData();
+				backend_keydata = _mediator.GetBackEndKeyData();
       	
-        // Change the state of connection to open.
-        connection_state = ConnectionState.Open;
+				// Change the state of connection to open.
+				connection_state = ConnectionState.Open;
       	
-      	// Get version information to enable/disable server version features.
-      	NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
-      	_serverVersion = (String) command.ExecuteScalar();
-      	ProcessServerVersion();
-      	_oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+				// Get version information to enable/disable server version features.
+				NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
+				_serverVersion = (String) command.ExecuteScalar();
+				ProcessServerVersion();
+				_oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
       	
       	
       		    			    		
-      }
-      catch(SocketException e)
-      {
-        // [TODO] Very ugly message. Needs more working.
-        throw new NpgsqlException("A SocketException occured", e);
-      }
+			}
+			catch(SocketException e) {
+				// [TODO] Very ugly message. Needs more working.
+				throw new NpgsqlException(resman.GetString("Exception_SocketEx"), e);
+			}
 	    	
-      catch(IOException e)
-      {
-        // This exception was thrown by StartupPacket handling functions.
-        // So, close the connection and throw the exception.
-        // [TODO] Better exception handling. :)
-        Close();
+			catch(IOException e) {
+				// This exception was thrown by StartupPacket handling functions.
+				// So, close the connection and throw the exception.
+				// [TODO] Better exception handling. :)
+				Close();
 	    		
-        throw new NpgsqlException("Error in Open()", e);
-      }
+				throw new NpgsqlException(resman.GetString("Exception_OpenError"), e);
+			}
 	    	
-    }
-	
-    public void Close()
-    
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Close()", LogLevel.Debug);
-    
-      try
-      {
-      	if ((connection_state == ConnectionState.Open))
-        {
-          CurrentState.Close(this);
-        }
-      }
-      catch (IOException e)
-      {
-        throw new NpgsqlException("Error in Close()", e);
-      }
-      finally
-      {
-        // Even if an exception occurs, let object in a consistent state.
-        if (TcpClient != null)
-        	TcpClient.Close();
-        connection_state = ConnectionState.Closed;
-      }
-    }
-	    
-    IDbCommand IDbConnection.CreateCommand()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LogLevel.Debug);
-      return (NpgsqlCommand) CreateCommand();
-    }
-    
-    public NpgsqlCommand CreateCommand()
-    {
-    	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CreateCommand()", LogLevel.Debug);
-      return new NpgsqlCommand("", this);
-    }
-    
-    // Implement the IDisposable interface.
-    public new void Dispose()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Dispose()", LogLevel.Debug);
-		if (this.connection_state == ConnectionState.Open){
-			this.Close();
 		}
-	    		    	
-    }
+
+		/// <summary>
+		/// Closes the connection to the database.
+		/// </summary>
+		public void Close() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Close");
+    
+			try {
+				if ((connection_state == ConnectionState.Open)) {
+					CurrentState.Close(this);
+				}
+			}
+			catch (IOException e) {
+				throw new NpgsqlException(resman.GetString("Exception_CloseError"), e);
+			}
+			finally {
+				// Even if an exception occurs, let object in a consistent state.
+				if (TcpClient != null)
+					TcpClient.Close();
+				connection_state = ConnectionState.Closed;
+			}
+		}
+
+		/// <summary>
+		/// Creates and returns a <see cref="System.Data.IDbCommand">IDbCommand</see> 
+		/// object associated with the <see cref="System.Data.IDbConnection">IDbConnection</see>.
+		/// </summary>
+		/// <returns>A <see cref="System.Data.IDbCommand">IDbCommand</see> object.</returns>
+		IDbCommand IDbConnection.CreateCommand() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "IDbConnection.CreateCommand");
+			return (NpgsqlCommand) CreateCommand();
+		}
+
+		/// <summary>
+		/// Creates and returns a <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see> 
+		/// object associated with the <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see>.
+		/// </summary>
+		/// <returns>A <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see> object.</returns>
+		public NpgsqlCommand CreateCommand() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CreateCommand");
+			return new NpgsqlCommand("", this);
+		}
+
+		/// <summary>
+		/// Releases the unmanaged resources used by the 
+		/// <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> 
+		/// and optionally releases the managed resources.
+		/// </summary>
+		/// <param name="disposing"><b>true</b> to release both managed and unmanaged resources; 
+		/// <b>false</b> to release only unmanaged resources.</param>
+		protected override void Dispose(bool disposing) {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Dispose", disposing);
+			if (disposing == true){
+				if (this.connection_state == ConnectionState.Open)
+					this.Close();
+				this.connection_string = null;
+			}
+			base.Dispose (disposing);
+		}
 	    
-    // Private util methods
+		// Private util methods
 	    
-    /// <summary>
-    /// This method parses the connection string.
-    /// It translates it to a list of key-value pairs.
-    /// Valid values are:
-    /// Server 		- Address/Name of Postgresql Server
-    /// Port		- Port to connect to.
-    /// Database 	- Database name. Defaults to user name if not specified
-    /// User		- User name
-    /// Password	- Password for clear text authentication
-    /// </summary>
-    private void ParseConnectionString()
-    {
-      NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ParseConnectionString()", LogLevel.Debug);
+		/// <summary>
+		/// This method parses the connection string.
+		/// It translates it to a list of key-value pairs.
+		/// Valid values are:
+		/// Server 		- Address/Name of Postgresql Server
+		/// Port		- Port to connect to.
+		/// Database 	- Database name. Defaults to user name if not specified
+		/// User		- User name
+		/// Password	- Password for clear text authentication
+		/// </summary>
+		private void ParseConnectionString() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ParseConnectionString");
 	    
-	    connection_string_values.Clear();
+			connection_string_values.Clear();
 	    
-	    // Get the key-value pairs delimited by CONN_DELIM
-      String[] pairs = connection_string.Split(new Char[] {CONN_DELIM});
+			// Get the key-value pairs delimited by CONN_DELIM
+			String[] pairs = connection_string.Split(new Char[] {CONN_DELIM});
 	    	
-      String[] keyvalue;
-      // Now, for each pair, get its key-value.
-      foreach(String s in pairs)
-      {
-        // This happen when there are trailling/empty CONN_DELIMs
-        // Just ignore them.
-        if (s == "")	
-          continue;
+			String[] keyvalue;
+			// Now, for each pair, get its key-value.
+			foreach(String s in pairs) {
+				// This happen when there are trailling/empty CONN_DELIMs
+				// Just ignore them.
+				if (s == "")	
+					continue;
 	    		
-        keyvalue = s.Split(new Char[] {CONN_ASSIGN});
+				keyvalue = s.Split(new Char[] {CONN_ASSIGN});
 	    		
-        // Check if there is a key-value pair.
-        if (keyvalue.Length != 2)
-          throw new ArgumentException("key=value argument incorrect in ConnectionString", connection_string);
+				// Check if there is a key-value pair.
+				if (keyvalue.Length != 2)
+					throw new ArgumentException(resman.GetString("Exception_WrongKeyVal"), connection_string);
 	    	
 				// Shift the key to upper case, and substitute ODBC style keys
 				keyvalue[0] = keyvalue[0].ToUpper();
 				if (keyvalue[0] == ODBC_USERID)
-	  			keyvalue[0] = CONN_USERID;
-        if (keyvalue[0] == ODBC_PASSWORD)
-          keyvalue[0] = CONN_PASSWORD;	    	 
+					keyvalue[0] = CONN_USERID;
+				if (keyvalue[0] == ODBC_PASSWORD)
+					keyvalue[0] = CONN_PASSWORD;	    	 
 	    	
 				// Add the pair to the dictionary. The key is shifted to upper
 				// case for case insensitivity.
-				    	
-				NpgsqlEventLog.LogMsg("Connection string option: " + keyvalue[0] + " = " + keyvalue[1], LogLevel.Normal);
-        connection_string_values.Add(keyvalue[0], keyvalue[1]);
-      }
-    }
+                
+				NpgsqlEventLog.LogMsg(resman, "Log_ConnectionStringValues", LogLevel.Debug, keyvalue[0], keyvalue[1]);
+				connection_string_values.Add(keyvalue[0], keyvalue[1]);
+			}
+		}
 
 
 		/// <summary>
 		/// This method is required to set all the version dependent features flags.
 		/// SupportsPrepare means the server can use prepared query plans (7.3+)
-		/// 
 		/// </summary>
-		 		 
-		private void ProcessServerVersion()
-		{
-			NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".ProcessServerVersion()", LogLevel.Debug);
+		private void ProcessServerVersion() {
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessServerVersion");
 			
 			
 			SupportsPrepare = (_serverVersion.IndexOf("PostgreSQL 7.3") != -1) || 
-												(_serverVersion.IndexOf("PostgreSQL 7.4") != -1) ;
+				(_serverVersion.IndexOf("PostgreSQL 7.4") != -1) ;
 			
 		}
     
-    // State 
-		internal void Query( NpgsqlCommand queryCommand )
-		{
+		// State 
+		internal void Query( NpgsqlCommand queryCommand ) {
 			CurrentState.Query( this, queryCommand );
 		}
-		internal void Authenticate(string password)
-		{
+		internal void Authenticate(string password) {
 			CurrentState.Authenticate( this, password );
 		}
-		internal void Startup()
-		{
+		internal void Startup() {
 			CurrentState.Startup( this );
 		}
 		
-		internal NpgsqlState CurrentState
-		{
-			get 
-			{
+		internal NpgsqlState CurrentState {
+			get {
 				return state;
 			}
-			set
-			{
+			set {
 				state = value;
 			}
 		}
 		// Internal properties
 
-		internal NpgsqlBackEndKeyData BackEndKeyData
-		{
-			get
-			{
+		internal NpgsqlBackEndKeyData BackEndKeyData {
+			get {
 				return backend_keydata;
 			}
-			set
-			{
+			set {
 				backend_keydata = value;
 			}
 		}
 		
-		internal String ServerName
-		{
-			get
-			{
+		internal String ServerName {
+			get {
 				return (String)connection_string_values[CONN_SERVER];
 			}
 		}
-		internal String ServerPort
-		{
-			get
-			{
+		internal String ServerPort {
+			get {
 				return   (String)connection_string_values[CONN_PORT];
 			}
 		}
-		internal String DatabaseName
-		{
-			get
-			{
+		internal String DatabaseName {
+			get {
 				return (String)connection_string_values[CONN_DATABASE];
 			}
 		}
-		internal String UserName
-		{
-			get
-			{
+		internal String UserName {
+			get {
 				return (String)connection_string_values[CONN_USERID];
 			}
 		}
-		internal String ServerPassword
-		{
-			get
-			{
+		internal String ServerPassword {
+			get {
 				return (String)connection_string_values[CONN_PASSWORD];
 			}
 		}
-		internal TcpClient TcpClient
-		{
-			get
-			{
+		internal TcpClient TcpClient {
+			get {
 				return connection;
 			}
-			set
-			{
+			set {
 				connection = value;
 			}
 		}
-		internal Encoding Encoding
-		{
-			get
-			{
+		internal Encoding Encoding {
+			get {
 				return connection_encoding;
 			}
 		}
 		
-		internal NpgsqlMediator	Mediator
-		{
-			get
-			{
+		internal NpgsqlMediator	Mediator {
+			get {
 				return _mediator;
 			}
 		}
 		
-		internal Boolean InTransaction
-		{
-			get
-			{
+		internal Boolean InTransaction {
+			get {
 				return _inTransaction;
 			}
 			
-			set
-			{
+			set {
 				_inTransaction = value;
 			}
 		}
 		
-		internal Boolean SupportsPrepare
-		{
-			get
-			{
+		internal Boolean SupportsPrepare {
+			get {
 				return _supportsPrepare;
 			}
 			
-			set
-			{
+			set {
 				_supportsPrepare = value;
 			}
 		}
 		
-		internal String ServerVersion
-		{
-			get
-			{
+		internal String ServerVersion {
+			get {
 				return _serverVersion;
 			}
 		}
 		
-		internal Hashtable OidToNameMapping
-		{
-			get
-			{
+		internal Hashtable OidToNameMapping {
+			get {
 				return _oidToNameMapping;
 			}
 			
-			set 
-			{
+			set {
 				_oidToNameMapping = value;
 			}
 			
 		}
-		
-  }
+		}
 }
+
 

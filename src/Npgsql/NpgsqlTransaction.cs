@@ -31,15 +31,19 @@ using System.Data;
 
 namespace Npgsql
 {
-	
-	public sealed class NpgsqlTransaction : IDbTransaction
+	/// <summary>
+	/// Represents a transaction to be made in a PostgreSQL database. This class cannot be inherited.
+	/// </summary>
+	public sealed class NpgsqlTransaction : MarshalByRefObject, IDbTransaction
 	{
 		
 		private static readonly String CLASSNAME = "NpgsqlTransaction";
 		
 		private NpgsqlConnection	_conn				= null;
 		private IsolationLevel		_isolation	= IsolationLevel.ReadCommitted;
-		
+		private bool _disposing = false;
+		private System.Resources.ResourceManager resman;
+
 		
 		
 		internal NpgsqlTransaction(NpgsqlConnection conn) : this(conn, IsolationLevel.ReadCommitted)
@@ -49,10 +53,11 @@ namespace Npgsql
 		
 		internal NpgsqlTransaction(NpgsqlConnection conn, IsolationLevel isolation)
 		{
-			
+			resman = new System.Resources.ResourceManager(typeof(NpgsqlTransaction));
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
 			if ((isolation != IsolationLevel.ReadCommitted) &&
 				(isolation != IsolationLevel.Serializable))
-				throw new ArgumentException("Must be Read Committed or Serializable", "isolation");
+				throw new ArgumentException(resman.GetString("Exception_UnsopportedIsolationLevel"), "isolation");
 			
 			_conn = conn;
 			_isolation = isolation;
@@ -71,7 +76,14 @@ namespace Npgsql
 			command.ExecuteNonQuery();
 						
 		}
-		
+
+		/// <summary>
+		/// Gets the <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> 
+		/// object associated with the transaction, or a null reference if the 
+		/// transaction is no longer valid.
+		/// </summary>
+		/// <value>The <see cref="Npgsql.NpgsqlConnection">NpgsqlConnection</see> 
+		/// object associated with the transaction.</value>
 		public NpgsqlConnection Connection
 		{
 			get
@@ -89,7 +101,12 @@ namespace Npgsql
 				return Connection;
 			}
 		}
-		
+
+		/// <summary>
+		/// Specifies the <see cref="System.Data.IsolationLevel">IsolationLevel</see> for this transaction.
+		/// </summary>
+		/// <value>The <see cref="System.Data.IsolationLevel">IsolationLevel</see> for this transaction. 
+		/// The default is <b>ReadCommitted</b>.</value>
 		public IsolationLevel IsolationLevel
 		{
 			get
@@ -97,26 +114,50 @@ namespace Npgsql
 				return _isolation;
 			}
 		}
-		
+
+		/// <summary>
+		/// Releases the unmanaged resources used by the 
+		/// <see cref="Npgsql.NpgsqlTransaction">NpgsqlTransaction</see> 
+		/// and optionally releases the managed resources.
+		/// </summary>
 		public void Dispose()
 		{
-			
+            this.Dispose(true);			
 		}
-		
+
+		private void Dispose(bool disposing){
+			if(disposing == true && this._conn != null){
+				this._disposing = true;
+				this.Rollback();
+			}
+		}
+
+		/// <summary>
+		/// Commits the database transaction.
+		/// </summary>
 		public void Commit()
 		{
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Commit");
 			NpgsqlCommand command = new NpgsqlCommand("COMMIT", _conn);
 			command.ExecuteNonQuery();
 			_conn.InTransaction = false;
 		}
-		
+
+		/// <summary>
+		/// Rolls back a transaction from a pending state.
+		/// </summary>
 		public void Rollback()
 		{
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Rollback");
 			NpgsqlCommand command = new NpgsqlCommand("ROLLBACK", _conn);
 			command.ExecuteNonQuery();
 			_conn.InTransaction = false;
 		}
 		
-		
+		internal bool Disposing{
+			get{
+				return _disposing;
+			}
+		}
 	}
 }
