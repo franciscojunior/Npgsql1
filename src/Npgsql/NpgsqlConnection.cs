@@ -450,18 +450,18 @@ namespace Npgsql
         }
 
         /// <summary>
-        /// Create a new (unconnected) connection based on this one.
+        /// Create a new connection based on this one.
         /// </summary>
-        /// <returns>A new NpgsqlConnction object.</returns>
+        /// <returns>A new NpgsqlConnection object.</returns>
         Object ICloneable.Clone()
         {
             return Clone();
         }
 
         /// <summary>
-        /// Create a new (unconnected) connection based on this one.
+        /// Create a new connection based on this one.
         /// </summary>
-        /// <returns>A new NpgsqlConnction object.</returns>
+        /// <returns>A new NpgsqlConnection object.</returns>
         public NpgsqlConnection Clone()
         {
             CheckNotDisposed();
