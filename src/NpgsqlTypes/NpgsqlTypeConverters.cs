@@ -267,12 +267,17 @@ namespace NpgsqlTypes
     internal abstract class ExtendedBackendToNativeTypeConverter
     {
         /// <summary>
-        /// Convert a postgresql point to a System.PointF.
+        /// Convert a postgresql point to a System.NpgsqlPoint.
         /// </summary>
         internal static Object ToPoint(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
-            return new PointF(100,250);
+                        
+            Int32 commaIndex = BackendData.IndexOf(',');
+            
+            Single x = Single.Parse(BackendData.Substring(1, commaIndex - 1));
+            Single y = Single.Parse(BackendData.Substring(1 + commaIndex, BackendData.Length - commaIndex - 2));
+            
+            return new NpgsqlPoint(x, y);
         }
 
         /// <summary>
@@ -281,7 +286,7 @@ namespace NpgsqlTypes
         internal static Object ToRectangle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             // FIXME - uh actually parse the data
-            return new RectangleF(100,250,20,40);
+            return new NpgsqlBox(100,250,20,40);
         }
 
         /// <summary>
@@ -332,14 +337,14 @@ namespace NpgsqlTypes
         /// </summary>
         internal static String ToPoint(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
         {
-            if (NativeData.GetType() == typeof(Point)) {
-                Point       P = (Point)NativeData;
+            if (NativeData is NpgsqlPoint)
+           	{
+           		NpgsqlPoint	P = (NpgsqlPoint)NativeData;
                 return String.Format(CultureInfo.InvariantCulture, "({0},{1})", P.X, P.Y);
-            } else if (NativeData.GetType() == typeof(PointF)) {
-                PointF      P = (PointF)NativeData;
-                return String.Format(CultureInfo.InvariantCulture, "({0},{1})", P.X, P.Y);
-            } else {
-                throw new InvalidCastException("Unable to cast data to Point type");
+           	} 
+			else 
+			{
+                throw new InvalidCastException("Unable to cast data to NpgsqlPoint type");
             }
         }
 
@@ -348,12 +353,18 @@ namespace NpgsqlTypes
         /// </summary>
         internal static String ToBox(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
         {
-            if (NativeData.GetType() == typeof(Rectangle)) {
+            /*if (NativeData.GetType() == typeof(Rectangle)) {
                 Rectangle       R = (Rectangle)NativeData;
                 return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", R.Left, R.Top, R.Left + R.Width, R.Top + R.Height);
             } else if (NativeData.GetType() == typeof(RectangleF)) {
                 RectangleF      R = (RectangleF)NativeData;
-                return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", R.Left, R.Top, R.Left + R.Width, R.Top + R.Height);
+                return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", R.Left, R.Top, R.Left + R.Width, R.Top + R.Height);*/
+                
+            if (NativeData is NpgsqlBox)
+			{
+				NpgsqlBox box = (NpgsqlBox) NativeData;
+				return String.Format(CultureInfo.InvariantCulture, "({0},{1}),({2},{3})", box.LeftTop.X, box.LeftTop.Y, box.RightBottom.X, box.RightBottom.Y);
+			    
             } else {
                 throw new InvalidCastException("Unable to cast data to Rectangle type");
             }

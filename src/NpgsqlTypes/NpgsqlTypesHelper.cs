@@ -29,8 +29,8 @@ using System.Net;
 using System.Text;
 using System.Resources;
 using System.Drawing;
-
 using Npgsql;
+
 
 namespace NpgsqlTypes
 {
@@ -209,15 +209,13 @@ namespace NpgsqlTypes
                 NativeTypeMapping.AddType("point", DbType.Object, true,
                 new ConvertNativeToBackendHandler(ExtendedNativeToBackendTypeConverter.ToPoint));
 
-                NativeTypeMapping.AddTypeAlias("point", typeof(Point));
-                NativeTypeMapping.AddTypeAlias("point", typeof(PointF));
-
+                NativeTypeMapping.AddTypeAlias("point", typeof(NpgsqlPoint));
+                
                 NativeTypeMapping.AddType("box", DbType.Object, true,
                 new ConvertNativeToBackendHandler(ExtendedNativeToBackendTypeConverter.ToBox));
 
-                NativeTypeMapping.AddTypeAlias("box", typeof(Rectangle));
-                NativeTypeMapping.AddTypeAlias("point", typeof(RectangleF));
-
+                NativeTypeMapping.AddTypeAlias("box", typeof(NpgsqlBox));
+                
                 NativeTypeMapping.AddType("lseg", DbType.Object, true,
                 new ConvertNativeToBackendHandler(ExtendedNativeToBackendTypeConverter.ToLSeg));
 
@@ -338,7 +336,7 @@ namespace NpgsqlTypes
                         new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToDateTime)),
 
 
-                    new NpgsqlBackendTypeInfo(0, "point", DbType.Object, typeof(PointF),
+                    new NpgsqlBackendTypeInfo(0, "point", DbType.Object, typeof(NpgsqlPoint),
                         new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToPoint)),
 
                     new NpgsqlBackendTypeInfo(0, "lseg", DbType.Object, typeof(NpgsqlLSeg),

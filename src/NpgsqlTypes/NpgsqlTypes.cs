@@ -36,6 +36,94 @@ using System.Drawing;
 
 namespace NpgsqlTypes
 {
+
+	/// <summary>
+	/// Represents a PostgreSQL Point type
+	/// </summary>
+	
+	public struct NpgsqlPoint
+	{
+		private Single _X;
+		private Single _Y;
+		
+		public NpgsqlPoint(Single X, Single Y)
+		{
+			_X = X;
+			_Y = Y;
+		}
+		
+		public Single X
+		{
+			get
+			{
+				return _X;
+			}
+			
+			set
+			{
+				_X = value;
+			}
+		}
+		
+		
+		public Single Y
+		{
+			get
+			{
+				return _Y;
+			}
+			
+			set
+			{
+				_Y = value;
+			}
+		}
+	}
+	
+	public struct NpgsqlBox
+	{
+		private NpgsqlPoint _LeftTop;
+		private NpgsqlPoint _RightBottom;
+		
+		public NpgsqlBox(NpgsqlPoint LeftTop, NpgsqlPoint RightBottom)
+		{
+			_LeftTop = LeftTop;
+			_RightBottom = RightBottom;
+		}
+		
+		public NpgsqlBox(Single X, Single Y, Single Width, Single Height)
+		{
+			_LeftTop = new NpgsqlPoint(X, Y);
+			_RightBottom = new NpgsqlPoint(X + Width, Y + Height); 
+		}
+
+		public NpgsqlPoint LeftTop
+		{
+			get
+			{
+				return _LeftTop;
+			}
+			set
+			{
+				_LeftTop = value;
+			}
+		}
+
+		public NpgsqlPoint RightBottom
+		{
+			get
+			{
+				return _RightBottom;
+			}
+			set
+			{
+				_RightBottom = value;
+			}
+		} 
+		
+	}
+	
+	
     /// <summary>
     /// Represents a PostgreSQL Line Segment type.
     /// </summary>
