@@ -301,7 +301,7 @@ namespace Npgsql
             NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
             if (TI == null) {
-                return null;
+                return typeof(String);  //Default type is string.
             } else {
                 return TI.Type;
             }
