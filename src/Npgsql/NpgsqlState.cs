@@ -73,10 +73,6 @@ namespace Npgsql
 			context.CurrentState = newState;
 		}
 		
-		//public delegate void ProcessBackendMessage( NpgsqlConnection context, byte[] message );
- 		
- 		public delegate void ProcessBackendMessage( NpgsqlConnection context, Object message );
-		
 		///<summary>
 		/// This method is responsible to handle all protocol messages sent from the backend.
 		/// It holds all the logic to do it.
@@ -85,7 +81,7 @@ namespace Npgsql
 		/// </summary>
 		/// 
 		
-		protected virtual void ProcessBackendResponses( NpgsqlConnection context, ProcessBackendMessage handler )
+		protected virtual void ProcessBackendResponses( NpgsqlConnection context )
 		{
 			NetworkStream 	stream = context.TcpClient.GetStream(); 
 			Int32 bytesRead;

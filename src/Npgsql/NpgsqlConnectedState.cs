@@ -57,12 +57,8 @@ namespace Npgsql
 																   "",
 																   "");
 			startupPacket.WriteToStream( context.TcpClient.GetStream(), context.Encoding );
-			ProcessBackendResponses( context, new ProcessBackendMessage(ProcessStartupResponses) );
+			ProcessBackendResponses( context );
 		}
-		private void ProcessStartupResponses( NpgsqlConnection context, Object message )
-		{
-			
-
-		}
+		
 	}
 }

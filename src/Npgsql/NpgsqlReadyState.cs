@@ -65,14 +65,10 @@ namespace Npgsql
 			query.WriteToStream(stream, context.Encoding);
 			stream.Flush();
 						
-			ProcessBackendResponses(context, new ProcessBackendMessage(ProcessQueryMessages));
+			ProcessBackendResponses(context);
 			
 		}
 		
-		private void ProcessQueryMessages(NpgsqlConnection context, Object message)
-		{
-			
-			
-		}
+	
 	}
 }
