@@ -26,8 +26,6 @@ using System.Data;
 using System.Web.UI.WebControls;
 using Npgsql;
 
-using NpgsqlTypes;
-
 using NUnit.Framework;
 using NUnit.Core;
 
@@ -298,6 +296,44 @@ namespace NpgsqlTests
 		  
 			
 		}
+		
+		
+		[Test]
+		public void TestOverlappedParameterNames()
+		{
+		  _conn.Open();
+		 
+		  NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :a or field_serial = :aa", _conn);
+		  command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32, 4, "a"));
+		  command.Parameters.Add(new NpgsqlParameter("aa", DbType.Int32, 4, "aa"));
+		  
+		  command.Parameters[0].Value = 2;
+		  command.Parameters[1].Value = 3;
+		  
+		  NpgsqlDataReader dr = command.ExecuteReader();
+		  
+		}
+		
+		[Test]
+		[ExpectedException(typeof(NpgsqlException))]
+		public void TestNonExistentParameterName()
+		{
+		  _conn.Open();
+		  
+		  NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :a or field_serial = :aa", _conn);
+		  command.Parameters.Add(new NpgsqlParameter(":b", DbType.Int32, 4, "b"));
+		  command.Parameters.Add(new NpgsqlParameter(":aa", DbType.Int32, 4, "aa"));
+		  
+		  command.Parameters[0].Value = 2;
+		  command.Parameters[1].Value = 3;
+		  
+		  NpgsqlDataReader dr = command.ExecuteReader();
+		  
+		  
+		}
+		
+			
+		
 		
 		[Test]
 		public void UseDataAdapter()
