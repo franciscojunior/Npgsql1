@@ -29,3 +29,9 @@ field_serial serial,
 field_date date,
 field_time time
 );
+
+create table tableD(
+field_serial serial,
+field_float4 float4,
+field_float8 float8
+);

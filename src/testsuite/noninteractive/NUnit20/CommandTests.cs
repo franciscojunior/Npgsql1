@@ -417,6 +417,72 @@ namespace NpgsqlTests
 		}
 		
 		[Test]
+		public void InsertSingleValue()
+		{
+		  _conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float4) values (:a)", _conn);
+			command.Parameters.Add(new NpgsqlParameter(":a", DbType.Single));
+			
+			command.Parameters[0].Value = 7.4F;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select * from tabled where field_float4 = :a";
+			
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+			dr.Read();
+			
+			Single result = dr.GetFloat(1);
+			
+			
+			command.CommandText = "delete from tabled where field_serial > 2;";
+			command.Parameters.Clear();
+			command.ExecuteNonQuery();
+			
+			
+			Assertion.AssertEquals(7.4F, result);
+			
+		}
+		
+		[Test]
+		public void InsertDoubleValue()
+		{
+		  _conn.Open();
+			
+			
+			NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float8) values (:a)", _conn);
+			command.Parameters.Add(new NpgsqlParameter(":a", DbType.Double));
+			
+			command.Parameters[0].Value = 7.4D;
+			
+			Int32 rowsAdded = command.ExecuteNonQuery();
+			
+			Assertion.AssertEquals(1, rowsAdded);
+			
+			command.CommandText = "select * from tabled where field_float8 = :a";
+			
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+			dr.Read();
+			
+			Double result = dr.GetDouble(2);
+			
+			
+			command.CommandText = "delete from tabled where field_serial > 2;";
+			command.Parameters.Clear();
+			//command.ExecuteNonQuery();
+			
+			
+			Assertion.AssertEquals(7.4D, result);
+			
+		}
+		
+		[Test]
 		public void NegativeNumericSupport()
 		{
 			_conn.Open();
