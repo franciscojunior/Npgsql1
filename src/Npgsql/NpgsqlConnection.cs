@@ -57,23 +57,16 @@ namespace Npgsql
         // Logging related values
         private readonly String CLASSNAME = "NpgsqlConnection";
 
-        //Changed the Name of this event because events usually don't start with 'On' in the .Net-Framework
-        // (but their handlers do ;-)
         /// <summary>
         /// Occurs on NotificationResponses from the PostgreSQL backend.
         /// </summary>
         public event NotificationEventHandler   Notification;
 
-        // Public properties for ssl callbacks
-        public CertificateValidationCallback    CertificateValidationCallback;
-        public CertificateSelectionCallback     CertificateSelectionCallback;
-        public PrivateKeySelectionCallback      PrivateKeySelectionCallback;
-
         private NpgsqlState			                state;
 
         private ConnectionState                 connection_state;
-        private String                          connection_string;
-        internal ListDictionary                 connection_string_values;
+//        private String                          connection_string;
+        private ListDictionary                  connection_string_values;
         // some of the following constants are needed
         // for designtime support so I made them 'internal'
         // as I didn't want to add another interface for internal access
@@ -86,9 +79,9 @@ namespace Npgsql
         internal readonly String CONN_PASSWORD	= "PASSWORD";
         internal readonly String CONN_DATABASE	= "DATABASE";
         internal readonly String CONN_PORT 	= "PORT";
-        internal readonly String SSL_ENABLED	= "SSL";
-        // Postgres default port
-        internal readonly String PG_PORT = "5432";
+        internal readonly String CONN_SSL_ENABLED	= "SSL";
+        internal readonly String CONN_ENCODING = "ENCODING";
+        internal readonly String CONN_TIMEOUT = "TIMEOUT";
 
         // These are for ODBC connection string compatibility
         internal readonly String ODBC_USERID 	= "UID";
@@ -98,9 +91,12 @@ namespace Npgsql
         internal readonly String MIN_POOL_SIZE = "MINPOOLSIZE";
         internal readonly String MAX_POOL_SIZE = "MAXPOOLSIZE";
 
-        internal readonly String CONN_ENCODING = "ENCODING";
-
-        internal readonly String CONN_TIMEOUT = "TIMEOUT";
+        // Connection string defaults
+        internal readonly Int32 DEF_PORT = 5432;
+        internal readonly String DEF_ENCODING = "SQL_ASCII";
+        internal readonly Int32 DEF_MIN_POOL_SIZE = 1;
+        internal readonly Int32 DEF_MAX_POOL_SIZE = 20;
+        internal readonly Int32 DEF_TIMEOUT = 15;
 
 
         // Values for possible CancelRequest messages.
@@ -109,15 +105,10 @@ namespace Npgsql
         // Flag for transaction status.
         private Boolean                         _inTransaction = false;
 
-        // Mediator which will hold data generated from backend
+        // Mediator which will hold data generated from backend.
         private NpgsqlMediator                  _mediator;
-        private Stream                          stream;
+        // Connector being used for the active connection.
         private Connector                       _connector;
-        private Encoding                        connection_encoding;
-
-        private ServerVersion                   _serverVersion;
-        private ProtocolVersion                 _backendProtocolVersion;
-        private Int32                           _connectionTimeout;
 
         private Boolean                         _supportsPrepare = false;
 
@@ -145,20 +136,12 @@ namespace Npgsql
 
             connection_state = ConnectionState.Closed;
             state = NpgsqlClosedState.Instance;
-            connection_string = ConnectionString;
-            connection_string_values = new ListDictionary(CaseInsensitiveComparer.Default);
-            connection_encoding = Encoding.Default;
-            _backendProtocolVersion = ProtocolVersion.Version3;
 
             _mediator = new NpgsqlMediator();
+            _connector = null;
             _oidToNameMapping = new Hashtable();
 
-            _connectionTimeout = 15;
-
-            CertificateValidationCallback = new CertificateValidationCallback(DefaultCertificateValidationCallback);
-
-
-            ParseAndSetConnectionString(ConnectionString);
+            connection_string_values = ParseConnectionString(ConnectionString);
         }
 
         /// <summary>
@@ -174,12 +157,29 @@ namespace Npgsql
         public String ConnectionString {
             get
             {
-                return connection_string;
+                StringBuilder      S = new StringBuilder();
+
+                foreach (DictionaryEntry DE in connection_string_values) {
+                    S.AppendFormat("{0}={1};", DE.Key, DE.Value);
+                }
+
+                return S.ToString();
+//                return connection_string;
             }
             set
             {
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "ConnectionString", value);
-                ParseAndSetConnectionString(value);
+                connection_string_values = ParseConnectionString(value);
+            }
+        }
+
+        /// <summary>
+        /// Gets the ListDictionary containing the parsed connection string values.
+        /// </summary>
+        internal ListDictionary ConnectionStringValues {
+            get
+            {
+                return connection_string_values;
             }
         }
 
@@ -192,7 +192,7 @@ namespace Npgsql
         public Int32 ConnectionTimeout {
             get
             {
-                return _connectionTimeout;
+                return this.ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
             }
         }
 
@@ -253,18 +253,6 @@ namespace Npgsql
             return BeginTransaction(level);
         }
 
-
-        // I had to rename this Method from Notification to Notify due to the renaming of OnNotification to Notification
-        /// <summary>
-        /// Creates a Notification event
-        /// </summary>
-        /// <param name="e">The <see cref="Npgsql.NpgsqlNotificationEventArgs">NpgsqlNotificationEventArgs</see> that contains the event data.</param>
-        internal void Notify(NpgsqlNotificationEventArgs e)
-        {
-            if (Notification != null)
-                Notification(this, e);
-        }
-
         /// <summary>
         /// Begins a database transaction.
         /// </summary>
@@ -321,12 +309,9 @@ namespace Npgsql
             String oldDatabaseName = ConnectStringValueToString(CONN_DATABASE);
             Close();
 
-            connection_string_values[CONN_DATABASE] = dbName;
+            connection_string_values[CONN_DATABASE] = dbName;            
 
             Open();
-
-
-
         }
 
         /// <summary>
@@ -337,59 +322,35 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
 
-            // I moved this here from ParseConnectionString as there is no need to validate the
-            // ConnectionString before we open the connection.
-            // See: http://gborg.postgresql.org/pipermail/npgsql-hackers/2003-March/000019.html
-            // In fact it makes it possible to parse incomplete ConnectionStrings for designtime support
-            // -- brar
-            //
-            // Now check if there is any missing argument.
-            if (connection_string == String.Empty)
-                throw new InvalidOperationException(resman.GetString("Exception_ConnStrEmpty"));
+            // Check if the connection is already open.
+            if (connection_state == ConnectionState.Open) {
+                throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
+            }
+
+            // Check if there is any missing argument.
             if (connection_string_values[CONN_SERVER] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_SERVER);
             if (connection_string_values[CONN_USERID] == null)
                 throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_USERID);
-            if (connection_string_values[CONN_PASSWORD] == null)
-                throw new ArgumentException(resman.GetString("Exception_MissingConnStrArg"), CONN_PASSWORD);
 
-            // Check and use defaults for these missing arguments.
-            if (connection_string_values[CONN_DATABASE] == null)
-                // Database is optional. "[...] defaults to the user name if empty"
-                connection_string_values[CONN_DATABASE] = connection_string_values[CONN_USERID];
-            if (connection_string_values[CONN_PORT] == null)
-                // Port is optional. Defaults to PG_PORT.
-                connection_string_values[CONN_PORT] = PG_PORT;
-            if (connection_string_values[SSL_ENABLED] == null)
-                connection_string_values[SSL_ENABLED] = "no";
-            if (connection_string_values[MIN_POOL_SIZE] == null)
-                connection_string_values[MIN_POOL_SIZE] = "1";
-            if (connection_string_values[MAX_POOL_SIZE] == null)
-                connection_string_values[MAX_POOL_SIZE] = "20";
-            if (connection_string_values[CONN_ENCODING] == null)
-                connection_string_values[CONN_ENCODING] = "SQL_ASCII";
-            if (connection_string_values[CONN_TIMEOUT] == null)
-                connection_string_values[CONN_TIMEOUT] = "15";
-
-            try
+            lock(ConnectorPool.ConnectorPoolMgr)
             {
-                String       ServerVersionString = String.Empty;
+                _connector = ConnectorPool.ConnectorPoolMgr.RequestConnector (
+                            ConnectionString,
+                            MaxPoolSize,
+                            ConnectionTimeout,
+                            false
+                );
+            }
 
-                // Check if the connection is already open.
-                if (connection_state == ConnectionState.Open)
-                    throw new InvalidOperationException(resman.GetString("Exception_ConnOpen"));
+            String       ServerVersionString = String.Empty;
 
-                lock(ConnectorPool.ConnectorPoolMgr)
-                {
-                    Connector = ConnectorPool.ConnectorPoolMgr.RequestConnector(ConnectionString,
-                                ConnectStringValueToInt32(MAX_POOL_SIZE),
-                                ConnectStringValueToInt32(CONN_TIMEOUT),
-                                false);
-                    Connector.InUse = true;
-                }
+            if (! _connector.IsInitialized)
+            {
+                _connector.Encoding = Encoding.Default;
+                _connector.BackendProtocolVersion = ProtocolVersion.Version3;
 
-                if (!Connector.IsInitialized)
-                {
+                try {
                     // Reset state to initialize new connector in pool.
                     CurrentState = NpgsqlClosedState.Instance;
 
@@ -409,16 +370,14 @@ namespace Npgsql
                         if (((NpgsqlError)_mediator.Errors[0]).Message.StartsWith("FATAL"))
                         {
                             // Try using the 2.0 protocol.
-                            _mediator.Reset();
+                            _mediator.ResetResponses();
                             CurrentState = NpgsqlClosedState.Instance;
-                            BackendProtocolVersion = ProtocolVersion.Version2;
+                            _connector.BackendProtocolVersion = ProtocolVersion.Version3;
                             CurrentState.Open(this);
                         }
 
-                        // Keep checking for errors...
-                        if(_mediator.Errors.Count > 0) {
-                            throw new NpgsqlException(_mediator.Errors);
-                        }
+                        // Check for errors and do the Right Thing.
+                        CheckErrors();
                     }
 
                     backend_keydata = _mediator.BackendKeyData;
@@ -438,52 +397,36 @@ namespace Npgsql
 
                     // Cook version string so we can use it for enabling/disabling things based on
                     // backend version.
-                    _serverVersion = ParseServerVersion(ServerVersionString);
+                    _connector.ServerVersion = ParseServerVersion(ServerVersionString);
 
                     // Adjust client encoding.
 
                     //NpgsqlCommand commandEncoding1 = new NpgsqlCommand("show client_encoding", this);
-                    //String clientEncoding = (String)commandEncoding1.ExecuteScalar();
-                    
-                    if (ConnectStringValueToString(CONN_ENCODING).ToUpper() == "UNICODE") 
+                    //String clientEncoding1 = (String)commandEncoding1.ExecuteScalar();
+
+                    if (ConnectStringValueToString(CONN_ENCODING, DEF_ENCODING).ToUpper() == "UNICODE")
                     {
-                        connection_encoding = Encoding.UTF8;
+                        _connector.Encoding = Encoding.UTF8;
                         NpgsqlCommand commandEncoding = new NpgsqlCommand("SET CLIENT_ENCODING TO UNICODE", this);
                         commandEncoding.ExecuteNonQuery();
                     }
-
-                    Connector.ServerVersion = ServerVersion;
-                    Connector.BackendProtocolVersion = BackendProtocolVersion;
-                    Connector.Encoding = connection_encoding;
-
                 }
-
-                // Connector was obtained from pool.
-                // Do a mini initialization in the state machine.
-
-                connection_state = ConnectionState.Open;
-
-                ServerVersion = Connector.ServerVersion;
-                BackendProtocolVersion = Connector.BackendProtocolVersion;
-                Encoding = Connector.Encoding;
-
-                CurrentState = NpgsqlReadyState.Instance;
-
-                ProcessServerVersion();
-                _oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
+                catch {
+                    Close();
+                    throw;
+                }
             }
 
-            catch(IOException e)
-            {
-                // This exception was thrown by StartupPacket handling functions.
-                // So, close the connection and throw the exception.
-                // [TODO] Better exception handling. :)
-                
-                Close();
+            // Connector was obtained from pool.
+            // Do a mini initialization in the state machine.
 
-                throw e;
-            }
+            _connector.IsInitialized = true;
+            connection_state = ConnectionState.Open;
 
+            CurrentState = NpgsqlReadyState.Instance;
+
+            ProcessServerVersion();
+            _oidToNameMapping = NpgsqlTypesHelper.LoadTypesMapping(this);
         }
 
         /// <summary>
@@ -492,7 +435,6 @@ namespace Npgsql
         public void Close()
         {
             Dispose(true);
-
         }
 
         /// <summary>
@@ -540,19 +482,23 @@ namespace Npgsql
                     }
 
                 }
-                finally
+                catch {}
+
+                lock(ConnectorPool.ConnectorPoolMgr)
                 {
-                    // Even if an exception occurs, let object in a consistent state.
-                    /*if (stream != null)
-                        stream.Close();*/
-                    connection_state = ConnectionState.Closed;
+                    ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
                 }
 
+                connection_state = ConnectionState.Closed;
             }
             base.Dispose (disposing);
         }
 
 
+        /// <summary>
+        /// Create a new (unconnected) connection based on this one.
+        /// </summary>
+        /// <returns>A new NpgsqlConnction object.</returns>
         public Object Clone()
         {
             return new NpgsqlConnection(ConnectionString);
@@ -564,7 +510,7 @@ namespace Npgsql
         //
 
         /// <summary>
-        /// This method parses, cleans, and assigns the connection string.
+        /// This method parses a connection string.
         /// It translates it to a list of key-value pairs.
         /// Valid values are:
         /// Server 		- Address/Name of Postgresql Server
@@ -576,18 +522,12 @@ namespace Npgsql
         /// MaxPoolSize - Max size of connection pool
         /// Encoding    - Encoding to be used
         /// Timeout     - Time to wait for connection open. In seconds.
-        /// The resulting cleaned connection string will have all key names
-        /// upper-cased for consistency and to help ensure proper operation
-        /// with the connection pool (which is keyed on connection string).
-        /// If any errors occur, the entire operation is aborted and the
-        /// connection state will be left unchanged.
         /// </summary>
-        private void ParseAndSetConnectionString(String CS)
+        private ListDictionary ParseConnectionString(String CS)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ParseConnectionString");
 
             ListDictionary new_values = new ListDictionary(CaseInsensitiveComparer.Default);
-            StringBuilder CleanedConnectionString = new StringBuilder();
             String[] pairs;
             String[] keyvalue;
 
@@ -609,10 +549,13 @@ namespace Npgsql
                 // Split this chunk on the first CONN_ASSIGN only.
                 keyvalue = s.Split(new Char[] {CONN_ASSIGN}, 2);
 
-                // Always trim things.
-                // Keys get uppercased for a numner of reasons
-                // (but NOT to enable case insensative comparisons).
+                // Keys always get trimmed and uppercased.
                 Key = keyvalue[0].Trim().ToUpper();
+
+                // Make sure the key is even there...
+                if (Key.Length == 0) {
+                    throw new ArgumentException(resman.GetString("Exception_WrongKeyVal"), "<BLANK>");
+                }
 
                 // We don't expect keys this long, and it might be about to be put
                 // in an error message, so makes sure it is a sane length.
@@ -625,7 +568,7 @@ namespace Npgsql
                     throw new ArgumentException(resman.GetString("Exception_WrongKeyVal"), Key);
                 }
 
-                // Always trim things.
+                // Values always get trimmed.
                 Value = keyvalue[1].Trim();
 
                 // Do some ODBC related substitions
@@ -639,14 +582,9 @@ namespace Npgsql
 
                 // Add the pair to the dictionary..
                 new_values.Add(Key, Value);
-
-                // Add the pair to the cleaned list. The key is shifted to upper case.
-                CleanedConnectionString.AppendFormat("{0}{1}{2}{3}", Key, CONN_ASSIGN, Value, CONN_DELIM);
             }
 
-            // Finally assign the real containers from our scratch ones.
-            connection_string_values = new_values;
-						connection_string = CleanedConnectionString.ToString();
+            return new_values;
         }
 
         /// <summary>
@@ -677,39 +615,24 @@ namespace Npgsql
         private ServerVersion ParseServerVersion (string VersionString)
         {
             String[]        Parts;
-            
-            
+
             Parts = VersionString.Split('.');
-            
-            
-            try 
-            {
-                
-                                
-                if (Parts.Length != 3) 
-                {
-                    if (Parts.Length == 2)
-                    {
-                        // Check if it is a devel version.
-                        if (Parts[1].EndsWith("devel"))
-                            return new ServerVersion(
-                                Convert.ToInt32(Parts[0]),
-                                Convert.ToInt32(Parts[1].Remove(Parts[1].Length - 5, 5)),
-                                0);
-                
-                    }
-                    
-                    throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString));
+
+            if (Parts.Length == 2) {
+                // Check if it is a devel version.
+                if (Parts[1].ToLower().EndsWith("devel")) {
+										Parts[1].Remove(Parts[1].Length - 5, 5);
                 }
-                
-                return new ServerVersion(
-                    Convert.ToInt32(Parts[0]),
-                    Convert.ToInt32(Parts[1]),
-                    Convert.ToInt32(Parts[2])
-                );
-            } 
-            catch (Exception E) 
-            {
+
+                // Coerce it into a 3-part version.
+                Parts = new String[] { Parts[0], Parts[1], "0" };
+            } else if (Parts.Length != 3) {
+                throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString));
+            }
+
+            try {
+                return new ServerVersion(Convert.ToInt32(Parts[0]), Convert.ToInt32(Parts[1]), Convert.ToInt32(Parts[2]));
+            } catch (Exception E) {
                 throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString), E);
             }
         }
@@ -726,38 +649,62 @@ namespace Npgsql
             SupportsPrepare = ServerVersion.GreaterOrEqual(7, 3, 0);
         }
 
+        /// <summary>
+        /// The network stream connected to the backend.
+        /// This can only be called when there is an active connection.
+        /// </summary>
         internal Stream Stream {
             get
             {
                 return _connector.Stream;
             }
-            set
-            {
-                stream = value;
-            }
         }
 
+        /// <summary>
+        /// The connector object connected to the backend.
+        /// </summary>
         internal Connector Connector
         {
             get
             {
                 return _connector;
             }
-            set
-            {
-                _connector = value;
+        }
+
+        /// <summary>
+        /// Check for mediator errors (sent by backend) and throw the appropriate
+        /// exception if errors found.  This needs to be called after every interaction
+        /// with the backend.
+        /// </summary>
+        internal void CheckErrors()
+        {
+            if (_mediator.Errors.Count > 0) {
+                throw new NpgsqlException(_mediator.Errors);
             }
         }
 
-        /*
-        public bool useSSL() 
+        /// <summary>
+        /// Check for notifications and fire the appropiate events.
+        /// This needs to be called after every interaction
+        /// with the backend.
+        /// </summary>
+        internal void CheckNotifications()
         {
-        	if (SSL_ENABLED=="yes")
-        		return true;
-
-        	return false;
+            if (Notification != null) {
+                foreach (NpgsqlNotificationEventArgs E in _mediator.Notifications) {
+                    Notification(this, E);
+                }
+            }
         }
-        */
+
+        /// <summary>
+        /// Check for errors AND notifications in one call.
+        /// </summary>
+        internal void CheckErrorsAndNotifications()
+        {
+            CheckErrors();
+            CheckNotifications();
+        }
 
         // State
         internal void Query (NpgsqlCommand queryCommand)
@@ -801,15 +748,15 @@ namespace Npgsql
         }
 
 
-        // Default SSL Callbacks implementation.
-        private Boolean DefaultCertificateValidationCallback(
+        /// <summary>
+        /// Default SSL Callback implementation.
+        /// </summary>
+        internal Boolean DefaultCertificateValidationCallback(
             X509Certificate certificate,
             int[]        certificateErrors)
         {
             return true;
         }
-
-
 
         internal NpgsqlState CurrentState {
             get
@@ -833,60 +780,80 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Backend server host name.
+        /// </summary>
         internal String ServerName {
             get
             {
-                return (String)connection_string_values[CONN_SERVER];
+                return ConnectStringValueToString(CONN_SERVER);
             }
         }
 
-        internal String ServerPort {
+        /// <summary>
+        /// Backend server port.
+        /// </summary>
+        internal Int32 ServerPort {
             get
             {
-                return   (String)connection_string_values[CONN_PORT];
+                return ConnectStringValueToInt32(CONN_PORT, DEF_PORT);
             }
         }
 
+        /// <summary>
+        /// Backend database name.
+        /// </summary>
         internal String DatabaseName {
             get
             {
-                return (String)connection_string_values[CONN_DATABASE];
+                return ConnectStringValueToString(CONN_DATABASE, UserName);
             }
         }
 
+        /// <summary>
+        /// User name.
+        /// </summary>
         internal String UserName {
             get
             {
-                return (String)connection_string_values[CONN_USERID];
+                return ConnectStringValueToString(CONN_USERID);
             }
         }
 
-        internal String ServerPassword {
+        /// <summary>
+        /// Password.
+        /// </summary>
+        internal String Password {
             get
             {
-                return (String)connection_string_values[CONN_PASSWORD];
+                return ConnectStringValueToString(CONN_PASSWORD);
             }
         }
 
-        internal String SSL {
+        /// <summary>
+        /// If true, the connection will attempt to use SSL.
+        /// </summary>
+        internal Boolean SSL {
             get
             {
-                return (String)connection_string_values[SSL_ENABLED];
+                return ConnectStringValueToBool(CONN_SSL_ENABLED);
             }
         }
 
+        /// <summary>
+        /// Client encoding currently in use.
+        /// This can only be called when there is an active connection.
+        /// </summary>
         internal Encoding Encoding {
             get
             {
-                return connection_encoding;
-            }
-
-            set
-            {
-                connection_encoding = value;
+                return _connector.Encoding;
             }
         }
 
+        /// <summary>
+        /// The connection mediator.
+        /// </summary>
         internal NpgsqlMediator	Mediator {
             get
             {
@@ -894,6 +861,9 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Report if the connection is in a transaction.
+        /// </summary>
         internal Boolean InTransaction {
             get
             {
@@ -905,6 +875,9 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Report whether the current connection can support prepare functionality.
+        /// </summary>
         internal Boolean SupportsPrepare {
             get
             {
@@ -916,14 +889,14 @@ namespace Npgsql
             }
         }
 
+        /// <summary>
+        /// Version of the PostgreSQL backend.
+        /// This can only be called when there is an active connection.
+        /// </summary>
         internal ServerVersion ServerVersion {
             get
             {
-                return _serverVersion;
-            }
-            set
-            {
-                _serverVersion = value;
+                return _connector.ServerVersion;
             }
         }
 
@@ -939,35 +912,72 @@ namespace Npgsql
 
         }
 
+        /// <summary>
+        /// Protocol version in use.
+        /// This can only be called when there is an active connection.
+        /// </summary>
         internal ProtocolVersion BackendProtocolVersion {
             get
             {
-                return _backendProtocolVersion;
-            }
-            set
-            {
-                _backendProtocolVersion = value;
+                return _connector.BackendProtocolVersion;
             }
         }
 
         internal Int32 MinPoolSize {
             get
             {
-                return Int32.Parse((String)connection_string_values[MIN_POOL_SIZE]);
+                return ConnectStringValueToInt32(MIN_POOL_SIZE, DEF_MIN_POOL_SIZE);
             }
         }
 
         internal Int32 MaxPoolSize {
             get
             {
-                return Int32.Parse((String)connection_string_values[MAX_POOL_SIZE]);
+                return ConnectStringValueToInt32(MAX_POOL_SIZE, DEF_MAX_POOL_SIZE);
             }
         }
 
-        private Int32 ConnectStringValueToInt32(String Key)
+        /// <summary>
+        /// Return a string value from the current connection string, even if the
+        /// given key is not in the string or if the value is null.
+        /// </summary>
+        internal String ConnectStringValueToString(String Key)
+        {
+            return ConnectStringValueToString(Key, "");
+        }
+
+        /// <summary>
+        /// Return a string value from the current connection string, even if the
+        /// given key is not in the string or if the value is null.
+        /// </summary>
+        internal String ConnectStringValueToString(String Key, String Default)
         {
             if (! connection_string_values.Contains(Key)) {
-                return 0;
+                return Default;
+            }
+
+            return Convert.ToString(connection_string_values[Key]);
+        }
+
+        /// <summary>
+        /// Return an integer value from the current connection string, even if the
+        /// given key is not in the string or if the value is null.
+        /// Throw an appropriate exception if the value cannot be coerced to an integer.
+        /// </summary>
+        internal Int32 ConnectStringValueToInt32(String Key)
+        {
+            return ConnectStringValueToInt32(Key, 0);
+        }
+
+        /// <summary>
+        /// Return an integer value from the current connection string, even if the
+        /// given key is not in the string.
+        /// Throw an appropriate exception if the value cannot be coerced to an integer.
+        /// </summary>
+        internal Int32 ConnectStringValueToInt32(String Key, Int32 Default)
+        {
+            if (! connection_string_values.Contains(Key)) {
+                return Default;
             }
 
             try {
@@ -977,13 +987,44 @@ namespace Npgsql
             }
         }
 
-        private String ConnectStringValueToString(String Key)
+        /// <summary>
+        /// Return a boolean value from the current connection string, even if the
+        /// given key is not in the string.
+        /// Throw an appropriate exception if the value is not recognized as a boolean.
+        /// </summary>
+        internal Boolean ConnectStringValueToBool(String Key)
+        {
+            return ConnectStringValueToBool(Key, false);
+        }
+
+        /// <summary>
+        /// Return a boolean value from the current connection string, even if the
+        /// given key is not in the string.
+        /// Throw an appropriate exception if the value is not recognized as a boolean.
+        /// </summary>
+        internal Boolean ConnectStringValueToBool(String Key, Boolean Default)
         {
             if (! connection_string_values.Contains(Key)) {
-                return "";
+                return Default;
             }
 
-            return Convert.ToString(connection_string_values[Key]);
+            switch (connection_string_values[Key].ToString().ToLower()) {
+            case "t" :
+            case "true" :
+            case "y" :
+            case "yes" :
+                return true;
+
+            case "f" :
+            case "false" :
+            case "n" :
+            case "no" :
+                return false;
+
+            default :
+                throw new ArgumentException(resman.GetString("Exception_InvalidBooleanKeyVal"), Key);
+
+            }
         }
     }
 }

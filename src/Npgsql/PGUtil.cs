@@ -25,6 +25,7 @@
 
 
 using System;
+using System.Collections;
 using System.IO;
 using System.Text;
 using System.Net.Sockets;
@@ -33,7 +34,6 @@ using System.Resources;
 
 namespace Npgsql
 {
-
     /// <summary>
     /// Represent the frontend/backend protocol version in use.
     /// </summary>
@@ -92,13 +92,8 @@ namespace Npgsql
     /// This class provides many util methods to handle
     /// reading and writing of PostgreSQL protocol messages.
     /// </summary>
-    /// [FIXME] Does this name fully represent the class responsability?
-    /// Should it be abstract or with a private constructor to prevent
-    /// creating instances?
-
-    internal sealed class PGUtil
+    internal abstract class PGUtil
     {
-
         // Logging related values
         private static readonly String CLASSNAME = "PGUtil";
         private static ResourceManager resman = new ResourceManager(typeof(PGUtil));
@@ -108,7 +103,6 @@ namespace Npgsql
         /// version number that the Postgres backend will recognize in a
         /// startup packet.
         /// </summary>
-
         public static Int32 ConvertProtocolVersion(ProtocolVersion Ver)
         {
             switch (Ver) {
@@ -131,27 +125,25 @@ namespace Npgsql
         /// It returns the resultant string of bytes read.
         /// This string is sent from backend.
         /// </summary>
-
         public static String ReadString(Stream network_stream, Encoding encoding)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ReadString");
 
-            // [FIXME] Is 512 enough?
-            Byte[] buffer = new Byte[512];
-            Byte b;
-            Int16 counter = 0;
-
+            ArrayList     buffer = new ArrayList();
+            Byte          b;
+            String        string_read;
 
             // [FIXME] Is this cast always safe?
             b = (Byte)network_stream.ReadByte();
             while(b != 0)
             {
-                buffer[counter] = b;
-                counter++;
+                buffer.Add(b);
                 b = (Byte)network_stream.ReadByte();
             }
-            String string_read = encoding.GetString(buffer, 0, counter);
+
+            string_read = encoding.GetString((Byte[])buffer.ToArray(typeof(Byte)));
             NpgsqlEventLog.LogMsg(resman, "Log_StringRead", LogLevel.Debug, string_read);
+
             return string_read;
         }
 
@@ -160,25 +152,24 @@ namespace Npgsql
         /// It returns the resultant string of bytes read.
         /// This string is sent from backend.
         /// </summary>
-
         public static String ReadString(Stream network_stream, Encoding encoding, Int32 length)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ReadString");
 
-            // [FIXME] Is 512 enough?
-            Byte[] buffer = new Byte[512];
-            Byte b;
-            Int16 counter = 0;
+            ArrayList     buffer = new ArrayList();
+            Byte          b;
+            String        string_read;
 
-            while(counter < length)
+            for (int C = 0 ; C < length ; C++)
             {
                 // [FIXME] Is this cast always safe?
                 b = (Byte)network_stream.ReadByte();
-                buffer[counter] = b;
-                counter++;
+                buffer.Add(b);
             }
-            String string_read = encoding.GetString(buffer, 0, counter);
+
+            string_read = encoding.GetString((Byte[])buffer.ToArray(typeof(Byte)));
             NpgsqlEventLog.LogMsg(resman, "Log_StringRead", LogLevel.Debug, string_read);
+
             return string_read;
         }
 
@@ -186,7 +177,6 @@ namespace Npgsql
         /// This method writes a C NULL terminated string to the network stream.
         /// It appends a NULL terminator to the end of the String.
         /// </summary>
-
         public static void WriteString(String the_string, Stream network_stream, Encoding encoding)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "WriteString");
@@ -199,7 +189,6 @@ namespace Npgsql
         /// backend server.
         /// It pads the string with null bytes to the size specified.
         /// </summary>
-
         public static void WriteLimString(String the_string, Int32 n, Stream network_stream, Encoding encoding)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "WriteLimString");
@@ -217,6 +206,7 @@ namespace Npgsql
         {
             Int32 bytes_from_stream = 0;
             Int32 total_bytes_read = 0;
+
             do
             {
                 bytes_from_stream = stream.Read(buffer, offset + total_bytes_read, size);
@@ -224,15 +214,20 @@ namespace Npgsql
                 size -= bytes_from_stream;
             }
             while(size > 0);
-
         }
 
 
+        /// <summary>
+        /// Write a 32-bit integer to the given stream in the correct byte order.
+        /// </summary>
         public static void WriteInt32(Stream stream, Int32 value)
         {
             stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)), 0, 4);
         }
 
+        /// <summary>
+        /// Read a 32-bit integer from the given stream in the correct byte order.
+        /// </summary>
         public static Int32 ReadInt32(Stream stream, Byte[] buffer)
         {
             CheckedStreamRead(stream, buffer, 0, 4);
@@ -240,46 +235,22 @@ namespace Npgsql
 
         }
 
+        /// <summary>
+        /// Write a 16-bit integer to the given stream in the correct byte order.
+        /// </summary>
         public static void WriteInt16(Stream stream, Int16 value)
         {
             stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder(value)), 0, 2);
         }
 
+        /// <summary>
+        /// Read a 16-bit integer from the given stream in the correct byte order.
+        /// </summary>
         public static Int16 ReadInt16(Stream stream, Byte[] buffer)
         {
             CheckedStreamRead(stream, buffer, 0, 2);
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt16(buffer, 0));
 
         }
-
-
-        /*public static void WriteQueryToStream( String query, Stream stream, Encoding encoding )
-        {
-        	NpgsqlEventLog.LogMsg( CLASSNAME + query, LogLevel.Debug  );
-        	// Send the query to server.
-        	// Write the byte 'Q' to identify a query message.
-        	stream.WriteByte((Byte)'Q');
-        	
-        	// Write the query. In this case it is the CommandText text.
-        	// It is a string terminated by a C NULL character.
-        	stream.Write(encoding.GetBytes(query + '\x00') , 0, query.Length + 1);
-        	
-        	// Send bytes.
-        	stream.Flush();
-        	
-        }
-
-        public static Int32 ProtocolVersionMajor(Int32 protocolVersion)
-        {
-          return (protocolVersion >> 16) & 0xffff;
-        }
-
-        public static Int32 ProtocolVersionMinor(Int32 protocolVersion)
-        {
-          return protocolVersion & 0xffff;
-        }*/
-
-
-
     }
 }

@@ -174,8 +174,10 @@ namespace Npgsql
                 // Now look for an available connector.
 
                 Connector freeConnector = FindFreeConnector(connectorPool);
-                if (freeConnector != null)
+                if (freeConnector != null) {
+                    freeConnector.InUse = true;
                     return freeConnector;
+                }
 
                 // No suitable connector could be found, so create new one
                 // if there is room available.
@@ -186,8 +188,8 @@ namespace Npgsql
 
                     connectorPool.Add(connector);
 
-
                     // and then returned to the caller
+                    connector.InUse = true;
                     return connector;
                 }
                 else
@@ -199,15 +201,17 @@ namespace Npgsql
                     while (timeoutMilliseconds > 0)
                     {
                         Connector freeConnector2 = FindFreeConnector(connectorPool);
-                        if (freeConnector2 != null)
+                        if (freeConnector2 != null) {
+                            freeConnector2.InUse = true;
                             return freeConnector2;
-                        else
+                        } else {
                             Thread.Sleep((timeoutMilliseconds > 900) ? 900 : timeoutMilliseconds);
+                        }
+
                         timeoutMilliseconds -= 900;
                     }
 
                     throw new Exception("Timeout while getting a connection from pool.");
-
                 }
 
             }
@@ -223,6 +227,21 @@ namespace Npgsql
             }
 
             return null;
+        }
+
+
+        /// <summary>
+        /// Releases a connector, making it available in the connector pool once again.
+        /// </summary>
+        /// <param name="Connector">The connector to make available.</param>
+        internal void ReleaseConnector (Connector Connector)
+        {
+            // FIXME
+            // This is very crude and will only work (I think) with non-shared connectors.
+
+            Connector.Stream = null;
+            Connector.InUse = false;
+            Connector.IsInitialized = false;
         }
     }
 }

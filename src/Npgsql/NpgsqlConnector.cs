@@ -41,7 +41,9 @@ namespace Npgsql
     /// </summary>
     internal class Connector
     {
-        /// <value>Buffer for the public Pooled property</value>
+        /// <value>
+        /// Buffer for the public Pooled property
+        /// </value>
         private Boolean _inUse;
 
 
@@ -132,7 +134,6 @@ namespace Npgsql
             set
             {
                 _stream = value;
-                _isInitialized = true;
             }
         }
 
@@ -142,7 +143,10 @@ namespace Npgsql
             {
                 return _isInitialized;
             }
-
+            set
+            {
+                _isInitialized = value;
+            }
         }
 
 

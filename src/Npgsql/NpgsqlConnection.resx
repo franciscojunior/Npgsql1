@@ -133,6 +133,9 @@
 	<data name="Exception_WrongKeyVal">
 		<value>key=value argument incorrect in ConnectionString</value>
 	</data>
+	<data name="Exception_InvalidBooleanKeyVal">
+		<value>expecting key=[boolean] value in ConnectionString</value>
+	</data>
 	<data name="Exception_InvalidIntegerKeyVal">
 		<value>expecting key=[numeric] value in ConnectionString</value>
 	</data>

@@ -110,15 +110,23 @@ namespace Npgsql
                 }
             }*/
 
-            context.Connector.InUse = false;
-            context.Connector = null;
+            // CHECKME!!!
+            // The close logic is pretty messed up I think.  Needs lots of work.
+
+            if (! context.Connector.Shared) {
+                if (context.Connector.Stream != null) {
+                    try {
+                        context.Connector.Stream.Close();
+                    } catch {}
+                }
+            }
+
             //ChangeState( context, NpgsqlClosedState.Instance );
         }
 
-        ///<summary> This method is used by the states to change the state of the context.
+        ///<summary>
+        ///This method is used by the states to change the state of the context.
         /// </summary>
-        ///
-
         protected virtual void ChangeState(NpgsqlConnection context, NpgsqlState newState)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ChangeState");
@@ -132,18 +140,25 @@ namespace Npgsql
         /// to handle backend requests.
         /// </summary>
         ///
-
         protected virtual void ProcessBackendResponses( NpgsqlConnection context )
         {
-            switch (context.BackendProtocolVersion) {
-            case ProtocolVersion.Version2 :
-                ProcessBackendResponses_Ver_2(context);
-                break;
+            // reset any responses just before getting new ones
+            context.Mediator.ResetResponses();
 
-            case ProtocolVersion.Version3 :
-                ProcessBackendResponses_Ver_3(context);
-                break;
+						try {
+                switch (context.BackendProtocolVersion) {
+                case ProtocolVersion.Version2 :
+                    ProcessBackendResponses_Ver_2(context);
+                    break;
 
+                case ProtocolVersion.Version3 :
+                    ProcessBackendResponses_Ver_3(context);
+                    break;
+
+                }
+            } finally {
+                // reset expectations right after getting new responses
+                context.Mediator.ResetExpectations();
             }
         }
 
@@ -156,9 +171,6 @@ namespace Npgsql
             Boolean readyForQuery = false;
 
             NpgsqlMediator mediator = context.Mediator;
-
-            // Reset the mediator.
-            mediator.Reset();
 
             Int16 rowDescNumFields = 0;
             NpgsqlRowDescription rd = null;
@@ -188,10 +200,14 @@ namespace Npgsql
                     //		Invalid password.
                     // Possible error in the NpgsqlConnectedState:
                     //		No pg_hba.conf configured.
-
+/*
                     if ((context.CurrentState == NpgsqlStartupState.Instance) ||
                             (context.CurrentState == NpgsqlConnectedState.Instance))
                         return;
+*/
+                    if (! mediator.RequireReadyForQuery) {
+                        return;
+                    }
 
                     break;
 
@@ -218,7 +234,7 @@ namespace Npgsql
                         // Send the PasswordPacket.
 
                         ChangeState( context, NpgsqlStartupState.Instance );
-                        context.Authenticate(context.ServerPassword);
+                        context.Authenticate(context.Password);
 
                         break;
                     }
@@ -237,7 +253,7 @@ namespace Npgsql
 
 
                         // 1.
-                        byte[] passwd = context.Encoding.GetBytes(context.ServerPassword);
+                        byte[] passwd = context.Encoding.GetBytes(context.Password);
                         byte[] saltUserName = context.Encoding.GetBytes(context.UserName);
 
                         byte[] crypt_buf = new byte[passwd.Length + saltUserName.Length];
@@ -433,9 +449,6 @@ namespace Npgsql
 
             NpgsqlMediator mediator = context.Mediator;
 
-            // Reset the mediator.
-            mediator.Reset();
-
             Int16 rowDescNumFields = 0;
             NpgsqlRowDescription rd = null;
             String Str; // for various strings
@@ -466,10 +479,14 @@ namespace Npgsql
                     //		Invalid password.
                     // Possible error in the NpgsqlConnectedState:
                     //		No pg_hba.conf configured.
-
+/*
                     if ((context.CurrentState == NpgsqlStartupState.Instance) ||
                             (context.CurrentState == NpgsqlConnectedState.Instance))
                         return;
+*/
+                    if (! mediator.RequireReadyForQuery) {
+                        return;
+                    }
 
                     break;
 
@@ -497,7 +514,7 @@ namespace Npgsql
                         // Send the PasswordPacket.
 
                         ChangeState( context, NpgsqlStartupState.Instance );
-                        context.Authenticate(context.ServerPassword);
+                        context.Authenticate(context.Password);
 
                         break;
                     }
@@ -516,7 +533,7 @@ namespace Npgsql
 
 
                         // 1.
-                        byte[] passwd = context.Encoding.GetBytes(context.ServerPassword);
+                        byte[] passwd = context.Encoding.GetBytes(context.Password);
                         byte[] saltUserName = context.Encoding.GetBytes(context.UserName);
 
                         byte[] crypt_buf = new byte[passwd.Length + saltUserName.Length];
