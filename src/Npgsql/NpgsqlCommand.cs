@@ -100,6 +100,7 @@ namespace Npgsql
             planName = String.Empty;
             text = cmdText;
             this.connection = connection;
+            
             if (this.connection != null)
                 this.connector = connection.Connector;
 
@@ -119,6 +120,7 @@ namespace Npgsql
         {
             resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
+            
 
             planName = String.Empty;
             text = cmdText;
@@ -579,9 +581,9 @@ namespace Npgsql
             ExecuteCommand();
             
             UpdateOutputParameters();
-
+            
             // Get the resultsets and create a Datareader with them.
-            return new NpgsqlDataReader(Connector.Mediator.ResultSets, Connector.Mediator.CompletedResponses, connection, cb);
+            return new NpgsqlDataReader(Connector.Mediator.ResultSets, Connector.Mediator.CompletedResponses, cb, this);
         }
 
         ///<summary>
@@ -1179,5 +1181,9 @@ namespace Npgsql
                 }
             }
         }
+        
+        
+         
+        
     }
 }
