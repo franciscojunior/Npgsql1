@@ -95,6 +95,7 @@ namespace Npgsql
             this.connection = connection;
             if (this.connection != null)
             	this.connector = connection.Connector;
+            
             parameters = new NpgsqlParameterCollection();
             timeout = 20;
             type = CommandType.Text;
@@ -188,7 +189,7 @@ namespace Npgsql
 
             set
             {
-                connection = (NpgsqlConnection) value;
+                Connection = (NpgsqlConnection) value;
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "IDbCommand.Connection", value);
             }
         }
@@ -213,6 +214,9 @@ namespace Npgsql
                 if (this.connection != null && this.Connector.Transaction != null)
                     throw new InvalidOperationException(resman.GetString("Exception_SetConnectionInTransaction"));
                 this.connection = value;
+                if (this.connection != null)
+                	connector = this.connection.Connector;
+                
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Connection", value);
             }
         }
@@ -570,7 +574,7 @@ namespace Npgsql
         private void CheckConnectionState()
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "CheckConnectionState");
-
+            
             // Check the connection state.
             if (connector == null || connector.State != ConnectionState.Open) {
                 throw new InvalidOperationException(resman.GetString("Exception_ConnectionNotOpen"));
@@ -797,6 +801,10 @@ namespace Npgsql
         {
             // Check the connection state first.
             CheckConnectionState();
+	    
+	    // reset any responses just before getting new ones
+            connector.Mediator.ResetResponses();
+
 
             if (parse == null) {
                 Connector.Query(this);

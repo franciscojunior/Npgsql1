@@ -120,9 +120,7 @@ namespace Npgsql
         ///
         protected virtual void ProcessBackendResponses( NpgsqlConnector context )
         {
-            // reset any responses just before getting new ones
-            context.Mediator.ResetResponses();
-
+            
             try {
                 switch (context.BackendProtocolVersion) {
                 case ProtocolVersion.Version2 :
