@@ -654,7 +654,7 @@ namespace Npgsql
 
             for (Int32 i = 0; i < parameters.Count; i++)
             {
-                result.Append(parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, true) + ',');
+                result.Append(parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, false) + ',');
             }
 
             result = result.Remove(result.Length - 1, 1);
