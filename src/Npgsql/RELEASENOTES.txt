@@ -1,4 +1,34 @@
 
+
+2004-08-31
+
+	Npgsql 0.7beta1 development release
+
+
+	Features added:
+	
+		Added support for point, box, lseg, path, polygon and circle datatypes. They are mapped to NpgsqlPoint, NpgsqlBox, NpgsqlLSeg,
+		NpgsqlPolygon and NpgsqlCircle respectively. Thanks Glen Parker for help.
+		
+		Added NpgsqlDbType enumeration with all supported types.
+		
+	
+	Bug fixes:
+        
+		Added api documentation. Thanks Glen Parker.
+		Fixed deserialization of NpgsqlException. There are some issues yet, just the base message is being deserialized. Errors collection are null. Thanks David Palmer (David dot Palmer at SensusTech dot com) for the heads up and fix.
+        Improved Unicode encoding support. It was possible to characters in unicode cross the stream buffer and be discarded. Now we use Decoders which handle that situation. Thanks Oskars Ozols (oskars dot ozols at di dot lv)
+        Improved connection startup code. Now new connections in ms.net goes a lot faster. Thanks Mikko Korkalo (mikko.korkalo at f-solutions dot net) for the patch.
+		Fixed a problem with plan execution in 7.3 backend versions. The text parameters weren't being quoted and backend complained about that.
+		
+		- gborg 898: Added HasRows method to NpgsqlDataReader. Thanks keitsi at minttupuffet dot net for feature request.
+		- gborg 899: Fixed return of IsClosed after closing NpgsqlDataReader. Thanks Mikko Korkalo (mikko.korkalo at f-solutions dot net) for the patch.
+		
+	Know Issues:
+		There are some reports about initial connection delay when using Npgsql in windows with ms .net implementation. We are still investigating what is causing that. Please, report us if you also have this problem.
+ 
+
+
 2004-06-15
 	Npgsql 0.6 development release.
 
@@ -7,7 +37,7 @@ for all this time without releases. We will try to get more often releases
 from now on. 
 	I'd like to specially thank Glen Parker (glenebob at nwlink dot com) for all the help given in this release. Thank you very much Glen!
 
-	What's new in this version:
+	What's new in this version: 
 	
 	- Connection Pooling support. Glen Parker worked very much in the
 redesign of connection pooling. You can use the connection pooling 
@@ -19,7 +49,7 @@ for its pool.
 	Timeout: Time to wait for connection open in seconds.
 
 	- SSL Connection support. You now can connect to postgresql using ssl connections. To
-do so, you must add the pair ssl=yes in connection string. Thanks Carlos Guzman 
+do so, you must add the pair ssl=yes in connection string. Thanks Carlos Guzman (carlosga at telefonica dot net)
 
 	- More connection string options:
 	Protocol: Protocol version to use, instead of automatic; Integer 2 or 3;
