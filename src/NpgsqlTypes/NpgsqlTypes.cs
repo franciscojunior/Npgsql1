@@ -174,9 +174,9 @@ namespace NpgsqlTypes
     /// </summary>
     public struct NpgsqlPolygon
     {
-        internal PointF[]     Points;
+        internal NpgsqlPoint[]     Points;
 
-        public NpgsqlPolygon(PointF[] Points)
+        public NpgsqlPolygon(NpgsqlPoint[] Points)
         {
             this.Points = Points;
         }
@@ -184,7 +184,7 @@ namespace NpgsqlTypes
         public Int32 Count
         { get { return Points.Length; } }
 
-        public PointF this [Int32 Index]
+        public NpgsqlPoint this [Int32 Index]
         { get { return Points[Index]; } }
     }
 
@@ -193,10 +193,10 @@ namespace NpgsqlTypes
     /// </summary>
     public struct NpgsqlCircle
     {
-        public PointF        Center;
+        public NpgsqlPoint   Center;
         public Double        Radius;
 
-        public NpgsqlCircle(PointF Center, Double Radius)
+        public NpgsqlCircle(NpgsqlPoint Center, Double Radius)
         {
             this.Center = Center;
             this.Radius = Radius;

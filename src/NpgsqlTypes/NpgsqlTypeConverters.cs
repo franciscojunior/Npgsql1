@@ -29,7 +29,6 @@ using System.Collections;
 using System.Globalization;
 using System.Text;
 using System.IO;
-using System.Drawing;
 using System.Text.RegularExpressions;
 
 using Npgsql;
@@ -267,14 +266,20 @@ namespace NpgsqlTypes
     /// </summary>
     internal abstract class ExtendedBackendToNativeTypeConverter
     {
+    
+    	private static readonly Regex pointRegex = new Regex(@"\((-?\d+.?\d*),(-?\d+.?\d*)\)");
+    	private static readonly Regex boxlsegRegex = new Regex(@"\((-?\d+.?\d*),(-?\d+.?\d*)\),\((-?\d+.?\d*),(-?\d+.?\d*)\)");
+    	private static readonly Regex pathpolygonRegex = new Regex(@"\((-?\d+.?\d*),(-?\d+.?\d*)\)");
+    	private static readonly Regex circleRegex = new Regex(@"<\((-?\d+.?\d*),(-?\d+.?\d*)\),(\d+.?\d*)>");
+    	
+    	
         /// <summary>
         /// Convert a postgresql point to a System.NpgsqlPoint.
         /// </summary>
         internal static Object ToPoint(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             
-            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\)");
-            Match m = r.Match(BackendData);
+            Match m = pointRegex.Match(BackendData);
             
             return new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString()));
             
@@ -285,11 +290,10 @@ namespace NpgsqlTypes
         /// <summary>
         /// Convert a postgresql point to a System.RectangleF.
         /// </summary>
-        internal static Object ToRectangle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        internal static Object ToBox(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
             
-            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\),\((\d+.?\d*),(\d+.?\d*)\)");
-            Match m = r.Match(BackendData);
+            Match m = boxlsegRegex.Match(BackendData);
             
             return new NpgsqlBox(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())),
             						new NpgsqlPoint(Single.Parse(m.Groups[3].ToString()), Single.Parse(m.Groups[4].ToString())));
@@ -300,8 +304,7 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToLSeg(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\),\((\d+.?\d*),(\d+.?\d*)\)");
-            Match m = r.Match(BackendData);
+            Match m = boxlsegRegex.Match(BackendData);
             
             return new NpgsqlLSeg(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())),
             						new NpgsqlPoint(Single.Parse(m.Groups[3].ToString()), Single.Parse(m.Groups[4].ToString())));
@@ -312,9 +315,8 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToPath(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-        	Regex r = new Regex(@"\((\d+.?\d*),(\d+.?\d*)\)");
-        	
-        	Match m = r.Match(BackendData);
+        	   	
+        	Match m = pathpolygonRegex.Match(BackendData);
         	Boolean open = (BackendData[0] == '['); 
         	ArrayList points = new ArrayList();
         	    	
@@ -354,8 +356,32 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToPolygon(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
-            return new NpgsqlPolygon(new PointF[] { new PointF(10,20), new PointF(30,40), new PointF(50,60) } );
+            
+        	Match m = pathpolygonRegex.Match(BackendData);
+        	ArrayList points = new ArrayList();
+        	    	
+        	while (m.Success)
+        	{
+        		
+	   			// Here we have to do a little hack, because as of 2004-08-11 mono cvs version, the last group is returned with
+	   			// a trailling ')' only when the last character of the string is a ')' which is the case for closed paths
+				// returned by backend. This gives parsing exception when converting to single. 
+				// I still don't know if this is a bug in mono or in my regular expression.
+	   			// Check if there is this character and remove it.
+	   			
+	   			String group2 = m.Groups[2].ToString();
+	   			if (group2.EndsWith(")"))
+	   				group2 = group2.Remove(group2.Length - 1, 1);
+	   				
+	   			points.Add(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(group2)));
+
+	        			
+	       		m = m.NextMatch();
+        		
+        	}
+        	
+        	return new NpgsqlPolygon((NpgsqlPoint[]) points.ToArray(typeof(NpgsqlPoint)));
+			
         }
 
         /// <summary>
@@ -363,8 +389,9 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToCircle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-            // FIXME - uh actually parse the data
-            return new NpgsqlCircle(new PointF(10,20), 100);
+        	Match m = circleRegex.Match(BackendData);
+            return new NpgsqlCircle(new NpgsqlPoint(Single.Parse(m.Groups[1].ToString()), Single.Parse(m.Groups[2].ToString())), Single.Parse(m.Groups[3].ToString()));
+            
         }
     }
 
@@ -442,7 +469,7 @@ namespace NpgsqlTypes
         {
             StringBuilder   B = new StringBuilder();
 
-            foreach (PointF P in ((NpgsqlPolygon)NativeData).Points) {
+            foreach (NpgsqlPoint P in ((NpgsqlPolygon)NativeData).Points) {
                 B.AppendFormat(CultureInfo.InvariantCulture, "{0}({1},{2})", (B.Length > 0 ? "," : ""), P.X, P.Y);
             }
 

@@ -28,7 +28,6 @@ using System.Data;
 using System.Net;
 using System.Text;
 using System.Resources;
-using System.Drawing;
 using Npgsql;
 
 
@@ -345,8 +344,8 @@ namespace NpgsqlTypes
                     new NpgsqlBackendTypeInfo(0, "path", DbType.Object, typeof(NpgsqlPath),
                         new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToPath)),
 
-                    new NpgsqlBackendTypeInfo(0, "box", DbType.Object, typeof(RectangleF),
-                        new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToRectangle)),
+                    new NpgsqlBackendTypeInfo(0, "box", DbType.Object, typeof(NpgsqlBox),
+                        new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToBox)),
 
                     new NpgsqlBackendTypeInfo(0, "circle", DbType.Object, typeof(NpgsqlCircle),
                         new ConvertBackendToNativeHandler(ExtendedBackendToNativeTypeConverter.ToCircle)),
