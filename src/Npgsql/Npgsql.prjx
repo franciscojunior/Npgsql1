@@ -50,6 +50,7 @@
     <File name="..\NpgsqlTypes\INullable.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name=".\NpgsqlBinaryRow.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
     <File name="..\NpgsqlTypes\NpgsqlDateTime.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
+    <File name=".\NpgsqlNotificationEventArgs.cs" subtype="Code" buildaction="Compile" dependson="" data="" />
   </Contents>
   <References />
   <DeploymentInformation target="" script="" strategy="File" />
