@@ -1,4 +1,71 @@
 
+2004-06-15
+	Npgsql 0.6 development release.
+
+	After so much time without a release, we finally got this out! Sorry
+for all this time without releases. We will try to get more often releases
+from now on. 
+	I'd like to specially thank Glen Parker (glenebob at nwlink dot com) for all the help given in this release. Thank you very much Glen!
+
+	What's new in this version:
+	
+	- Connection Pooling support. Glen Parker worked very much in the
+redesign of connection pooling. You can use the connection pooling 
+by specifying the following key-value pairs in the connection string:
+
+	MaxPoolSize: specifies the max number of connections Npgsql will use
+for its pool. 
+	Pooling: True or False. Controls whether connection pooling is used.  Default = True;
+	Timeout: Time to wait for connection open in seconds.
+
+	- SSL Connection support. You now can connect to postgresql using ssl connections. To
+do so, you must add the pair ssl=yes in connection string. Thanks Carlos Guzman 
+
+	- More connection string options:
+	Protocol: Protocol version to use, instead of automatic; Integer 2 or 3;
+	Encoding: Encoding to use when connected to backend. Currently can only be SQL_ASCII or Unicode. Default: SQL_ASCII.
+
+	- Error Handling:
+	NpgsqlException is now used exclusively for errors reported by the backend.
+	NpgsqlException now provides access to all information returned by the backend with an error. (More specific informations as error number only available on 7.4+ server versions)
+
+	- General:
+	Protocol version 3 handling is much closer to completion.
+	Lots of API documentation added.
+	
+	
+	Bug fixes:
+
+	Added support for Unicode encoding. Fixes feature request 534 on gborg. Thanks Ivar
+<ivar at lumisoft dot ee> for pointing it out.
+
+	Added code to set datestyle to iso when connecting using protocol 3.0 version. Thanks Sami Kuhmonen <feenix at iqs dot fi> for pointing it out.
+
+	Faster support of bytea binary data. Thanks Jackson Harper (jackson at ximian dot com)
+and Jonathan Gilbert (2a5gjx302 at sneakemail dot com). The performance for adding binary data is
+10x faster than original code :)
+	
+	CommandBuilder and better Dataset support. Thanks Pedro Yoros (yoros at wanadoo dot es).
+
+	Fixed problem when getting empty resultsets. Thanks lynnroth for pointing it out. 
+
+	Connection.Close couldn't be called twice. gborg 828. Thanks Glen Parker (glenebob at nwlink dot com)
+
+	Wrong date format sent to DB. Thanks Glen Parker (glenebob at nwlink dot com)
+
+	RedHat Postgresql messes version string. Thanks Glen Parker (glenebob at nwlink dot com)
+
+	NpgsqlMessageTypes.EmptyQueryResponse doesn't read enough from response string. Thanks Glen Parker (glenebob at nwlink dot com)
+
+ 	Problem with czech diacritics. Thanks stehule at kix dot fsv dot cvut dot cz for the patch.
+
+	fill method updates db without specifying insert command and creates wrong commandtext.
+
+
+
+	
+	
+	
 
 2003-05-31
     Npgsql 0.5 development release.
