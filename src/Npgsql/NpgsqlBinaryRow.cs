@@ -122,7 +122,7 @@ namespace Npgsql
 				
 				// Add them to the BinaryRow data.
 				//data.Add(NpgsqlTypesHelper.ConvertStringToNpgsqlType(result.ToString(), row_desc[field_count].type_oid));
-				data.Add(new NpgsqlBinary(input_buffer));
+				data.Add(input_buffer);
 				
 			}
 			
