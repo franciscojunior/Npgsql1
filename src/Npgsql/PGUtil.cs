@@ -35,9 +35,9 @@ using System.Resources;
 namespace Npgsql
 {
     /// <summary>
-    /// Represent the frontend/backend protocol version in use.
+    /// Represent the frontend/backend protocol version.
     /// </summary>
-    internal enum ProtocolVersion
+    public enum ProtocolVersion
     {
         Version2,
         Version3
@@ -46,7 +46,7 @@ namespace Npgsql
     /// <summary>
     /// Represent the backend server version.
     /// </summary>
-    internal class ServerVersion
+    public sealed class ServerVersion
     {
         public static readonly Int32 ProtocolVersion2 = 2 << 16; // 131072
         public static readonly Int32 ProtocolVersion3 = 3 << 16; // 196608
@@ -55,19 +55,28 @@ namespace Npgsql
         private Int32   _Minor;
         private Int32   _Patch;
 
-        public ServerVersion(Int32 Major, Int32 Minor, Int32 Patch)
+        internal ServerVersion(Int32 Major, Int32 Minor, Int32 Patch)
         {
             _Major = Major;
             _Minor = Minor;
             _Patch = Patch;
         }
 
+        /// <summary>
+        /// Server version major number.
+        /// </summary>
         public Int32 Major
         { get { return _Major; } }
 
+        /// <summary>
+        /// Server version minor number.
+        /// </summary>
         public Int32 Minor
         { get { return _Minor; } }
 
+        /// <summary>
+        /// Server version patch level number.
+        /// </summary>
         public Int32 Patch
         { get { return _Patch; } }
 
@@ -126,7 +135,10 @@ namespace Npgsql
             return _Major ^ _Minor ^ _Patch;
         }
 
-        public new String ToString()
+        /// <summary>
+        /// Returns the string representation of this version in three place dot notation (Major.Minor.Patch).
+        /// </summary>
+        public override String ToString()
         {
             return string.Format("{0}.{1}.{2}", _Major, _Minor, _Patch);
         }
@@ -168,6 +180,66 @@ namespace Npgsql
             // CHECKME
             // should we throw?
             return 0;
+        }
+
+        /// <summary>
+        /// This method takes a version string as returned by SELECT VERSION() and returns
+        /// a valid version string ("7.2.2" for example).
+        /// This is only needed when running protocol version 2.
+        /// This does not do any validity checks.
+        /// </summary>
+        public static string ExtractServerVersion (string VersionString)
+        {
+            Int32               Start = 0, End = 0;
+
+            // find the first digit and assume this is the start of the version number
+            for ( ; Start < VersionString.Length && ! char.IsDigit(VersionString[Start]) ; Start++);
+
+            End = Start;
+
+            // read until hitting whitespace, which should terminate the version number
+            for ( ; End < VersionString.Length && ! char.IsWhiteSpace(VersionString[End]) ; End++);
+
+            return VersionString.Substring(Start, End - Start + 1);
+        }
+
+        /// <summary>
+        /// This method takes a version string ("7.4.1" for example) and produces
+        /// the required integer version numbers (7, 4, and 1).
+        /// </summary>
+        public static ServerVersion ParseServerVersion (string VersionString)
+        {
+            String[]        Parts;
+
+            Parts = VersionString.Split('.');
+
+            if (Parts.Length < 2) {
+                throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString));
+            }
+
+            try {
+                if (Parts.Length == 2) {
+                    // Coerce it into a 3-part version.
+                    return new ServerVersion(ConvertBeginToInt32(Parts[0]), ConvertBeginToInt32(Parts[1]), 0);
+                } else {
+                    // If there are more than 3 parts, just ignore the extras, rather than rejecting it.
+                    return new ServerVersion(ConvertBeginToInt32(Parts[0]), ConvertBeginToInt32(Parts[1]), ConvertBeginToInt32(Parts[2]));
+                }
+            } catch (Exception E) {
+                throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString), E);
+            }
+        }
+
+        /// <summary>
+        /// Convert the beginning numeric part of the given string to Int32.
+        /// For example:
+        ///   Strings "12345ABCD" and "12345.54321" would both be converted to int 12345.
+        /// </summary>
+        private static Int32 ConvertBeginToInt32(String Raw)
+        {
+            Int32         Length = 0;
+            for ( ; Length < Raw.Length && Char.IsNumber(Raw[Length]) ; Length++);
+            return Convert.ToInt32(Raw.Substring(0, Length));
         }
 
         ///<summary>

@@ -440,12 +440,12 @@ namespace Npgsql
                     if (ServerVersionString.Length == 0)
                     {
                         NpgsqlCommand command = new NpgsqlCommand("select version();set DATESTYLE TO ISO;", this);
-                        ServerVersionString = ExtractServerVersion( (String)command.ExecuteScalar() );
+                        ServerVersionString = PGUtil.ExtractServerVersion( (String)command.ExecuteScalar() );
                     }
 
                     // Cook version string so we can use it for enabling/disabling things based on
                     // backend version.
-                    _connector.ServerVersion = ParseServerVersion(ServerVersionString);
+                    _connector.ServerVersion = PGUtil.ParseServerVersion(ServerVersionString);
 
                     // Adjust client encoding.
 
@@ -618,57 +618,6 @@ namespace Npgsql
 
             return new_values;
         }
-
-        /// <summary>
-        /// This method takes a version string as returned by SELECT VERSION() and returns
-        /// a valid version string ("7.2.2" for example).
-        /// This is only needed when running protocol version 2.
-        /// This does not do any validity checks.
-        /// </summary>
-        private string ExtractServerVersion (string VersionString)
-        {
-            Int32               Start = 0, End = 0;
-
-            // find the first digit and assume this is the start of the version number
-            for ( ; Start < VersionString.Length && ! char.IsDigit(VersionString[Start]) ; Start++);
-
-            End = Start;
-
-            // read until hitting whitespace, which should terminate the version number
-            for ( ; End < VersionString.Length && ! char.IsWhiteSpace(VersionString[End]) ; End++);
-
-            return VersionString.Substring(Start, End - Start + 1);
-        }
-
-        /// <summary>
-        /// This method takes a version string ("7.4.1" for example) and produces
-        /// the required integer version numbers (7, 4, and 1).
-        /// </summary>
-        private ServerVersion ParseServerVersion (string VersionString)
-        {
-            String[]        Parts;
-
-            Parts = VersionString.Split('.');
-
-            if (Parts.Length == 2) {
-                // Check if it is a devel version.
-                if (Parts[1].ToLower().EndsWith("devel")) {
-										Parts[1] = Parts[1].Remove(Parts[1].Length - 5, 5);
-                }
-
-                // Coerce it into a 3-part version.
-                Parts = new String[] { Parts[0], Parts[1], "0" };
-            } else if (Parts.Length != 3) {
-                throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString));
-            }
-
-            try {
-                return new ServerVersion(Convert.ToInt32(Parts[0]), Convert.ToInt32(Parts[1]), Convert.ToInt32(Parts[2]));
-            } catch (Exception E) {
-                throw new FormatException(String.Format("Internal: Backend sent bad version string: {0}", VersionString), E);
-            }
-        }
-
 
         /// <summary>
         /// This method is required to set all the version dependent features flags.
@@ -929,9 +878,12 @@ namespace Npgsql
         /// Version of the PostgreSQL backend.
         /// This can only be called when there is an active connection.
         /// </summary>
-        internal ServerVersion ServerVersion {
+        public ServerVersion ServerVersion {
             get
             {
+                if (_connector == null) {
+                    throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
+                }
                 return _connector.ServerVersion;
             }
         }
@@ -952,9 +904,12 @@ namespace Npgsql
         /// Protocol version in use.
         /// This can only be called when there is an active connection.
         /// </summary>
-        internal ProtocolVersion BackendProtocolVersion {
+        public ProtocolVersion BackendProtocolVersion {
             get
             {
+                if (_connector == null) {
+                    throw new InvalidOperationException(resman.GetString("Exception_ConnNotOpen"));
+                }
                 return _connector.BackendProtocolVersion;
             }
         }

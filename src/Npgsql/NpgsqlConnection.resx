@@ -118,6 +118,9 @@
 	<data name="Exception_ConnOpen">
 		<value>Connection already open</value>
 	</data>
+	<data name="Exception_ConnNotOpen">
+		<value>Connection is not open</value>
+	</data>
 	<data name="Exception_ConnStrEmpty">
 		<value>ConnectionString cannot be empty.</value>
 	</data>
