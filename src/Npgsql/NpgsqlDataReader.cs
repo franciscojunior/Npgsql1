@@ -266,7 +266,7 @@ namespace Npgsql
 
             CheckHaveResultSet();
 
-            NpgsqlTypeInfo  TI = GetTypeInfo(Index);
+            NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
             return _currentResultset.RowDescription[Index].type_oid.ToString();
         }
@@ -280,7 +280,7 @@ namespace Npgsql
 
             CheckHaveResultSet();
 
-            NpgsqlTypeInfo  TI = GetTypeInfo(Index);
+            NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
 
             if (TI == null) {
                 return _currentResultset.RowDescription[Index].type_oid.ToString();
@@ -298,7 +298,31 @@ namespace Npgsql
 
             CheckHaveResultSet();
 
-            return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[Index].GetType();
+            NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
+
+            if (TI == null) {
+                return null;
+            } else {
+                return TI.Type;
+            }
+        }
+
+        /// <summary>
+        /// Return the data DbType of the column at index <param name="Index"></param>.
+        /// </summary>
+        public DbType GetFieldDbType(Int32 Index)
+        {
+            NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetFieldType");
+
+            CheckHaveResultSet();
+
+            NpgsqlBackendTypeInfo  TI = GetTypeInfo(Index);
+
+            if (TI == null) {
+                return DbType.String;
+            } else {
+                return TI.DBType;
+            }
         }
 
         /// <summary>
@@ -541,7 +565,7 @@ namespace Npgsql
             return (GetValue(i) == DBNull.Value);
         }
 
-        internal NpgsqlTypeInfo GetTypeInfo(Int32 FieldIndex)
+        internal NpgsqlBackendTypeInfo GetTypeInfo(Int32 FieldIndex)
         {
             return _currentResultset.RowDescription[FieldIndex].type_info;
         }

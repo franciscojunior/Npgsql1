@@ -90,7 +90,7 @@ namespace Npgsql
 
         private Boolean                          _supportsPrepare = false;
 
-        private NpgsqlTypeMapping                _oidToNameMapping = null;
+        private NpgsqlBackendTypeMapping         _oidToNameMapping = null;
 
         private Encoding                         _encoding;
 
@@ -116,7 +116,7 @@ namespace Npgsql
             _isInitialized = false;
             _state = NpgsqlClosedState.Instance;
             _mediator = new NpgsqlMediator();
-            _oidToNameMapping = new NpgsqlTypeMapping();
+            _oidToNameMapping = new NpgsqlBackendTypeMapping();
         }
 
 
@@ -403,7 +403,7 @@ namespace Npgsql
             }
         }
 
-        internal NpgsqlTypeMapping OidToNameMapping {
+        internal NpgsqlBackendTypeMapping OidToNameMapping {
             get
             {
                 return _oidToNameMapping;
@@ -562,7 +562,7 @@ namespace Npgsql
             // It is possible that the connector may add types to its private
             // mapping that will not be valid to another connector, even
             // if connected to the same backend version.
-            _oidToNameMapping = NpgsqlTypesHelper.LoadInitialTypesMapping(this).Clone();
+            _oidToNameMapping = NpgsqlTypesHelper.CreateAndLoadInitialTypesMapping(this).Clone();
 
             ProcessServerVersion();
 

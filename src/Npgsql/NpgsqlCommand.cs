@@ -731,7 +731,7 @@ namespace Npgsql
 
                 for (i = 0; i < parameters.Count; i++)
                 {
-                    command.Append(NpgsqlTypesHelper.GetBackendTypeNameFromDbType(parameters[i].DbType));
+                    command.Append(NpgsqlTypesHelper.GetDefaultTypeInfo(parameters[i].DbType));
 
                     command.Append(',');
                 }

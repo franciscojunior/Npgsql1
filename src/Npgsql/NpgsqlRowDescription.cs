@@ -43,14 +43,14 @@ namespace Npgsql
     // Should it be a struct or a class?
     internal struct NpgsqlRowDescriptionFieldData
     {
-        public String              name;                      // Protocol 2/3
-        public Int32               table_oid;                 // Protocol 3
-        public Int16               column_attribute_number;   // Protocol 3
-        public Int32               type_oid;                  // Protocol 2/3
-        public Int16               type_size;                 // Protocol 2/3
-        public Int32               type_modifier;		      // Protocol 2/3
-        public FormatCode          format_code;               // Protocol 3. 0 text, 1 binary
-        public NpgsqlTypeInfo      type_info;                 // everything we know about this field type
+        public String                   name;                      // Protocol 2/3
+        public Int32                    table_oid;                 // Protocol 3
+        public Int16                    column_attribute_number;   // Protocol 3
+        public Int32                    type_oid;                  // Protocol 2/3
+        public Int16                    type_size;                 // Protocol 2/3
+        public Int32                    type_modifier;		       // Protocol 2/3
+        public FormatCode               format_code;               // Protocol 3. 0 text, 1 binary
+        public NpgsqlBackendTypeInfo    type_info;                 // everything we know about this field type
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ namespace Npgsql
             protocol_version = protocolVersion;
         }
 
-        public void ReadFromStream(Stream input_stream, Encoding encoding, NpgsqlTypeMapping type_mapping)
+        public void ReadFromStream(Stream input_stream, Encoding encoding, NpgsqlBackendTypeMapping type_mapping)
         {
             switch (protocol_version) {
             case ProtocolVersion.Version2 :
@@ -88,7 +88,7 @@ namespace Npgsql
             }
         }
 
-        private void ReadFromStream_Ver_2(Stream input_stream, Encoding encoding, NpgsqlTypeMapping type_mapping)
+        private void ReadFromStream_Ver_2(Stream input_stream, Encoding encoding, NpgsqlBackendTypeMapping type_mapping)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ReadFromStream_Ver_2");
 
@@ -125,7 +125,7 @@ namespace Npgsql
             }
         }
 
-        private void ReadFromStream_Ver_3(Stream input_stream, Encoding encoding, NpgsqlTypeMapping type_mapping)
+        private void ReadFromStream_Ver_3(Stream input_stream, Encoding encoding, NpgsqlBackendTypeMapping type_mapping)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ReadFromStream_Ver_3");
 
