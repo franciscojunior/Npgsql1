@@ -1,4 +1,22 @@
 
+
+2002-05-26
+	fxjr:
+		NpgsqlCommand.cs
+			- When a message is not handled in ExecuteScalar, the exception shows it.
+			ExecuteScalar() is still crashing with select field, field from table.
+			- Added limited support to strong type return value in the ExecuteScalar() 
+			method. Only to int4 datatype on the database. It will be mapped to Int32.
+			Any other type will be returned as String.
+			- Fixed bug with ignoring other rows and columns. The last row was being 
+			returned, if so.
+			- Fixed bug with byteorder while handling RowDescription message in the
+			ExecuteScalar() method.
+			- Some code cleanup of the ExecuteScalar() method.
+			- Fixed the hardcoded value of bytes to read in the handle of
+			AsciiRow message. Now it reads the number of bytes that is necessary
+			to hold the number of fields of the query.
+
 2002-05-25
 
 	fxjr:
