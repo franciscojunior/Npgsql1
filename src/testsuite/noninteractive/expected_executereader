@@ -1,2 +1,8 @@
 Connection completed
 5
+field_serial 	field_text 	field_int4 	field_int8 	field_bool 	
+============================================
+1 	Random text 	 	 	 	
+2 	 	4 	 	 	
+3 	 	 	8 	 	
+4 	 	 	 	t 	
