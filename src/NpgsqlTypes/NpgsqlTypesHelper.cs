@@ -167,6 +167,8 @@ namespace NpgsqlTypes
                 NativeTypeMapping.AddDbTypeAlias("text", DbType.AnsiStringFixedLength);
                 NativeTypeMapping.AddTypeAlias("text", typeof(String));
 
+		NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
+
                 NativeTypeMapping.AddType("bytea", NpgsqlDbType.Bytea, DbType.Binary, true,
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBinary));
 
@@ -294,7 +296,7 @@ namespace NpgsqlTypes
                     new NpgsqlBackendTypeInfo(0, "bpchar", NpgsqlDbType.Text, DbType.String, typeof(String),
                         null),
 
-                    new NpgsqlBackendTypeInfo(0, "varchar", NpgsqlDbType.Text, DbType.String, typeof(String),
+                    new NpgsqlBackendTypeInfo(0, "varchar", NpgsqlDbType.Varchar, DbType.String, typeof(String),
                         null),
 
                     new NpgsqlBackendTypeInfo(0, "text", NpgsqlDbType.Text, DbType.String, typeof(String),

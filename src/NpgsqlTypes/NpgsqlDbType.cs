@@ -47,7 +47,8 @@ namespace NpgsqlTypes
         Smallint,
         Text,
         Time,
-        Timestamp
+        Timestamp,
+	Varchar
 
     }
 
