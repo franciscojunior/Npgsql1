@@ -68,10 +68,15 @@ namespace Npgsql
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CanRead() ", LogLevel.Debug);
 	  	/*if (_currentResultset == null)
 	  		return false;*/
-	  	return (_currentResultset != null);
+	  	return ((_currentResultset != null) && (_currentResultset.Count > 0));
 	  	
 	  }
 	  
+	  private void CheckCanRead()
+	  {
+	    if (!CanRead())
+	      throw new InvalidOperationException("Cannot read data");
+	  }
 	  
 	  public void Dispose()
 	  {
@@ -217,6 +222,9 @@ namespace Npgsql
 	  public Object GetValue(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValue(Int32)", LogLevel.Debug);
+	    
+	    CheckCanRead();
+	    
 	  	if (i < 0 || _rowIndex < 0)
 	  		throw new InvalidOperationException("Cannot read data.");
 	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex])[i];
@@ -229,6 +237,8 @@ namespace Npgsql
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetValues(Object[])", LogLevel.Debug);
 	  	
+	  	CheckCanRead();
+	    
 	  	// Only the number of elements in the array are filled.
 	  	// It's also possible to pass an array with more that FieldCount elements.
 	  	Int32 maxColumnIndex = (values.Length < FieldCount) ? values.Length : FieldCount;
@@ -242,6 +252,7 @@ namespace Npgsql
 	  
 	  public Int32 GetOrdinal(String name)
 	  {
+	    CheckCanRead();
 	    return _currentResultset.RowDescription.FieldIndex(name);
 	  }
 	  
@@ -417,8 +428,9 @@ namespace Npgsql
 	  
 	  public Boolean IsDBNull(Int32 i)
 	  {
-	  	//throw new NotImplementedException();
 	  	
+	  	CheckCanRead();
+	    
 	  	return ((NpgsqlAsciiRow)_currentResultset[_rowIndex]).IsNull(i);
 	  }
 
