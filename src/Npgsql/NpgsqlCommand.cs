@@ -93,7 +93,8 @@ namespace Npgsql
             planName = String.Empty;
             text = cmdText;
             this.connection = connection;
-            this.connector = connection.Connector;
+            if (this.connection != null)
+            	this.connector = connection.Connector;
             parameters = new NpgsqlParameterCollection();
             timeout = 20;
             type = CommandType.Text;
@@ -802,19 +803,36 @@ namespace Npgsql
 
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();
-            } else {
-                BindParameters();
+            } 
+			else 
+			{
+            	try
+				{
+					
+					BindParameters();
 
-                // Check for errors and/or notifications and do the Right Thing.
-                connector.CheckErrorsAndNotifications();
+					// Check for errors and/or notifications and do the Right Thing.
+					connector.CheckErrorsAndNotifications();
 
-                connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
+					connector.Execute(new NpgsqlExecute(bind.PortalName, 0));
 
-                // Check for errors and/or notifications and do the Right Thing.
-                connector.CheckErrorsAndNotifications();
-            }
-            /*	else
-            		throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));*/
+					// Check for errors and/or notifications and do the Right Thing.
+					connector.CheckErrorsAndNotifications();
+				}
+              	finally
+				{
+					// As per documentation:
+					// "[...] When an error is detected while processing any extended-query message,
+					// the backend issues ErrorResponse, then reads and discards messages until a
+					// Sync is reached, then issues ReadyForQuery and returns to normal message processing.[...]"
+					// So, send a sync command if we get any problems.
+
+					connector.Sync();
+					
+
+				}
+			}
+           
         }
 
 
