@@ -12,15 +12,20 @@ use strict;
 # Name of the release
 my $RELEASE_NAME="npgsql";
 
+# Name of cvs2pl script that generates the ChangeLog
+my $CVS2CL="cvs2cl";
+
 # List of files to be packaged
 #
 # example $targets definition:
 #
-#my $targets = { "LICENSE.txt" => "file",
-#  		"README.txt" => "file",
+#  my $targets = { "ChangeLog" => "file",
 #  		"src/Npgsql" => "dir",
-#  		"src/testsuite" => "dir"};
-my $targets = { "src/Npgsql" => "dir",
+#  		"src/testsuite" => "dir",
+#  		"admin" => "dir"};
+#
+my $targets = { "ChangeLog" => "file",
+		"src/Npgsql" => "dir",
 		"src/testsuite" => "dir",
 		"admin" => "dir"};
 
@@ -40,11 +45,24 @@ my $OK="OK\n";
 # Change up to the root directory
 chdir "..";
 
-# Clean up 
-print "Cleaning up...";
+#
+# Clean up
+#
+print "Cleaning up ...";
 system("(cd src/Npgsql; make clean > /dev/null)");
 system("rm -f admin/*.tar.gz > /dev/null");
+system("rm -f ChangeLog* > /dev/null");
 print $OK;
+
+
+
+#
+# Create a ChangeLog
+#
+print "Creating a ChangeLog file ...";
+system("$CVS2CL 2> /dev/null");
+print $OK;
+
 
 #
 # Figure out the new version number
@@ -86,17 +104,20 @@ foreach my $file (sort keys %$targets) {
 #
 # Verify that all files are properly tagged
 #
-print "Checking if all files are properly tagged as $RELEASE_TAG. NO implicit tagging will be performed...\n";
+print "Checking if all files are properly tagged as $RELEASE_TAG. NO implicit tagging will be performed ...\n";
 my $errors;
 foreach my $file ( @$target_files ) {
-    open(CVSLOG, "cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}' |");
-    print "$file... ";
-    my $line;
-    if (!<CVSLOG> || $_ ne $RELEASE_TAG) {
-	print "not cvs tagged as $RELEASE_TAG\n";
-	$errors = 1;
-    } else {
-	print $OK;
+    # Ignore the ChangeLog file
+    if ($file ne "ChangeLog") { 
+	open(CVSLOG, "cvs status -v $file 2> /dev/null |grep $RELEASE_TAG | awk '{print $1}' |");
+	print "$file... ";
+	my $line;
+	if (!<CVSLOG> || $_ ne $RELEASE_TAG) {
+	    print "not cvs tagged as $RELEASE_TAG\n";
+	    $errors = 1;
+	} else {
+	    print $OK;
+	}
     }
 }
 
@@ -114,7 +135,7 @@ if ($errors) {
 # Create release tar.gzs
 #
 my $rel_file=$RELEASE_NAME . "_" . $rel_version . ".tar.gz";
-print "Packaging source release...\n";
+print "Packaging source release ...\n";
 system("(tar -czvf $rel_file @$target_files > /dev/null; mv $rel_file admin/.)");
 print "This is release version $version, since that's what's in AssemblyInfo.cs\n";
 chdir "admin";
