@@ -32,6 +32,7 @@ using System.IO;
 using System.Text;
 using System.Collections;
 using System.Collections.Specialized;
+using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using Mono.Security.Protocol.Tls;
 using NpgsqlTypes;
@@ -87,32 +88,33 @@ namespace Npgsql
         // as I didn't want to add another interface for internal access
         // --brar
         // In the connection string
-        internal readonly Char CONN_DELIM	= ';';  // Delimeter
-        internal readonly Char CONN_ASSIGN	= '=';
-        internal readonly String CONN_SERVER 	= "SERVER";
-        internal readonly String CONN_PORT 	= "PORT";
-        internal readonly String CONN_PROTOCOL 	= "PROTOCOL";
-        internal readonly String CONN_DATABASE	= "DATABASE";
-        internal readonly String CONN_USERID 	= "USER ID";
-        internal readonly String CONN_PASSWORD	= "PASSWORD";
-        internal readonly String CONN_SSL_ENABLED	= "SSL";
-        internal readonly String CONN_ENCODING = "ENCODING";
-        internal readonly String CONN_TIMEOUT = "TIMEOUT";
+        internal static readonly Char CONN_DELIM	= ';';  // Delimeter
+        internal static readonly Char CONN_ASSIGN	= '=';
+        internal static readonly String CONN_SERVER 	= "SERVER";
+        internal static readonly String CONN_PORT 	= "PORT";
+        internal static readonly String CONN_PROTOCOL 	= "PROTOCOL";
+        internal static readonly String CONN_DATABASE	= "DATABASE";
+        internal static readonly String CONN_USERID 	= "USER ID";
+        internal static readonly String CONN_PASSWORD	= "PASSWORD";
+        internal static readonly String CONN_SSL_ENABLED	= "SSL";
+        internal static readonly String CONN_ENCODING = "ENCODING";
+        internal static readonly String CONN_TIMEOUT = "TIMEOUT";
 
         // These are for ODBC connection string compatibility
-        internal readonly String ODBC_USERID 	= "UID";
-        internal readonly String ODBC_PASSWORD = "PWD";
+        internal static readonly String ODBC_USERID 	= "UID";
+        internal static readonly String ODBC_PASSWORD = "PWD";
 
         // These are for the connection pool
-        internal readonly String MIN_POOL_SIZE = "MINPOOLSIZE";
-        internal readonly String MAX_POOL_SIZE = "MAXPOOLSIZE";
+        internal static readonly String POOLING       = "POOLING";
+        internal static readonly String MIN_POOL_SIZE = "MINPOOLSIZE";
+        internal static readonly String MAX_POOL_SIZE = "MAXPOOLSIZE";
 
         // Connection string defaults
-        internal readonly Int32 DEF_PORT = 5432;
-        internal readonly String DEF_ENCODING = "SQL_ASCII";
-        internal readonly Int32 DEF_MIN_POOL_SIZE = 1;
-        internal readonly Int32 DEF_MAX_POOL_SIZE = 20;
-        internal readonly Int32 DEF_TIMEOUT = 15;
+        internal static readonly Int32 DEF_PORT = 5432;
+        internal static readonly String DEF_ENCODING = "SQL_ASCII";
+        internal static readonly Int32 DEF_MIN_POOL_SIZE = 1;
+        internal static readonly Int32 DEF_MAX_POOL_SIZE = 20;
+        internal static readonly Int32 DEF_TIMEOUT = 15;
 
 
         // Values for possible CancelRequest messages.
@@ -365,6 +367,8 @@ namespace Npgsql
 
             if (MaxPoolSize < 0)
                 throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", MAX_POOL_SIZE);
+            if (Timeout < 0)
+                throw new ArgumentOutOfRangeException("Numeric argument must not be less than zero.", CONN_TIMEOUT);
 
             // If ConnectionString specifies a protocol version, we will 
             // not try to fall back to version 2 on failure.
@@ -375,10 +379,7 @@ namespace Npgsql
                 PV = ProtocolVersion.Version3;
             }
 
-            lock(ConnectorPool.ConnectorPoolMgr)
-            {
-                _connector = ConnectorPool.ConnectorPoolMgr.RequestConnector (this);
-            }
+            _connector = ConnectorPool.ConnectorPoolMgr.RequestConnector (this);
 
             if (! _connector.IsInitialized)
             {
@@ -514,11 +515,7 @@ namespace Npgsql
                 // managed resources.
                 NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Dispose", disposing);
 
-                lock(ConnectorPool.ConnectorPoolMgr)
-                {
-                    ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
-                }
-
+                ConnectorPool.ConnectorPoolMgr.ReleaseConnector(_connector);
                 _connector = null;
 
                 connection_state = ConnectionState.Closed;
@@ -950,6 +947,13 @@ namespace Npgsql
             }
         }
 
+        internal Boolean Pooling {
+            get
+            {
+                return this.ConnectStringValueToBool(POOLING, true);
+            }
+        }
+
         internal Int32 MinPoolSize {
             get
             {
@@ -961,6 +965,13 @@ namespace Npgsql
             get
             {
                 return ConnectStringValueToInt32(MAX_POOL_SIZE, DEF_MAX_POOL_SIZE);
+            }
+        }
+
+        internal Int32 Timeout {
+            get
+            {
+                return ConnectStringValueToInt32(CONN_TIMEOUT, DEF_TIMEOUT);
             }
         }
 

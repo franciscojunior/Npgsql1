@@ -20,6 +20,8 @@
 // ------------------------------------------------------------------
 //	Status
 //		0.00.0000 - 06/17/2002 - ulrich sprick - creation
+//		          - 05/??/2004 - Glen Parker<glenebob@nwlink.com> rewritten using
+//                               System.Queue.
 
 using System;
 using System.Collections;
@@ -30,6 +32,18 @@ namespace Npgsql
 {
     internal class ConnectorPool
     {
+        /// <summary>
+        /// A queue with an extra Int32 for keeping track of busy connections.
+        /// </summary>
+        private class ConnectorQueue : System.Collections.Queue
+        {
+            /// <summary>
+            /// The number of pooled Connectors that belong to this queue but
+            /// are currently in use.
+            /// </summary>
+            public Int32            UseCount = 0;
+        }
+
         /// <value>Unique static instance of the connector pool
         /// mamager.</value>
         internal static ConnectorPool ConnectorPoolMgr = new Npgsql.ConnectorPool();
@@ -59,10 +73,53 @@ namespace Npgsql
         /// <param name="Connection">The NpgsqlConnection that is requesting
         /// the connector. Its ConnectionString will be used to search the
         /// pool for available connectors.</param>
-        /// <param name="Timeout">How long to wait for a connection to
-        /// become available. Currently unused.</param>
         /// <returns>A connector object.</returns>
-        public Npgsql.Connector RequestConnector (NpgsqlConnection Connection)
+        internal Npgsql.Connector RequestConnector (NpgsqlConnection Connection)
+        {
+            if (Connection.Pooling) {
+                return RequestPooledConnector(Connection);
+            } else {
+                return GetNonPooledConnector(Connection);
+            }
+        }
+
+        /// <summary>
+        /// Find a pooled connector.  Handle locking and timeout here.
+        /// </summary>
+        private Npgsql.Connector RequestPooledConnector (NpgsqlConnection Connection)
+        {
+            Connector       Connector;
+            Int32           timeoutMilliseconds = Connection.Timeout * 1000;
+
+            lock(this)
+            {
+                Connector = RequestPooledConnectorInternal(Connection);
+            }
+
+            while (Connector == null && timeoutMilliseconds > 0)
+            {
+                Int32 ST = timeoutMilliseconds > 1000 ? 1000 : timeoutMilliseconds;
+
+                Thread.Sleep(ST);
+                timeoutMilliseconds -= ST;
+
+                lock(this)
+                {
+                    Connector = RequestPooledConnectorInternal(Connection);
+                }
+            }
+
+            if (Connector == null) {
+                throw new Exception("Timeout while getting a connection from pool.");
+            }
+
+            return Connector;
+        }
+
+        /// <summary>
+        /// Find a pooled connector.  Handle shared/non-shared here.
+        /// </summary>
+        private Npgsql.Connector RequestPooledConnectorInternal (NpgsqlConnection Connection)
         {
             Connector       Connector = null;
             Boolean         Shared = false;
@@ -71,7 +128,7 @@ namespace Npgsql
             // on some property on the Connection.
 
             if (! Shared) {
-                Connector = GetPooledConnecter(Connection);
+                Connector = GetPooledConnector(Connection);
             } else {
                 // Connection sharing? What's that?
                 throw new NotImplementedException("Internal: Shared pooling not implemented");
@@ -91,13 +148,31 @@ namespace Npgsql
         /// <param name="Connector">The connector to release.</param>
         public void ReleaseConnector (Connector Connector)
         {
+            if (Connector.Connection.Pooling) {
+                ReleasePooledConnector(Connector);
+            } else {
+                UngetNonPooledConnector(Connector);
+            }
+        }
+
+        /// <summary>
+        /// Release a pooled connector.  Handle locking here.
+        /// </summary>
+        private void ReleasePooledConnector (Connector Connector)
+        {
+            lock(this)
+            {
+                ReleasePooledConnectorInternal(Connector);
+            }
+        }
+
+        /// <summary>
+        /// Release a pooled connector.  Handle shared/non-shared here.
+        /// </summary>
+        private void ReleasePooledConnectorInternal (Connector Connector)
+        {
             if (! Connector.Shared) {
-                if (Connector.Connection.MaxPoolSize == 0) {
-                    // No way we can pool when MaxPoolSize == 0
-                    Connector.Close();
-                } else {
-                    PoolConnector(Connector);
-                }
+                UngetPooledConnector(Connector);
             } else {
                 // Connection sharing? What's that?
                 throw new NotImplementedException("Internal: Shared pooling not implemented");
@@ -105,27 +180,45 @@ namespace Npgsql
         }
 
         /// <summary>
+        /// Create a connector without any pooling functionality.
+        /// </summary>
+        private Npgsql.Connector GetNonPooledConnector(NpgsqlConnection Connection)
+        {
+            Connector       Connector;
+
+            Connector = new Connector(false);
+            Connector.Connection = Connection;
+
+            return Connector;
+        }
+
+        /// <summary>
         /// Find an available pooled connector in the non-shared pool, or create
         /// a new one if none found.
         /// </summary>
-        private Npgsql.Connector GetPooledConnecter(NpgsqlConnection Connection)
+        private Npgsql.Connector GetPooledConnector(NpgsqlConnection Connection)
         {
-            Queue           Queue;
-            Connector       Connector;
+            ConnectorQueue  Queue;
+            Connector       Connector = null;
 
             // Try to find a queue.
-            Queue = (Queue)PooledConnectors[Connection.ConnectionString];
+            Queue = (ConnectorQueue)PooledConnectors[Connection.ConnectionString];
 
-            if (Queue == null || Queue.Count == 0) {
-                // No queue, or an empty one, found.  Make a new connector.
-                Connector = new Connector(false);
-                Connector.Connection = Connection;
-                return Connector;
+            if (Queue == null) {
+                Queue = new ConnectorQueue();
+                PooledConnectors[Connection.ConnectionString] = Queue;
             }
 
-            // Found a queue with connectors.  Grab the top one.
-            Connector = (Connector)Queue.Dequeue();
-            Connector.Connection = Connection;
+            if (Queue.Count > 0) {
+                // Found a queue with connectors.  Grab the top one.
+                Connector = (Connector)Queue.Dequeue();
+                Queue.UseCount++;
+                Connector.Connection = Connection;
+            } else if (Queue.Count + Queue.UseCount < Connection.MaxPoolSize) {
+                Connector = new Connector(false);
+                Queue.UseCount++;
+                Connector.Connection = Connection;
+            }
 
             return Connector;
         }
@@ -134,46 +227,50 @@ namespace Npgsql
         /// Find an available shared connector in the shared pool, or create
         /// a new one if none found.
         /// </summary>
-        private Npgsql.Connector GetSharedConnecter(NpgsqlConnection Connection)
+        private Npgsql.Connector GetSharedConnector(NpgsqlConnection Connection)
         {
-            Connector       Connector;
+            // To be implemented
 
-            Connector = (Connector)SharedConnectors[Connection.ConnectionString];
-
-            if (Connector == null) {
-                Connector = new Connector(true);
-
-                SharedConnectors[Connection.ConnectionString] = Connector;
-            }
-
-            return Connector;
+            return null;
         }
 
         /// <summary>
-        /// Put a pooled connector (back?) into the pool queue.  Create the queue if needed.
+        /// Close the connector.
+        /// </summary>
+        /// <param name="Connector">Connector to release</param>
+        private void UngetNonPooledConnector(Connector Connector)
+        {
+            Connector.Close();
+        }
+
+        /// <summary>
+        /// Put a pooled connector into the pool queue.  Create the queue if needed.
         /// </summary>
         /// <param name="Connector">Connector to pool</param>
-        private void PoolConnector(Connector Connector)
+        private void UngetPooledConnector(Connector Connector)
         {
-            Queue           Queue;
+            ConnectorQueue           Queue;
 
-            // Try to find a queue.
-            Queue = (Queue)PooledConnectors[Connector.Connection.ConnectionString];
+            // Find the queue.
+            Queue = (ConnectorQueue)PooledConnectors[Connector.Connection.ConnectionString];
 
             if (Queue == null) {
-                // No queue found. Make a new one.
-                Queue = new Queue();
-                PooledConnectors[Connector.Connection.ConnectionString] = Queue;
+                throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
             }
 
-            // If there is room, push the connector into the queue,
-            // otherwise it must be closed and forgotten.
-            if (Queue.Count < Connector.Connection.MaxPoolSize) {
-                Queue.Enqueue(Connector);
-            } else {
-                Connector.Close();
-                return;
-            }
+            Connector.Connection = null;
+
+            Queue.Enqueue(Connector);
+            Queue.UseCount--;
+        }
+
+        /// <summary>
+        /// Stop sharing a shared connector.
+        /// </summary>
+        /// <param name="Connector">Connector to unshare</param>
+        private void UngetSharedConnector(Connector Connector)
+        {
+            // To be implemented
         }
     }
 }
