@@ -250,13 +250,31 @@ namespace Npgsql
 	  {
 	  	get
 	  	{
-		  	throw new NotImplementedException();
+		  	//throw new NotImplementedException();
+	  		NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".this[String]", LogLevel.Debug);
+	  		return GetValue(_currentResultset.RowDescription.FieldIndex(name));
 	  	}
 	  }
 	  
 	  public Boolean GetBoolean(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetBoolean(Int32)", LogLevel.Debug);
+	  	
+  		switch ((String) this[i])
+  		{
+  			case "t":
+  				return true;
+  				
+  			case "f":
+  				return false;
+  				
+  			default:
+  				throw new System.InvalidCastException();
+  			
+  		}
+	  	
 	  }
 	  
 	  public Byte GetByte(Int32 i)
@@ -276,7 +294,14 @@ namespace Npgsql
 	  
 	  public Int64 GetChars(Int32 i, Int64 fieldoffset, Char[] buffer, Int32 bufferoffset, Int32 length)
 	  {
-	    throw new NotImplementedException();
+			String		str;
+
+			str = GetString(i);
+	  	if (buffer == null)
+	  		return str.Length;
+	  	
+			str.ToCharArray(bufferoffset, length).CopyTo(buffer, 0);
+			return buffer.GetLength(0);
 	  }
 	  
 	  public Guid GetGuid(Int32 i)
@@ -286,38 +311,96 @@ namespace Npgsql
 	  
 	  public Int16 GetInt16(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt16(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Int16.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
+	  	
+
 	  }
 	  
 	  public Int32 GetInt32(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt32(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Int32.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
+	  	
+
 	  }
 	  
 	  public Int64 GetInt64(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetInt64(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Int64.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
 	  }
 	  
 	  public Single GetFloat(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetFloat(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Single.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
 	  }
 	  
 	  public Double GetDouble(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetDouble(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Double.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
 	  }
 	  
 	  public String GetString(Int32 i)
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetString(Int32)", LogLevel.Debug);
-	    return (String) this[i];
+	    return (String) GetValue(i);
 	  }
 	  
 	  public Decimal GetDecimal(Int32 i)
 	  {
-	    throw new NotImplementedException();
+	    // Should this be done using the GetValue directly and not by converting to String
+	  	// and parsing from there?
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetDecimal(Int32)", LogLevel.Debug);
+	  	try
+	  	{
+		    return Decimal.Parse((String) this[i]);
+	  	} catch (System.FormatException)
+	  	{
+	  		throw new System.InvalidCastException();
+	  	}
 	  }
 	  
 	  public DateTime GetDateTime(Int32 i)
