@@ -34,7 +34,7 @@ namespace NpgsqlTypes
 		
 		private Decimal _value;
 		
-		private Boolean _isNull;
+		private Boolean _isNotNull;
 		
 		public static readonly NpgsqlDecimal Null;
 		
