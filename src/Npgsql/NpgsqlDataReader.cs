@@ -36,24 +36,40 @@ namespace Npgsql
 		
 	  private NpgsqlConnection 	_connection;
 		private ArrayList 				_resultsets;
+		private ArrayList					_responses;
 	  private Int32 						_rowIndex;
 		private Int32							_resultsetIndex;
 		private	NpgsqlResultSet		_currentResultset;
 		private DataTable					_currentResultsetSchema;
 		
+		
 		// Logging related values
     private static readonly String CLASSNAME = "NpgsqlDataReader";
 		
-	  internal NpgsqlDataReader( ArrayList resultsets, NpgsqlConnection connection)
+	  internal NpgsqlDataReader( ArrayList resultsets, ArrayList responses, NpgsqlConnection connection)
 	  {
 	    _resultsets					= resultsets;
+	  	_responses					= responses;
 	  	_connection 				= connection;
 	  	_rowIndex						= -1;
 	  	_resultsetIndex			= 0;
+	  	
 	  	_currentResultset 	= (NpgsqlResultSet)_resultsets[_resultsetIndex];
 	  	
+	  	
+	  	
 	  }
-	  	  
+	  
+	  private Boolean CanRead()
+	  {
+	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".CanRead() ", LogLevel.Debug);
+	  	/*if (_currentResultset == null)
+	  		return false;*/
+	  	return (_currentResultset != null);
+	  	
+	  }
+	  
+	  
 	  public void Dispose()
 	  {
 	  	
@@ -81,7 +97,18 @@ namespace Npgsql
 	  	get
 	  	{
 	  		NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".get_RecordsAffected()", LogLevel.Debug);
+	  		
+	  		/*if (_currentResultset == null)
+	  			return 0;	//[FIXME] Get the actual number of rows deleted, updated or inserted.
 	  		return -1;
+	  		*/
+	  		
+	  		if (CanRead())
+	  			return -1;
+	  		
+	  		String[] ret_string_tokens = ((String)_responses[_resultsetIndex]).Split(null);	// whitespace separator.
+				
+				return Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
 	  	}
 	    
 	  }
@@ -101,6 +128,7 @@ namespace Npgsql
 	  	// SqlClient modify to a invalid resultset and throws exceptions
 	  	// when trying to access any data.
 	  	
+	  		  	
 	  	if((_resultsetIndex + 1) < _resultsets.Count)
 	  	{
 	  		_resultsetIndex++;
@@ -110,11 +138,16 @@ namespace Npgsql
 	  	}
 	  	else
 	  		return false;
+	  	
 	  }
 	  
 	  public Boolean Read()
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".Read()", LogLevel.Debug);
+	  	
+	  	if (!CanRead())
+	  		return false;
+	  	
 	    _rowIndex++;
 	  	return (_rowIndex < _currentResultset.Count);
 	  }
@@ -123,7 +156,10 @@ namespace Npgsql
 	  {
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetSchemaTable()", LogLevel.Debug);
 	    //throw new NotImplementedException();
-	  		  	
+	  	
+	  	if (!CanRead())
+	  		return null; //[FIXME] Should we return null or throw an exception??
+	  	
 	  	if(_currentResultsetSchema == null)
 	  		_currentResultsetSchema = GetResultsetSchema();
 	  	
@@ -136,8 +172,14 @@ namespace Npgsql
 	  {
 	  	get
 	  	{
+	  		
 	  		NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".get_FieldCount()", LogLevel.Debug);
-	  		return _currentResultset.RowDescription.NumFields;
+	  		//return ((_currentResultset == null) ? 0 : _currentResultset.RowDescription.NumFields);
+	  		if (CanRead())
+	  			return _currentResultset.RowDescription.NumFields;
+	  		else
+	  			return -1;
+	  			
 	  	}
 	    
 	  }
@@ -146,7 +188,11 @@ namespace Npgsql
 	  {
 	    //throw new NotImplementedException();
 	  	NpgsqlEventLog.LogMsg("Entering " + CLASSNAME + ".GetName(Int32)", LogLevel.Debug);
-	  	return _currentResultset.RowDescription[i].name;
+	  	
+	  	if (CanRead())
+	  		return _currentResultset.RowDescription[i].name;
+	  	else
+	  		return String.Empty;
 	  }
 	  
 	  public String GetDataTypeName(Int32 i)
