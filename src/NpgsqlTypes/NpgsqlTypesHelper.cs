@@ -243,16 +243,16 @@ internal class NpgsqlTypesHelper
             }
 
         case DbType.DateTime:
-			
+			Console.WriteLine(data);
             // Get the date time parsed in all expected formats for timestamp.
             return DateTime.ParseExact(data,
-                                       new String[] {	"yyyy-MM-dd HH:mm:ss.ffffffzz", 
-									   					"yyyy-MM-dd HH:mm:ss.fffffzz",
-														"yyyy-MM-dd HH:mm:ss.ffffzz", 
-														"yyyy-MM-dd HH:mm:ss.fffzz",
-														"yyyy-MM-dd HH:mm:ss.ffzz",
-														"yyyy-MM-dd HH:mm:ss.fzz",
-														"yyyy-MM-dd HH:mm:sszz",
+                                       new String[] {	"yyyy-MM-dd HH:mm:ss.ffffff-zz", 
+									   					"yyyy-MM-dd HH:mm:ss.fffff-zz",
+														"yyyy-MM-dd HH:mm:ss.ffff-zz", 
+														"yyyy-MM-dd HH:mm:ss.fff-zz",
+														"yyyy-MM-dd HH:mm:ss.ff-zz",
+														"yyyy-MM-dd HH:mm:ss.f-zz",
+														"yyyy-MM-dd HH:mm:ss-zz",
 														"yyyy-MM-dd HH:mm:ss.ffffff", 
 									   					"yyyy-MM-dd HH:mm:ss.fffff",
 														"yyyy-MM-dd HH:mm:ss.ffff", 
@@ -512,17 +512,18 @@ internal class NpgsqlTypesHelper
     private static String ConvertByteArrayToBytea(Byte[] byteArray)
     {
         NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ConvertByteArrayToBytea");
-        StringBuilder  result = new StringBuilder("");
-
-        foreach(Byte byteToConvert in byteArray)
-        {
-            result.Append("\\\\");
-            result.Append((byteToConvert & 0xC0) >> 6);
-            result.Append((byteToConvert & 0x38) >> 3);
-            result.Append(byteToConvert & 0x07);
+		int len = byteArray.Length;
+		char[] res = new char [len * 5];
+        for (int i = 0; i <len; i++) 
+		{
+        	res [(i*5)] = '\\';
+            res [(i*5)+1] = '\\';
+            res [(i*5)+2] = (char) (((byteArray[i] & 0xC0) >> 6) + '0');
+            res [(i*5)+3] = (char) (((byteArray[i] & 0x38) >> 3) + '0');
+            res [(i*5)+4] = (char) ((byteArray[i] & 0x07) + '0');
         }
 
-        return result.ToString();
+       return new String (res);
     }
 
 }
