@@ -54,7 +54,7 @@ test_failed=0
 for file in `ls test_*.cs | sed -e s/test_// -e s/.cs//`;
 do
     echo "------------------------------------------------------------"
-    echo -n "Compiling test file test_$file..." && \
+    echo -n "Compiling test file test_$file.cs..." && \
     ( ${CC} ${CPPFLAGS} test_${file}.cs 2>&1 > /dev/null && echo "OK") || echo "FAILED"
     echo -n "Running test file test_${file}.exe..." && \
     ( ${MONO} test_${file}.exe > out_$file);
