@@ -41,6 +41,17 @@ namespace Npgsql
 		// Log support
 		private static readonly String CLASSNAME = "NpgsqlDataAdapter";
 		
+		public NpgsqlDataAdapter() {}
+		
+		public NpgsqlDataAdapter(NpgsqlCommand selectCommand)
+		{
+			_selectCommand = selectCommand;
+		}
+		
+		public NpgsqlDataAdapter(String selectCommandText, NpgsqlConnection selectConnection) : this(new NpgsqlCommand(selectCommandText, selectConnection)){}
+		
+		public NpgsqlDataAdapter(String selectCommandText, String selectConnectionString) : this(selectCommandText, new NpgsqlConnection(selectConnectionString)){}
+		
 		
 		protected override RowUpdatedEventArgs CreateRowUpdatedEvent(
 				DataRow dataRow,
