@@ -103,6 +103,12 @@ namespace Npgsql
 			_rows.Add(asciiRow);
 		}
 		
+		public void AddBinaryRow(NpgsqlBinaryRow asciiRow)
+		{
+			_rows.Add(asciiRow);
+		}
+		
+		
 		public void AddBackendKeydata(NpgsqlBackEndKeyData keydata)
 		{
 			_responses.Add(keydata);	//hack	
