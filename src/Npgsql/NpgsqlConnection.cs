@@ -177,8 +177,8 @@ namespace Npgsql
         // (i.e.:192.168.0.1), there may be a long delay trying
         // resolve it when it is not necessary.
         // So, try first connect as if it was a dotted ip address.
-		    	
-        try
+		    
+		    try
         {
           IPAddress ipserver = IPAddress.Parse((String)connection_string_values[CONN_SERVER]);
           ep_server = new IPEndPoint(ipserver, Int32.Parse((String)connection_string_values[CONN_PORT]));
@@ -339,21 +339,23 @@ namespace Npgsql
       output_stream.Write(BitConverter.GetBytes(IPAddress.HostToNetworkOrder((Int32)((PROTOCOL_VERSION_MAJOR<<16) | PROTOCOL_VERSION_MINOR))), 0, 4);
 	    	
       // Database name.
-      String dbname = (String)connection_string_values[CONN_DATABASE];
-      // Pad with nulls to get the 64 LimString
-      dbname = dbname.PadRight(64, '\x00');
-      output_stream.Write(connection_encoding.GetBytes(dbname), 0, 64);
-	    	
+      String db_name = (String)connection_string_values[CONN_DATABASE];
+      
+      // Write LimString padded with nulls
+      PGUtil.WriteLimString(db_name, 64, output_stream, connection_encoding);
+      
       // User name.
-      String username = (String)connection_string_values[CONN_USERID];
-      // Pad with nulls to get the 32 LimString
-      username = username.PadRight(32, '\x00');
-      output_stream.Write(connection_encoding.GetBytes(username), 0, 32);
-	    	
+      String user_name = (String)connection_string_values[CONN_USERID];
+      
+      // Write LimString padded with nulls
+      PGUtil.WriteLimString(user_name, 32, output_stream, connection_encoding);
+    	
       // Write the other unused fields
       String unused = "";
-      unused = unused.PadRight(192, '\x00');
-      output_stream.Write(connection_encoding.GetBytes(unused), 0, 64 + 64 + 64);
+    	
+    	// Write LimString padded with nulls
+    	PGUtil.WriteLimString(unused, 64 + 64 + 64, output_stream, connection_encoding);
+    	
       output_stream.Flush();
 	    	
     }
