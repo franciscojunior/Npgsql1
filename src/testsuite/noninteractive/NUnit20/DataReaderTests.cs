@@ -250,6 +250,34 @@ namespace NpgsqlTests
 		}
 		
 		[Test]
+		[ExpectedException(typeof(InvalidOperationException))]
+		public void GetValueFromEmptyResultset()
+		{
+		  _conn.Open();
+			NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_text = :value;", _conn);
+			
+			String test = "Text single quote";
+			NpgsqlParameter param = new NpgsqlParameter();
+			param.ParameterName = "value";
+			param.DbType = DbType.String;
+			//param.NpgsqlDbType = NpgsqlDbType.Text;
+			param.Size = test.Length;
+			param.Value = test;
+			command.Parameters.Add(param);
+			
+			NpgsqlDataReader dr = command.ExecuteReader();
+			
+			dr.Read();
+			
+			
+			// This line should throw the invalid operation exception as the datareader will
+			// have an empty resultset.
+			Console.WriteLine(dr.IsDBNull(1));
+		  
+			
+		}
+		
+		[Test]
 		public void UseDataAdapter()
 		{
 			
