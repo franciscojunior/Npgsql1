@@ -72,6 +72,10 @@ namespace NpgsqlTypes
 			{
 				case DbType.Boolean:
 					return "bool";
+			  case DbType.Single:
+			    return "float4";
+			  case DbType.Double:
+			    return "float8";
 				case DbType.Int64:
 					return "int8";
 				case DbType.Int32:
@@ -110,6 +114,12 @@ namespace NpgsqlTypes
 				case DbType.Int16:
 					return parameter.Value.ToString();
 				
+				case DbType.Single:
+				  return ((Single)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
+			  
+			  case DbType.Double:
+				  return ((Double)parameter.Value).ToString(NumberFormatInfo.InvariantInfo);
+			  
 				case DbType.Date:
 				  return "'" + ((DateTime)parameter.Value).ToString("yyyy-MM-dd") + "'";
 					
@@ -154,6 +164,13 @@ namespace NpgsqlTypes
 			{
 				case DbType.Boolean:
 					return (data.ToLower() == "t" ? true : false);
+			  
+			  case DbType.Single:
+			    return Single.Parse(data, NumberFormatInfo.InvariantInfo);
+			  
+			  case DbType.Double:
+			    return Double.Parse(data, NumberFormatInfo.InvariantInfo);
+			  
 				case DbType.Int16:
 					return Int16.Parse(data);
 				case DbType.Int32:
@@ -228,6 +245,10 @@ namespace NpgsqlTypes
 					return Type.GetType("System.Boolean");
 				case DbType.Int16:
 					return Type.GetType("System.Int16");
+			  case DbType.Single:
+					return Type.GetType("System.Single");
+			  case DbType.Double:
+					return Type.GetType("System.Double");
 				case DbType.Int32:
 					return Type.GetType("System.Int32");
 				case DbType.Int64:
@@ -276,7 +297,7 @@ namespace NpgsqlTypes
 				// Bootstrap value as the datareader below will use ConvertStringToNpgsqlType above.
 				//oidToNameMapping.Add(26, "oid");
 								
-				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'date', 'int2', 'int4', 'int8', 'numeric', 'text', 'time', 'timestamp');", conn);
+				NpgsqlCommand command = new NpgsqlCommand("select oid, typname from pg_type where typname in ('bool', 'date', 'float4', 'float8', 'int2', 'int4', 'int8', 'numeric', 'text', 'time', 'timestamp');", conn);
 				
 				NpgsqlDataReader dr = command.ExecuteReader();
 				
@@ -299,6 +320,12 @@ namespace NpgsqlTypes
 							break;
 					  case "date":
 					    type = DbType.Date;
+					    break;
+						case "float4":
+					    type = DbType.Single;
+					    break;
+						case "float8":
+					    type = DbType.Double;
 					    break;
 						case "int2":
 							type = DbType.Int16;
