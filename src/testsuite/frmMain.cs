@@ -63,6 +63,8 @@ using Npgsql;
     private System.Windows.Forms.Label lblReader;
 		private System.Windows.Forms.TextBox txtDatabase;
 		private System.Windows.Forms.Label label1;
+		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.ComboBox cbVersion;
     private NpgsqlConnection cnDB;
 
     public frmMain()
@@ -76,6 +78,8 @@ using Npgsql;
       cmdNonQuery.Click += new System.EventHandler(cmdNonQuery_Click);
       cmdScalar.Click += new System.EventHandler(cmdScalar_Click);
       cmdReader.Click += new System.EventHandler(cmdReader_Click);
+
+      cbVersion.SelectedIndex = 0;
     }
 
     /// <summary>
@@ -89,7 +93,7 @@ using Npgsql;
         {
           cnDB.Close();
         }
-        catch (NpgsqlException)
+        catch (Exception)
         {
           // Do nothing...
         }
@@ -144,22 +148,19 @@ using Npgsql;
 
       // Setup a connection string
       string szConnect = "DATABASE=" + txtDatabase.Text + ";SERVER=" + txtHostname.Text + ";PORT=" + int.Parse(txtPort.Text) + ";UID=" + txtUsername.Text + ";PWD=" + txtPassword.Text + ";";
+      if (cbVersion.SelectedIndex > 0) {
+        szConnect += "PROTOCOL=" + (cbVersion.SelectedIndex + 1).ToString();
+      }
       log("Connection String: " + szConnect);
 
       // Attempt to open a connection
       cnDB = new NpgsqlConnection(szConnect);
-     
+
       try 
       {
         cnDB.Open();
       } 
-      catch (NpgsqlException ex) 
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished connecting!\r\n"); 
-        return;
-      }
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished connecting!\r\n"); 
@@ -173,13 +174,7 @@ using Npgsql;
         Object ObjVer = cmdVer.ExecuteScalar();
         log(ObjVer.ToString());
       }
-      catch(NpgsqlException ex)
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished connecting!\r\n");
-        return;
-      } 
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished connecting!\r\n");
@@ -202,7 +197,7 @@ using Npgsql;
           {
             cnDB.Close();
           }
-          catch (NpgsqlException ex)
+          catch (Exception ex)
           {
             log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
             log("Finished disconnecting!\r\n");
@@ -256,13 +251,7 @@ using Npgsql;
         Int32 iRes = cmdNQ.ExecuteNonQuery();
         log("Records affected: " + iRes);
       }
-      catch(NpgsqlException ex)
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished executing Non-Query!\r\n"); 
-        return;
-      }
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished executing Non-Query!\r\n"); 
@@ -300,13 +289,7 @@ using Npgsql;
         Object objRes = cmdNQ.ExecuteScalar();
         log("Result: " + objRes.ToString());
       }
-      catch(NpgsqlException ex)
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished executing Scalar!\r\n"); 
-        return;
-      } 
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished executing Scalar!\r\n"); 
@@ -344,13 +327,7 @@ using Npgsql;
         NpgsqlCommand cmdNQ = new NpgsqlCommand(txtReader.Text, cnDB);
         objRdr = cmdNQ.ExecuteReader();
       }
-      catch(NpgsqlException ex)
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished executing Reader!\r\n"); 
-        return;
-      } 
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished executing Reader!\r\n"); 
@@ -374,13 +351,7 @@ using Npgsql;
           log("");
         }
       }
-      catch(NpgsqlException ex)
-      {
-        log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
-        log("Finished executing Reader!\r\n"); 
-        return;
-      } 
-      catch(InvalidOperationException ex)
+      catch(Exception ex)
       {
         log("Error: " + ex.Message + "\r\n" + "StackTrace: \r\n" + ex.StackTrace);
         log("Finished executing Reader!\r\n"); 
@@ -439,6 +410,8 @@ using Npgsql;
 			this.txtReader = new System.Windows.Forms.TextBox();
 			this.lblReader = new System.Windows.Forms.Label();
 			this.txtLog = new System.Windows.Forms.TextBox();
+			this.cbVersion = new System.Windows.Forms.ComboBox();
+			this.label2 = new System.Windows.Forms.Label();
 			this.tabset.SuspendLayout();
 			this.Connection.SuspendLayout();
 			this.ExecuteNonQuery.SuspendLayout();
@@ -462,6 +435,8 @@ using Npgsql;
 			// Connection
 			// 
 			this.Connection.Controls.AddRange(new System.Windows.Forms.Control[] {
+																																						 this.label2,
+																																						 this.cbVersion,
 																																						 this.txtDatabase,
 																																						 this.label1,
 																																						 this.cmdDisconnect,
@@ -485,7 +460,7 @@ using Npgsql;
 			this.txtDatabase.Location = new System.Drawing.Point(80, 56);
 			this.txtDatabase.Name = "txtDatabase";
 			this.txtDatabase.Size = new System.Drawing.Size(152, 20);
-			this.txtDatabase.TabIndex = 30;
+			this.txtDatabase.TabIndex = 2;
 			this.txtDatabase.Text = "template1";
 			// 
 			// label1
@@ -493,16 +468,16 @@ using Npgsql;
 			this.label1.AutoSize = true;
 			this.label1.Location = new System.Drawing.Point(8, 64);
 			this.label1.Name = "label1";
-			this.label1.Size = new System.Drawing.Size(56, 13);
+			this.label1.Size = new System.Drawing.Size(53, 13);
 			this.label1.TabIndex = 29;
-			this.label1.Text = "Database:";
+			this.label1.Text = "Database";
 			// 
 			// cmdDisconnect
 			// 
 			this.cmdDisconnect.Location = new System.Drawing.Point(488, 32);
 			this.cmdDisconnect.Name = "cmdDisconnect";
 			this.cmdDisconnect.Size = new System.Drawing.Size(88, 24);
-			this.cmdDisconnect.TabIndex = 28;
+			this.cmdDisconnect.TabIndex = 7;
 			this.cmdDisconnect.Text = "&Disconnect";
 			// 
 			// cmdConnect
@@ -510,7 +485,7 @@ using Npgsql;
 			this.cmdConnect.Location = new System.Drawing.Point(488, 8);
 			this.cmdConnect.Name = "cmdConnect";
 			this.cmdConnect.Size = new System.Drawing.Size(88, 24);
-			this.cmdConnect.TabIndex = 27;
+			this.cmdConnect.TabIndex = 6;
 			this.cmdConnect.Text = "&Connect";
 			// 
 			// txtPassword
@@ -519,7 +494,7 @@ using Npgsql;
 			this.txtPassword.Name = "txtPassword";
 			this.txtPassword.PasswordChar = '*';
 			this.txtPassword.Size = new System.Drawing.Size(152, 20);
-			this.txtPassword.TabIndex = 26;
+			this.txtPassword.TabIndex = 4;
 			this.txtPassword.Text = "";
 			// 
 			// txtUsername
@@ -527,7 +502,7 @@ using Npgsql;
 			this.txtUsername.Location = new System.Drawing.Point(320, 8);
 			this.txtUsername.Name = "txtUsername";
 			this.txtUsername.Size = new System.Drawing.Size(152, 20);
-			this.txtUsername.TabIndex = 25;
+			this.txtUsername.TabIndex = 3;
 			this.txtUsername.Text = "postgres";
 			// 
 			// txtPort
@@ -535,7 +510,7 @@ using Npgsql;
 			this.txtPort.Location = new System.Drawing.Point(80, 32);
 			this.txtPort.Name = "txtPort";
 			this.txtPort.Size = new System.Drawing.Size(64, 20);
-			this.txtPort.TabIndex = 24;
+			this.txtPort.TabIndex = 1;
 			this.txtPort.Text = "5432";
 			// 
 			// txtHostname
@@ -543,7 +518,7 @@ using Npgsql;
 			this.txtHostname.Location = new System.Drawing.Point(80, 8);
 			this.txtHostname.Name = "txtHostname";
 			this.txtHostname.Size = new System.Drawing.Size(152, 20);
-			this.txtHostname.TabIndex = 23;
+			this.txtHostname.TabIndex = 0;
 			this.txtHostname.Text = "localhost";
 			// 
 			// lblPassword
@@ -713,6 +688,28 @@ using Npgsql;
 			this.txtLog.Size = new System.Drawing.Size(600, 214);
 			this.txtLog.TabIndex = 11;
 			this.txtLog.Text = "";
+			// 
+			// cbVersion
+			// 
+			this.cbVersion.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.cbVersion.Items.AddRange(new object[] {
+																									 "Automatic",
+																									 "Version 2",
+																									 "Version 3",
+																									 "Invalid!"});
+			this.cbVersion.Location = new System.Drawing.Point(320, 56);
+			this.cbVersion.Name = "cbVersion";
+			this.cbVersion.Size = new System.Drawing.Size(121, 21);
+			this.cbVersion.TabIndex = 5;
+			// 
+			// label2
+			// 
+			this.label2.AutoSize = true;
+			this.label2.Location = new System.Drawing.Point(248, 64);
+			this.label2.Name = "label2";
+			this.label2.Size = new System.Drawing.Size(46, 13);
+			this.label2.TabIndex = 32;
+			this.label2.Text = "Protocol";
 			// 
 			// frmMain
 			// 
