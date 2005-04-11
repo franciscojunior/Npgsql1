@@ -1089,14 +1089,7 @@ namespace Npgsql
 
             while(paramStart > -1)
             {
-                if((resLen > paramEnd) &&
-                        (result[paramEnd] == ' ' ||
-                         result[paramEnd] == ',' ||
-                         result[paramEnd] == ')' ||
-                         result[paramEnd] == ';' ||
-                         result[paramEnd] == '\n' ||
-                         result[paramEnd] == '\r' ||
-                         result[paramEnd] == '\t'))
+                if((resLen > paramEnd) && !Char.IsLetterOrDigit(result, paramEnd))
                 {
                     result = result.Substring(0, paramStart) + paramVal + result.Substring(paramEnd);
                     found = true;
