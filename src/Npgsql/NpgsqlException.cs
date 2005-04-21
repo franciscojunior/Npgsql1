@@ -46,7 +46,9 @@ namespace Npgsql
 
         // To allow deserialization.
         private NpgsqlException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {}
+        {
+            errors = (IList)info.GetValue("errors", typeof(IList));
+        }
 
         /// <summary>
         /// Construct a backend error exception based on a list of one or more
@@ -66,6 +68,20 @@ namespace Npgsql
         
         internal NpgsqlException(String message, Exception innerException) : base (message, innerException)
         {}
+        
+        
+        override public void GetObjectData(SerializationInfo info,StreamingContext context) 
+        {
+            base.GetObjectData(info, context);
+            
+            // Add custom data, in this case the list of errors when serializing.
+            // Thanks Robert Chartier for info: http://www.15seconds.com/issue/020903.htm
+            
+            //use the info object to add the items you want serialized
+            info.AddValue("errors", errors, typeof(IList));
+            
+            
+        }
 
         /// <summary>
         /// Provide access to the entire list of errors provided by the PostgreSQL backend.
