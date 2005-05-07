@@ -87,12 +87,14 @@ namespace Npgsql
                 tcpc.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
                 Stream stream = tcpc.GetStream();
     
+                               
                 // If the PostgreSQL server has SSL connectors enabled Open SslClientStream if (response == 'S') {
                 if (context.SSL)
                 {
                     PGUtil.WriteInt32(stream, 8);
                     PGUtil.WriteInt32(stream,80877103);
                     // Receive response
+                    
                     Char response = (Char)stream.ReadByte();
                     if (response == 'S')
                     {
@@ -107,16 +109,21 @@ namespace Npgsql
                         ((SslClientStream)stream).ServerCertValidationDelegate = new CertificateValidationCallback(context.DefaultCertificateValidationCallback);
                         ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = new PrivateKeySelectionCallback(context.DefaultPrivateKeySelectionCallback);
                     }
+                    else
+                        throw new InvalidOperationException(resman.GetString("Exception_Ssl_RequestError"));
+                    
                 }
     
                 context.Stream = stream;
     
                 NpgsqlEventLog.LogMsg(resman, "Log_ConnectedTo", LogLevel.Normal, context.Host, context.Port);
                 ChangeState(context, NpgsqlConnectedState.Instance);
+                
+                
             }
             catch (Exception e)
             {
-                throw new NpgsqlException(e.ToString());
+                throw new NpgsqlException(e.ToString(), e);
             }
         }
 
