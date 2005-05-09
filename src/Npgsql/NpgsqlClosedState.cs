@@ -89,7 +89,7 @@ namespace Npgsql
     
                                
                 // If the PostgreSQL server has SSL connectors enabled Open SslClientStream if (response == 'S') {
-                if (context.SSL)
+                if (context.SSL || (context.SslMode == SslMode.Require) || (context.SslMode == SslMode.Prefer))
                 {
                     PGUtil.WriteInt32(stream, 8);
                     PGUtil.WriteInt32(stream,80877103);
@@ -109,7 +109,7 @@ namespace Npgsql
                         ((SslClientStream)stream).ServerCertValidationDelegate = new CertificateValidationCallback(context.DefaultCertificateValidationCallback);
                         ((SslClientStream)stream).PrivateKeyCertSelectionDelegate = new PrivateKeySelectionCallback(context.DefaultPrivateKeySelectionCallback);
                     }
-                    else
+                    else if (context.SslMode == SslMode.Require)
                         throw new InvalidOperationException(resman.GetString("Exception_Ssl_RequestError"));
                     
                 }
