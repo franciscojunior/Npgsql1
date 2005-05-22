@@ -159,6 +159,9 @@ namespace NpgsqlTypes
                 }
 
                 NativeTypeMapping = new NpgsqlNativeTypeMapping();
+                
+                NativeTypeMapping.AddType("char", NpgsqlDbType.Char, DbType.String, true, null);
+                
 
                 NativeTypeMapping.AddType("text", NpgsqlDbType.Text, DbType.String, true, null);
 
@@ -169,8 +172,7 @@ namespace NpgsqlTypes
 
                 NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
                 
-                NativeTypeMapping.AddType("char", NpgsqlDbType.Char, DbType.String, true, null);
-                                
+                                                
                 NativeTypeMapping.AddType("bytea", NpgsqlDbType.Bytea, DbType.Binary, true,
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBinary));
 
@@ -538,6 +540,7 @@ namespace NpgsqlTypes
         private NpgsqlDbType     _NpgsqlDbType;
         private DbType           _DbType;
         private Boolean          _Quote;
+        private Boolean          _UseSize;
         
         static NpgsqlNativeTypeInfo()
         {
@@ -561,6 +564,16 @@ namespace NpgsqlTypes
             _DbType = DbType;
             _Quote = Quote;
             _ConvertNativeToBackend = ConvertNativeToBackend;
+            
+            
+            // The only parameters types which use length currently supported are char and varchar. Check for them.
+            
+            if ( (NpgsqlDbType == NpgsqlDbType.Char)
+                || (NpgsqlDbType == NpgsqlDbType.Varchar))
+                
+                _UseSize = true;
+            else
+                _UseSize = false;
         }
 
         /// <summary>
@@ -589,6 +602,13 @@ namespace NpgsqlTypes
         { get { return _Quote; } }
 
         /// <summary>
+        /// Use parameter size information.
+        /// </summary>
+        public Boolean UseSize
+        { get { return _UseSize; } }
+        
+        
+        /// <summary>
         /// Perform a data conversion from a native object to
         /// a backend representation.
         /// DBNull and null values are handled differently depending if a plain query is used
@@ -612,7 +632,7 @@ namespace NpgsqlTypes
                 return "NULL";  // Plain queries exptects null values as string NULL. 
             
             if (_ConvertNativeToBackend != null)
-                return QuoteString(_ConvertNativeToBackend(this, NativeData));
+                return (this.Quote ? QuoteString(_ConvertNativeToBackend(this, NativeData)) : _ConvertNativeToBackend(this, NativeData));
             else
             {
                 
@@ -625,12 +645,14 @@ namespace NpgsqlTypes
                 }
                 else if (NativeData is IFormattable)
                 {
-                    return QuoteString(((IFormattable) NativeData).ToString(null, ni).Replace("'", "''").Replace("\\", "\\\\"));
+                    return (this.Quote ? QuoteString(((IFormattable) NativeData).ToString(null, ni).Replace("'", "''").Replace("\\", "\\\\")) : 
+                    ((IFormattable) NativeData).ToString(null, ni).Replace("'", "''").Replace("\\", "\\\\"));
                     
                 }
                 
                 // Do special handling of strings when in simple query. Escape quotes and backslashes.
-                return QuoteString(NativeData.ToString().Replace("'", "''").Replace("\\", "\\\\").Replace("\0", "\\0"));
+                return (this.Quote ? QuoteString(NativeData.ToString().Replace("'", "''").Replace("\\", "\\\\").Replace("\0", "\\0")) : 
+                NativeData.ToString().Replace("'", "''").Replace("\\", "\\\\").Replace("\0", "\\0"));
                 
             }
     

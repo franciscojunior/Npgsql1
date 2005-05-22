@@ -834,12 +834,22 @@ namespace Npgsql
                         NpgsqlParameter p = Parameters[s];
                         if ((p.Direction == ParameterDirection.Input) ||
                         (p.Direction == ParameterDirection.InputOutput))
+		        {
                             
-                                // FIXME DEBUG ONLY
-                                // adding the '::<datatype>' on the end of a parameter is a highly
-                                // questionable practice, but it is great for debugging!
-                                sb.Append(p.TypeInfo.ConvertToBackend(p.Value, false) + "::" + p.TypeInfo.Name);
-                            
+                            // FIXME DEBUG ONLY
+                            // adding the '::<datatype>' on the end of a parameter is a highly
+                            // questionable practice, but it is great for debugging!
+                            sb.Append(p.TypeInfo.ConvertToBackend(p.Value, false) + "::" + p.TypeInfo.Name);
+		            // Only add data type info if value is not null.
+				                                
+                            if (p.Value != DBNull.Value)
+                            {
+                                sb.Append("::");
+			        sb.Append(p.TypeInfo.Name);
+			        if (p.TypeInfo.UseSize)
+			            sb.Append("(").Append(p.Size).Append(")");
+			    }
+                        }   
                     }   
                     else 
                         sb.Append(s);
