@@ -179,7 +179,7 @@ namespace Npgsql
         {
             get
             {
-                return _currentResultset.Count > 0;
+	    	return (HaveResultSet() ? _currentResultset.Count > 0 : false);
             }
 
         }
@@ -225,7 +225,10 @@ namespace Npgsql
         public Boolean Read()
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Read");
-            CheckHaveResultSet();
+	    
+            if (!HaveResultSet())
+	    	return false;
+		
             if (_rowIndex < _currentResultset.Count)
             {
                 _rowIndex++;
