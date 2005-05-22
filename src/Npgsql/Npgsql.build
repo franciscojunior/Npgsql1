@@ -8,7 +8,7 @@
     <property name="ms.res.dir" value="${build.dir}/res/ms"/>
     <property name="mono.build.dir" value="${build.dir}/mono"/>
     <property name="nunit2tests.build.dir" value="${build.dir}/nunit2tests"/>
-    <property name="tls.lib" value="${nant.project.basedir}/../../lib/Mono.Security.Protocol.Tls.dll" />
+    <property name="tls.lib" value="${nant.project.basedir}/../../lib/Mono.Security.dll" />
     <property name="assemblyname" value="Npgsql"/>
     <property name="debug" value="true"/>
     <property name="xmldoc" value="${ms.build.dir}/${assemblyname}.xml"/>
