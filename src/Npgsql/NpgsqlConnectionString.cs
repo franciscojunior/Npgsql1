@@ -350,7 +350,7 @@ namespace Npgsql
         
         public SslMode ToSslMode(String Key)
         {
-            return ToSslMode(Key, SslMode.Prefer);
+            return ToSslMode(Key, SslMode.Disable);
         }
         
         ///<summary>
