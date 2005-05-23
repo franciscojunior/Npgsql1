@@ -1,5 +1,47 @@
 
 
+
+2005-05-23
+
+    Npgsql 0.7beta6 development release
+    
+    Features added:
+    
+        gborg 1191: Started initial support for GetSchema().
+        
+        NpgsqlConnection.Open() now throws NpgsqlException when trying to connect to a server which doesn't exist instead of throwing SocketException. Thanks Peter van der Maas (peter at abitogroup dot com) for heads up.
+        
+        New parameter substitution algorithm to handle parameter values. Previous algorithm allowed parameter values which had strings equal to some other parameter to be incorrectly replaced. For example, suppose parameters :p1 and :p2 where for some reason, the value of :p1 contains substring :p2: "aaaaa:p2". When replacing value of :p2, this previous value would get replaced. Now with the regexp based algorithm, all values are independently of the others. Note that this in only available on unprepared commands.
+        
+        New connection string option for handling ssl: sslmode. It allows four values: Prefer, Require, Allow and Disable. See user manual for more info about it.
+        
+        gborg 1278: Char and Varchar datatypes now have their length properly handled.        
+        
+    Bug fixes:
+    
+        gborg 1121: Fixed another culture variant representation problem when handling floating numbers. Thanks Sergey (sergey dot p dot k dot no dot spam at gmail dot com) for patch.
+
+        gborg 1167: Added support for writing null chars in text fields. Now they are escaped with \\0.
+        Thanks Sergey (sergey dot p dot k dot no dot spam at gmail dot com) for patch.
+        
+        Fixed a problem when using prepare commands inside a transaction. Portal wasn't being released. We use the unnamed portal now. Thanks Marcin (marcin at floryan dot neostrada dot pl) for the heads up.
+        
+        * NpgsqlTypes/NpgsqlTypesHelper.cs:  Fixed support for setting Byte va
+lues to parameters. Thanks Ales Vojacek (alesv at fbl dot cz) for heads up.
+
+        gborg 1223: ReplaceParameterValue fails to recognize a parameter when it's followed by a '+' - it only checks for whitespace, parentheses and commas. Now it is correctly handled with the new parameter substitution algorithm.
+        
+        Fixed problems when Npgsql didn't use property the types of parameters when sending queries. Parameters were being sent as strings only and this were giving a lot of problems when calling functions. Now we explicitly add the types of parameters with a new substitution algorithm. Thanks Ivan (ivan-sun1 at mail dot ru) for heads up.
+        
+        gborg 1265, 933: Fixed a null reference exception which was being thrown when trying to access info of NpgsqlException after it was serialized. Now NpgsqlException implements custom serialization to send the correct data when serializing.
+        
+        NpgsqlClosedState.cs, 
+          NpgsqlState.resx: Enforced the ssl option specified in connection string. If user specified ssl=yes, only ssl connections will be done. If server doesn't support it, an NpgsqlException will be thrown. Thanks Tope Akinniyi (topeakinniyi at yahoo dot co dot uk) for heads up.
+        
+        NpgsqlDataReader.cs: Fixed a bug in Read(). It was throwing an InvalidOperationException when trying to read from a query which didn't return any resultset. It should just return false. Thanks Helge Lenuweit <helge at lenuweit dot net> for heads up.
+        
+        gborg 1291: Fixed a null reference exception when calling NpgsqlDataReader.HasRows when there was no resultset.
+
 2005-02-08
 
     Npgsql 0.7beta5 development release
