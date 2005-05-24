@@ -839,7 +839,7 @@ namespace Npgsql
                             // FIXME DEBUG ONLY
                             // adding the '::<datatype>' on the end of a parameter is a highly
                             // questionable practice, but it is great for debugging!
-                            sb.Append(p.TypeInfo.ConvertToBackend(p.Value, false) + "::" + p.TypeInfo.Name);
+                            sb.Append(p.TypeInfo.ConvertToBackend(p.Value, false);
 		            // Only add data type info if value is not null.
 				                                
                             if (p.Value != DBNull.Value)
