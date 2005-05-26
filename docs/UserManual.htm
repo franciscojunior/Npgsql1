@@ -90,6 +90,7 @@ guidelines specified in the .Net docs.</p>
 
 <p> This section explains Npgsql usage in a .Net Application. If you are used to developing Data Access applications using the
 Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
+<p> In order to use Npgsql, server must be listening to TCP/IP connections. TCP connections are enabled by default on 8.0 servers. 7.3 and below, should have postmaster started with -i option. Check Postgresql Documentation for details: <a href="http://www.postgresql.org/docs/7.4/static/postmaster-start.html">http://www.postgresql.org/docs/7.4/static/postmaster-start.html</a> </p>
 <p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
 
 <h3> Adding required namespaces to your source file </h3>
@@ -138,10 +139,16 @@ public class NpgsqlUserManual
         /// MaxPoolSize:                Max size of connection pool;
         /// Encoding:                   Encoding to be used; 
         /// Timeout:                    Time to wait for connection open in seconds.
-        
+        /// Sslmode:                    Mode for ssl connection control. 
         
         Encoding can the ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
         Min pool size when specified will make NpgsqlConnection pre allocates this number of connections with the server.
+        Sslmode can be one of the following values: 
+            Prefer - If it is possible to connect using ssl, it will be used.
+            Require - If an ssl connection cannot be made, an exception is thrown.
+            Allow - Not supported yet, just connects without ssl.
+            Disable - No ssl connection is done.
+            Default is Disable.
         
 </pre>
 
@@ -360,6 +367,51 @@ public static class NpgsqlUserManual
 </pre>
 
 This code assumes a table called tablea with at least a column named column1 of type int4.
+
+<h3> Using output parameters in a query </h3>
+<p> Output parameters can be used with Npgsql. Note that Npgsql "simulates" output parameter by parsing the first result set from the execution of a query and translating it to output parameters value. This can be done in two ways: mapped or not. A mapped parsing, tries to match the column name returned by resultset into a parameter with the same name. If a match is found, only the output parameters which has a match will be updated. If a map is not found, the output parameters are updated based on the order they were added to command parameters collection. This mapping is automatic. When parsing resultset, Npgsql tries to find a match. <b>Both Output and InputOutput parameter directions are supported</b>.</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+    public static void Main(String[] args)
+    {
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+        conn.Open();
+        
+        // Send a query to backend.
+        NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = 2", conn);
+        
+        // Now declare an output parameter to receive the first column of the tablea.
+        
+        NpgsqlParameter firstColumn = new NpgsqlParameter("firstcolumn", NpgsqlDbType.Integer);
+        firstColumn.Direction = ParameterDirection.Output;
+        
+        command.Parameters.Add(firstColumn);
+    
+            
+        try
+        {
+            command.ExecuteNonQuery();
+            
+            // Now, the firstcolumn parameter will have the value of the first column of the resultset.
+            Console.WriteLine(firstColumn.Value);
+            
+    
+        }
+        
+        finally
+        {
+            conn.Close();
+        }
+    }
+}
+</pre>
+
 
 
 <h3> Function calling</h3>
@@ -977,28 +1029,109 @@ As result you will have an icon named NpgsqlConnection in the Data-Tab of the To
 
 <p> Npgsql supports the following data types: </p>
 
-<ul>
-   <li> Bigint </li>
-   <li> Boolean </li>
-   <li> Box </li>
-   <li> Bytea </li>
-   <li> Circle </li>
-   <li> Date </li>
-   <li> Double </li>
-   <li> Integer </li>
-   <li> Line </li>
-   <li> LSeg </li>
-   <li> Money </li>
-   <li> Numeric </li>
-   <li> Path </li>
-   <li> Point </li>
-   <li> Polygon </li>
-   <li> Real </li>
-   <li> Smallint </li>
-   <li> Text </li>
-   <li> Time </li>
-   <li> Timestamp </li>
- </ul>
+
+<div align="center">
+<table  border="1">
+    <tr class="H1">
+        <td>Postgresql Type</td>
+        <td>NpgsqlDbType</td>
+        <td>System.DbType Enum</td>
+        <td>.Net System Type</td>
+    </tr>
+    
+    <tr class="H2">
+        <td>int8</td>
+        <td>Real</td>
+        <td>Int64</td>
+        <td>Int64</td>
+    </tr>
+    <tr class="H2">
+        <td>bool</td>
+        <td>Boolean</td>
+        <td>Boolean</td>
+        <td>Boolean</td>
+    </tr>
+    <tr class="H2">
+        <td>Box, Circle, Line, LSeg, Path, Point, Polygon</td>
+        <td>Box, Circle, Line, LSeg, Path, Point, Polygon</td>
+        <td>Object</td>
+        <td>Object</td>
+    </tr>
+    <tr class="H2">
+        <td>bytea</td>
+        <td>Bytea</td>
+        <td>Binary</td>
+        <td>Byte[]</td>
+    </tr>
+    <tr class="H2">
+        <td>date</td>
+        <td>Date</td>
+        <td>Date</td>
+        <td>DateTime</td>
+    </tr>
+    <tr class="H2">
+        <td>float8</td>
+        <td>Double</td>
+        <td>Double</td>
+        <td>Double</td>
+    </tr>
+    <tr class="H2">
+        <td>int4</td>
+        <td>Integer</td>
+        <td>Int32</td>
+        <td>Int32</td>
+    </tr>
+    <tr class="H2">
+        <td>money</td>
+        <td>Money</td>
+        <td>Decimal</td>
+        <td>Decimal</td>
+    </tr>
+    <tr class="H2">
+        <td>numeric</td>
+        <td>Numeric</td>
+        <td>Decimal</td>
+        <td>Decimal</td>
+    </tr> 
+    <tr class="H2">
+        <td>float4</td>
+        <td>Real</td>
+        <td>Single</td>
+        <td>Single</td>
+    </tr>
+    <tr class="H2">
+        <td>int2</td>
+        <td>Smallint</td>
+        <td>Int16</td>
+        <td>Int16</td>
+    </tr>
+    <tr class="H2">
+        <td>text</td>
+        <td>Text</td>
+        <td>String</td>
+        <td>String</td>
+    </tr>
+    <tr class="H2">
+        <td>time, timetz</td>
+        <td>Time</td>
+        <td>Time</td>
+        <td>DateTime</td>
+    </tr>
+    <tr class="H2">
+        <td>timestamp, timestamptz</td>
+        <td>Timestamp</td>
+        <td>DateTime</td>
+        <td>Decimal</td>
+    </tr>
+    <tr class="H2">
+        <td>varchar</td>
+        <td>Varchar</td>
+        <td>String</td>
+        <td>String</td>
+    </tr>
+    
+</table>
+</div>
 
 <h3> Features </h3>
 
@@ -1006,7 +1139,7 @@ As result you will have an icon named NpgsqlConnection in the Data-Tab of the To
   <li> You can send select, insert, delete queries </li>
   <li> You can call functions </li>
   <li> You can get resultset from functions </li>
-  <li> You can use parameters in your queries </li>
+  <li> You can use parameters in your queries. Input, Output and InputOuput parameters are supported </li>
   <li> Parameter names have ":" markers or "@" markers to easy migration of code. :parameter -or- @parameter </li>
   <li> Support for transactions </li>
   
