@@ -160,8 +160,16 @@ namespace NpgsqlTypes
 
                 NativeTypeMapping = new NpgsqlNativeTypeMapping();
                 
+                
+                // Conflicting types should have mapped first the non default mappings.
+                // For example, char, varchar and text map to DbType.String. As the most 
+                // common is to use text with string, it has to be the last mapped, in order
+                // to type mapping has the last entry, in this case, text, as the map value
+                // for DbType.String.
+                
                 NativeTypeMapping.AddType("char", NpgsqlDbType.Char, DbType.String, true, null);
                 
+                NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
 
                 NativeTypeMapping.AddType("text", NpgsqlDbType.Text, DbType.String, true, null);
 
@@ -170,8 +178,6 @@ namespace NpgsqlTypes
                 NativeTypeMapping.AddDbTypeAlias("text", DbType.AnsiStringFixedLength);
                 NativeTypeMapping.AddTypeAlias("text", typeof(String));
 
-                NativeTypeMapping.AddType("varchar", NpgsqlDbType.Varchar, DbType.String, true, null);
-                
                                                 
                 NativeTypeMapping.AddType("bytea", NpgsqlDbType.Bytea, DbType.Binary, true,
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBinary));
@@ -202,12 +208,12 @@ namespace NpgsqlTypes
 
                 NativeTypeMapping.AddTypeAlias("int8", typeof(Int64));
 
-                NativeTypeMapping.AddType("float4", NpgsqlDbType.Real, DbType.Single, false,
+                NativeTypeMapping.AddType("float4", NpgsqlDbType.Real, DbType.Single, true,
                 null);
 
                 NativeTypeMapping.AddTypeAlias("float4", typeof(Single));
 
-                NativeTypeMapping.AddType("float8", NpgsqlDbType.Double, DbType.Double, false,
+                NativeTypeMapping.AddType("float8", NpgsqlDbType.Double, DbType.Double, true,
                 null);
 
                 NativeTypeMapping.AddTypeAlias("float8", typeof(Double));

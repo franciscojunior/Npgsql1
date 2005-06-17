@@ -826,8 +826,9 @@ namespace Npgsql
                 {
                     String s = m.Groups[0].ToString();
                     
-                    if (s.StartsWith(":") ||
-                    s.StartsWith("@"))
+                    if ((s.StartsWith(":") ||
+                        s.StartsWith("@")) &&
+			Parameters.Contains(s))
                     {
                         // It's a parameter. Lets handle it.
                     
@@ -840,13 +841,14 @@ namespace Npgsql
                             // adding the '::<datatype>' on the end of a parameter is a highly
                             // questionable practice, but it is great for debugging!
                             sb.Append(p.TypeInfo.ConvertToBackend(p.Value, false));
-		            // Only add data type info if value is not null.
+		            
+			    // Only add data type info if we are calling an stored procedure
 				                                
-                            if (p.Value != DBNull.Value)
+                            if (type == CommandType.StoredProcedure)
                             {
                                 sb.Append("::");
 			        sb.Append(p.TypeInfo.Name);
-			        if (p.TypeInfo.UseSize)
+			        if (p.TypeInfo.UseSize && (p.Size > 0)
 			            sb.Append("(").Append(p.Size).Append(")");
 			    }
                         }   
