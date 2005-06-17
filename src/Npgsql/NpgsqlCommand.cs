@@ -848,7 +848,7 @@ namespace Npgsql
                             {
                                 sb.Append("::");
 			        sb.Append(p.TypeInfo.Name);
-			        if (p.TypeInfo.UseSize && (p.Size > 0)
+			        if (p.TypeInfo.UseSize && (p.Size > 0))
 			            sb.Append("(").Append(p.Size).Append(")");
 			    }
                         }   
