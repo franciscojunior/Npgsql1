@@ -902,6 +902,81 @@ public Image pobierzRysunek(int idtowaru)
 pictureBox1.Image = Image pobierzRysunek(1); 
 </pre>
 
+<h3>Working with refcursors</h3>
+
+<p> This sample will show how you can get data from functions which return refcursors. With support provided by Npgsql you can get many resultsets from these functions without have to worry about how to work with refcursors.</p>
+<p> For example porpouses, consider the following refcursor-returning function:</p>
+
+<pre class="CodeBox">
+CREATE OR REPLACE FUNCTION testrefcursor() RETURNS SETOF refcursor AS
+
+'DECLARE ref1 refcursor;
+ref2 refcursor;
+BEGIN
+
+OPEN ref1 FOR SELECT 1;
+
+RETURN NEXT ref1;
+
+OPEN ref2 FOR SELECT 2;
+
+RETURN next ref2;
+
+RETURN;
+END;'
+LANGUAGE plpgsql;
+</pre>
+
+<p>Note that this function is really very simple as it just returns single-row resultsets. You can change the select 1 for any select you want.</p>
+
+<p>Now, to call these function and retrieve the data, you should use the following code:</p>
+
+
+<pre class="CodeBox">
+
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+
+public class c
+{
+    public static void Main(String[] args)
+    {
+                
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Initial Catalog=eeeeee;User id=npgsql_tests;password=npgsql_tests;");
+        conn.Open();
+
+        NpgsqlTransaction t = conn.BeginTransaction();          
+        NpgsqlCommand command = new NpgsqlCommand("testrefcursor", conn);
+        command.CommandType = CommandType.StoredProcedure;
+        
+        NpgsqlDataReader dr = command.ExecuteReader();
+    
+        while(dr.Read())
+        {
+        
+            Console.WriteLine(dr.GetValue(0));
+        }
+
+        dr.NextResult();
+    
+        while(dr.Read())
+        {
+    
+            Console.WriteLine(dr.GetValue(0));
+        }
+        dr.Close();
+        t.Commit();
+        conn.Close();
+    }
+}
+
+</pre>
+
+<p> That's it!. One last thing worth noting is that <font color="red"> you have to use transaction</font> in order to this work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished just after you do the function call.
+
+
 <h3> 2.1 Npgsql.dll file location </h3>
 
 <p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
