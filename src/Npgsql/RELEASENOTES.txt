@@ -1,5 +1,23 @@
 
 
+2005-07-11
+
+    Npgsql 0.7 stable release
+    
+    Feature added:
+    
+        Npgsql now can handle functions which return refcursor and setof refcursor. Now, results are returned as NpgsqlDataReader resultsets. There is no need to explicitly call "fetch all ..."
+    Bug fixes:
+        
+        gborg 1353: geometric types weren't being parsed correctly on runtimes whose culture uses comma as decimal separator. Now uses a parsing with culture invariant info.
+    
+        gborg 1339: Char and varchar now are properly handled when their size isn't specified.
+        
+        Parameter types are now only specified when calling stored procedures. There is no need of explicit type when calling plain queries.
+        
+        Fixed bug in NpgsqlCommand.GetClearCommandText() where query strings which contain ":" or "@" without being an parameter prefix were being incorrectly replaced by an inexistent parameter and throwing exceptions. Now, Npgsql checks if this is really a parameter before trying to replace it. Thanks Ivan (ivan-sun1 at mail dot ru) for fix.
+        
+        
 
 2005-05-23
 
