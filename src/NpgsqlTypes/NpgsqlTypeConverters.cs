@@ -248,7 +248,7 @@ namespace NpgsqlTypes
         /// </summary>
         internal static String ToMoney(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
         {
-            return "$" + ((Decimal)NativeData).ToString(DateTimeFormatInfo.InvariantInfo);
+            return "$" + ((IFormattable)NativeData).ToString(null, CultureInfo.InvariantCulture.NumberFormat);
         }
         
         
