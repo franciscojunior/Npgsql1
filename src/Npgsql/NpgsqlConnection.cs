@@ -765,15 +765,15 @@ namespace Npgsql
                     throw new NotSupportedException();
                     // custom collections for npgsql
                 case "Databases":
-                    return new NpgsqlSchema(Clone()).GetDatabases(restrictions);
+                    return new NpgsqlSchema(new NpgsqlConnection(ConnectionString)).GetDatabases(restrictions);
                 case "Tables":
-                    return new NpgsqlSchema(Clone()).GetTables(restrictions);
+                    return new NpgsqlSchema(new NpgsqlConnection(ConnectionString)).GetTables(restrictions);
                 case "Columns":
-                    return new NpgsqlSchema(Clone()).GetColumns(restrictions);
+                    return new NpgsqlSchema(new NpgsqlConnection(ConnectionString)).GetColumns(restrictions);
                 case "Views":
-                    return new NpgsqlSchema(Clone()).GetViews(restrictions);
+                    return new NpgsqlSchema(new NpgsqlConnection(ConnectionString)).GetViews(restrictions);
                 case "Users":
-                    return new NpgsqlSchema(Clone()).GetUsers(restrictions);
+                    return new NpgsqlSchema(new NpgsqlConnection(ConnectionString)).GetUsers(restrictions);
                 default:
                     throw new NotSupportedException();
             }
