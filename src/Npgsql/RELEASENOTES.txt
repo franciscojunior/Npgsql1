@@ -1,5 +1,30 @@
 
 
+2005-08-24
+
+    Npgsql 0.7.1
+    
+    Features added:
+    
+        Josh Cooley (jbnpgsql at tuxinthebox dot net) improved Metadata support in Npgsql. Added support for the following collections through NpgsqlConnection.GetSchema() methods: MetaDataCollections, Restrictions, Databases, Tables, Columns, Views and Users. Also added support for restrictions when getting info about these collections.
+        
+        Added refcursor parameter support. Now, refcursors can be passed as arguments for functions. Thanks Jon Asher for heads up and tests.
+    
+    Bug fixes:
+    
+        Fixed problem with query strings with newlines. Regexp used to parse parameters were removing new line bytes creating query strings with errors. Thanks Jaroslaw Kowalski (jaak at jkowalski dot net) for fix.
+        
+        Updated ProviderType metadata from NpgsqlDataReader.GetResultsetSchema to be the string for the type rather than the oid.  Fixed ColumnSize, NumericPrecision, NumericScale, BaseColumnName, AllowDBNull, and IsAliased. Also integrated patch from (rlp at bamafolks dot com), gborg 751. Thanks Josh Cooley (jbnpgsql at tuxinthebox dot net).
+
+        gborg 1388. Fixed documentation about User Id connection string key. Thanks Peyn (peyn at tlen dot pl) for heads up.
+        
+        gborg 1387. Fixed problem when using commandtype.storedprocedure with command texts which have parameters with ' or any other value which needed to be escaped. Now they are properly handled. Thanks Dalibor (dalxxx at email dot com) for heads up and tests.
+
+        Fixed problem with stored procedure command texts which finished with a ";". Npgsql was adding incorrectly a trailing "()" when calling this command text.
+        
+        Fixed ConnectorPool when creating MinPoolSize connections. Josh Cooley said when submitting patch: "It seems that if the MinPoolSize was set to anything other than one, then it was prepopulated with the first connector created." Thanks Aza (aza at azaclauson dot com) for heads up and big thanks Josh Cooley (jbnpgsql at tuxinthebox dot net) for fix!
+        
+
 2005-07-11
 
     Npgsql 0.7 stable release
