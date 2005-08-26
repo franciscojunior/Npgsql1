@@ -24,6 +24,11 @@
         
         Fixed ConnectorPool when creating MinPoolSize connections. Josh Cooley said when submitting patch: "It seems that if the MinPoolSize was set to anything other than one, then it was prepopulated with the first connector created." Thanks Aza (aza at azaclauson dot com) for heads up and big thanks Josh Cooley (jbnpgsql at tuxinthebox dot net) for fix!
         
+        Fixed problems with parameters with "@" prefix. They weren't correctly recognized. Thanks Pejvan Beigui ( pejvan at gmail dot com) for heads up.
+        
+        Fixed infinite loop when getting metadata using Mono runtime. We were using DataSet.Fill to get metadata info and Mono implementation of DataSet.Fill was calling our method to get metadata which resulted in a loop. Thanks Josh Cooley (jbnpgsql at tuxinthebox dot net) for fix!
+        
+        
 
 2005-07-11
 
