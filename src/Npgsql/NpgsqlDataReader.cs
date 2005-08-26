@@ -716,7 +716,7 @@ namespace Npgsql
                 if (rd[i].type_modifier != -1 && rd[i].type_info.Name == "numeric")
                 {
                     row["NumericPrecision"] = ((rd[i].type_modifier-4)>>16)&ushort.MaxValue;
-                    row["NumericPrecision"] = (rd[i].type_modifier-4)&ushort.MaxValue;
+                    row["NumericScale"] = (rd[i].type_modifier-4)&ushort.MaxValue;
                 }
                 else
                 {
@@ -764,7 +764,7 @@ namespace Npgsql
                 // only 1, but we can't index into the Hashtable
                 foreach(DictionaryEntry entry in oidTableLookup)
                 {
-                    GetPrimaryKeys(((DataRow)entry.Value)["table_name"].ToString());
+                    GetPrimaryKeys(((object[])entry.Value)[Tables.table_name].ToString());
                 }
             }
 
@@ -786,7 +786,7 @@ namespace Npgsql
                 if (rd[i].type_modifier != -1 && rd[i].type_info.Name == "numeric")
                 {
                     row["NumericPrecision"] = ((rd[i].type_modifier-4)>>16)&ushort.MaxValue;
-                    row["NumericPrecision"] = (rd[i].type_modifier-4)&ushort.MaxValue;
+                    row["NumericScale"] = (rd[i].type_modifier-4)&ushort.MaxValue;
                 }
                 else
                 {
@@ -797,9 +797,9 @@ namespace Npgsql
                 row["IsKey"] = IsKey(GetName(i), keyList);
                 if (rd[i].table_oid != 0 && oidTableLookup != null)
                 {
-                    row["BaseCatalogName"] = ((DataRow)oidTableLookup[rd[i].table_oid])["table_catalog"];
-                    row["BaseSchemaName"] = ((DataRow)oidTableLookup[rd[i].table_oid])["table_schema"];
-                    row["BaseTableName"] = ((DataRow)oidTableLookup[rd[i].table_oid])["table_name"];
+                    row["BaseCatalogName"] = ((object[])oidTableLookup[rd[i].table_oid])[Tables.table_catalog];
+                    row["BaseSchemaName"] = ((object[])oidTableLookup[rd[i].table_oid])[Tables.table_schema];
+                    row["BaseTableName"] = ((object[])oidTableLookup[rd[i].table_oid])[Tables.table_name];
                 }
                 else
                 {
@@ -876,9 +876,9 @@ namespace Npgsql
                 return true;
 
             string lookupKey = _currentResultset.RowDescription[FieldIndex].table_oid.ToString() + "," + _currentResultset.RowDescription[FieldIndex].column_attribute_number;
-            DataRow row = (DataRow)columnLookup[lookupKey];
+            object[] row = (object[])columnLookup[lookupKey];
             if (row != null)
-                return !(bool)row["column_notnull"];
+                return !(bool)row[Columns.column_notnull];
             else
                 return true;
         }
@@ -889,9 +889,9 @@ namespace Npgsql
                 return GetName(FieldIndex);
             
             string lookupKey = _currentResultset.RowDescription[FieldIndex].table_oid.ToString() + "," + _currentResultset.RowDescription[FieldIndex].column_attribute_number;
-            DataRow row = (DataRow)columnLookup[lookupKey];
+            object[] row = (object[])columnLookup[lookupKey];
             if (row != null)
-                return (string)row["column_name"];
+                return (string)row[Columns.column_name];
             else
                 return GetName(FieldIndex);
         }
@@ -922,6 +922,14 @@ namespace Npgsql
 
         }
 
+        private struct Tables
+        {
+            public const int table_catalog = 0;
+            public const int table_schema = 1;
+            public const int table_name = 2;
+            public const int table_id = 3;
+        }
+
         private Hashtable GetTablesFromOids(ArrayList oids)
         {
             if (oids.Count == 0)
@@ -929,6 +937,8 @@ namespace Npgsql
 
             StringBuilder sb = new StringBuilder();
 
+            // the column index is used to find data.
+            // any changes to the order of the columns needs to be reflected in struct Tables
             sb.Append("SELECT current_database() AS table_catalog, nc.nspname AS table_schema, c.relname AS table_name, c.oid as table_id");
             sb.Append(" FROM pg_namespace nc, pg_class c WHERE c.relnamespace = nc.oid AND (c.relkind = 'r' OR c.relkind = 'v') AND c.oid IN (");
             bool first = true;
@@ -942,23 +952,35 @@ namespace Npgsql
             sb.Append(')');
 
             using (NpgsqlConnection connection = _connection.Clone())
-            using (NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(sb.ToString(), connection))
+            using (NpgsqlCommand command = new NpgsqlCommand(sb.ToString(), connection))
+            using (NpgsqlDataReader reader = command.ExecuteReader())
             {
-                DataTable dataTable = new DataTable();
                 Hashtable oidLookup = new Hashtable();
-                adapter.Fill(dataTable);
-                foreach(DataRow row in dataTable.Rows)
+                int columnCount = reader.FieldCount;
+                while (reader.Read())
                 {
-                    oidLookup[Convert.ToInt32(row["table_id"])] = row;
+                    object[] values = new object[columnCount];
+                    reader.GetValues(values);
+                    oidLookup[Convert.ToInt32(reader[Tables.table_id])] = values;
                 }
                 return oidLookup;
             }
+        }
+
+        private struct Columns
+        {
+            public const int column_name = 0;
+            public const int column_notnull = 1;
+            public const int table_id = 2;
+            public const int column_num = 3;
         }
 
         private Hashtable GetColumns()
         {
             StringBuilder sb = new StringBuilder();
 
+            // the column index is used to find data.
+            // any changes to the order of the columns needs to be reflected in struct Columns
             sb.Append("SELECT a.attname AS column_name, a.attnotnull AS column_notnull, a.attrelid AS table_id, a.attnum AS column_num");
             sb.Append(" from pg_attribute a WHERE a.attnum > 0 AND (");
             bool first = true;
@@ -979,14 +1001,16 @@ namespace Npgsql
                 return null;
 
             using (NpgsqlConnection connection = _connection.Clone())
-            using (NpgsqlDataAdapter adapter = new NpgsqlDataAdapter(sb.ToString(), connection))
+            using (NpgsqlCommand command = new NpgsqlCommand(sb.ToString(), connection))
+            using (NpgsqlDataReader reader = command.ExecuteReader())
             {
-                DataTable dataTable = new DataTable();
                 Hashtable columnLookup = new Hashtable();
-                adapter.Fill(dataTable);
-                foreach(DataRow row in dataTable.Rows)
+                int columnCount = reader.FieldCount;
+                while(reader.Read())
                 {
-                    columnLookup[row["table_id"].ToString() + "," + row["column_num"].ToString()] = row;
+                    object[] values = new object[columnCount];
+                    reader.GetValues(values);
+                    columnLookup[reader[Columns.table_id].ToString() + "," + reader[Columns.column_num].ToString()] = values;
                 }
                 return columnLookup;
             }
