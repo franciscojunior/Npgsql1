@@ -764,7 +764,7 @@ namespace Npgsql
                 // only 1, but we can't index into the Hashtable
                 foreach(DictionaryEntry entry in oidTableLookup)
                 {
-                    GetPrimaryKeys(((object[])entry.Value)[Tables.table_name].ToString());
+                    keyList = GetPrimaryKeys(((object[])entry.Value)[Tables.table_name].ToString());
                 }
             }
 
