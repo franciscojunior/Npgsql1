@@ -29,6 +29,7 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.ComponentModel;
+using NpgsqlTypes;
 
 namespace Npgsql
 {
@@ -144,8 +145,38 @@ namespace Npgsql
             { }
         }
 
+	///<summary>
+	///
+	/// This method is reponsible to derive the command parameter list with values obtained from function definition. 
+	/// It clears the Parameters collection of command. Also, if there is any parameter type which is not supported by Npgsql, an InvalidOperationException will be thrown.
+	/// Parameters name will be parameter1, parameter2, ...
+	/// For while, only parameter name and NpgsqlDbType are obtained.
+	///</summary>
+	/// <param name="command">NpgsqlCommand whose function parameters will be obtained.</param>
         public static void DeriveParameters (NpgsqlCommand command)
-        {}
+        {
+            String query = "select proargtypes from pg_proc where proname = :procname";
+    
+            NpgsqlCommand c = new NpgsqlCommand(query, command.Connection);
+            c.Parameters.Add(new NpgsqlParameter("procname", NpgsqlDbType.Text));
+            c.Parameters[0].Value = command.CommandText;
+    
+            String types = (String) c.ExecuteScalar();
+    
+            command.Parameters.Clear();
+            Int32 i = 1;
+            
+            foreach(String s in types.Split())
+            {
+                if (!c.Connector.OidToNameMapping.ContainsOID(Int32.Parse(s)))
+                {
+                    command.Parameters.Clear();
+                    throw new InvalidOperationException(String.Format("Invalid parameter type: {0}", s));
+                }
+                command.Parameters.Add(new NpgsqlParameter("parameter" + i++, c.Connector.OidToNameMapping[Int32.Parse(s)].NpgsqlDbType));
+            }
+	    	
+        }
 
         public NpgsqlCommand GetInsertCommand (DataRow row)
         {
