@@ -47,3 +47,18 @@ field_polygon polygon,
 field_circle circle
 );
 
+create table tableF(
+field_serial serial,
+field_bytea bytea
+);
+
+create table tableG(
+field_serial serial,
+field_timestamp_with_timezone timestamp with time zone
+);
+
+create table tableH(
+field_serial serial,
+field_char5 char(5),
+field_varchar5 varchar(5)
+);

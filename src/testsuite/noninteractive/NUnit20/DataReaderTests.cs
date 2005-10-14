@@ -25,6 +25,7 @@ using System;
 using System.Data;
 using System.Web.UI.WebControls;
 using Npgsql;
+using NpgsqlTypes;
 
 using NUnit.Framework;
 using NUnit.Core;
@@ -37,7 +38,7 @@ namespace NpgsqlTests
     {
 
         private NpgsqlConnection 	_conn = null;
-        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;maxpoolsize=2;";
+        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;";
 
         [SetUp]
         protected void SetUp()
@@ -86,12 +87,34 @@ namespace NpgsqlTests
             Int64 a = dr.GetChars(1, 0, result, 0, 6);
 
             Assert.AreEqual("Random", new String(result));
-            /*ConsoleWriter cw = new ConsoleWriter(Console.Out);
-
-            cw.WriteLine(result);*/
-
+            
 
         }
+           
+           
+        [Test]
+        public void GetBytes()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select field_bytea from tablef where field_serial = 1;", _conn);
+
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+            dr.Read();
+            Byte[] result = new Byte[2];
+
+
+            Int64 a = dr.GetBytes(0, 0, result, 0, 2);
+            Int64 b = dr.GetBytes(0, result.Length, result, 0, 2);
+
+            Assert.AreEqual('S', (Char)result[0]);
+            Assert.AreEqual('.', (Char)result[1]);
+            Assert.AreEqual(2, a);
+            Assert.AreEqual(0, b);
+            
+        }
+        
+        
 
         [Test]
         public void GetInt32()
@@ -317,7 +340,7 @@ namespace NpgsqlTests
         }
 
         [Test]
-        [ExpectedException(typeof(IndexOutOfRangeException))]
+        [ExpectedException(typeof(NpgsqlException))]
         public void TestNonExistentParameterName()
         {
             _conn.Open();
@@ -532,8 +555,130 @@ namespace NpgsqlTests
 
 
         }
+        
+        [Test]
+        public void SingleRowCommandBehaviorSupport()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea", _conn);
+
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SingleRow);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(1, i);
 
 
+        }
+        
+        
+        [Test]
+        public void SingleRowCommandBehaviorSupportFunctioncall()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("funcb", _conn);
+            command.CommandType = CommandType.StoredProcedure;
 
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SingleRow);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(1, i);
+
+
+        }
+        
+        [Test]
+        public void SingleRowCommandBehaviorSupportFunctioncallPrepare()
+        {
+            //FIXME: Find a way of supporting single row with prepare.
+            // Problem is that prepare plan must already have the limit 1 single row support.
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("funcb()", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+            
+            command.Prepare();
+
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SingleRow);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(1, i);
+
+
+        }
+        
+        [Test]
+        public void PrimaryKeyFieldsMetadataSupport()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select * from metadatatest1", _conn);
+            
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+            
+            DataTable metadata = dr.GetSchemaTable();
+            
+            Boolean keyfound = false;
+            
+            foreach(DataRow r in metadata.Rows)
+            {
+                if ((Boolean)r["IsKey"] )
+                {
+                    Assert.AreEqual("field_pk", r["ColumnName"]);
+                    keyfound = true;
+                }
+                    
+            }
+            if (!keyfound)
+                Assert.Fail("No primary key found!");
+
+        }
+        
+        [Test]
+        public void HasRowsWithoutResultset()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("delete from tablea where field_serial = 2000000", _conn);
+            
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+                        
+            Assert.IsFalse(dr.HasRows);
+
+
+        }
+   
+        [Test]
+        public void ParameterAppearMoreThanOneTime()
+        {
+            _conn.Open();
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :parameter and field_int4 = :parameter", _conn);
+            
+            command.Parameters.Add("parameter", NpgsqlDbType.Integer);
+            command.Parameters["parameter"].Value = 1;
+            
+            NpgsqlDataReader dr = command.ExecuteReader();
+                        
+            Assert.IsFalse(dr.HasRows);
+            
+            dr.Close();
+            
+
+
+        }
+               
     }
 }

@@ -36,7 +36,7 @@ namespace NpgsqlTests
     public class ConnectionTests
     {
         private NpgsqlConnection 	_conn = null;
-        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;maxpoolsize=2;";
+        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;";
 
         [SetUp]
         protected void SetUp()

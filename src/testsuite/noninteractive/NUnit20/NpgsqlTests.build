@@ -1,6 +1,6 @@
 <project name="NpgsqlTests" default="build" basedir=".">
 
-    <property name="NAnt.lib.dir" value="/home/fxjr/Desenvolvimento/CVSRepositories/MonoCommit/install/lib/mono/1.0" />
+    <property name="NAnt.lib.dir" value="/home/fxjr/Desenvolvimento/CVSRepositories/MonoCommit/install2.0/lib/mono/1.0" />
     <property name="assemblyname" value="NpgsqlTests" />
     
     <target name="clean" description="cleans the build directory">
@@ -12,16 +12,18 @@
     </target>
     
     <target name="build" depends="init">
+      <echo message="Nant base dir is: ${nant::get-base-directory()}" />
       <csc target="library" output="${nunit2tests.build.dir}/${assemblyname}.dll" debug="${debug}" >
         <sources>
-          <includes name="*.cs" />
+          <include name="*.cs" />
         </sources>
         <references>
-          <includes name="${NAnt.lib.dir}/nunit.framework.dll" />
-          <includes name="${NAnt.lib.dir}/nunit.core.dll" />
-          <includes name="${ms.build.dir}/Npgsql.dll" />
-	  <includes name="System.Data.dll" />
-	  <includes name="System.Web.dll" />
+		<lib>
+			<include name="${nant::get-base-directory()}" />
+		</lib>
+          <include name="${ms.build.dir}/Npgsql.dll" />
+	  <include name="System.Data.dll" />
+	  <include name="System.Web.dll" />
         </references>
       </csc>
     </target>    
