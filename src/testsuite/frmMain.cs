@@ -371,7 +371,7 @@ using Npgsql;
       } else {
         txtLog.AppendText(System.DateTime.Now + " - " + szMessage + "\r\n");
       }  
-      //txtLog.SelectionStart = txtLog.Text.Length;
+      txtLog.SelectionStart = txtLog.Text.Length;
     }
 
 		#region Windows Form Designer generated code
