@@ -2,46 +2,38 @@ Option Strict Off
 Option Explicit On
 Friend Class Form2
 	Inherits System.Windows.Forms.Form
-#Region "Windows フォーム デザイナによって生成されたコード"
-	Public Sub New()
-		MyBase.New()
-		If m_vb6FormDefInstance Is Nothing Then
-			If m_InitializingDefInstance Then
-				m_vb6FormDefInstance = Me
-			Else
-				Try 
-					'スタートアップ フォームについては、最初に作成されたインスタンスが既定インスタンスになります。
-					If System.Reflection.Assembly.GetExecutingAssembly.EntryPoint.DeclaringType Is Me.GetType Then
-						m_vb6FormDefInstance = Me
-					End If
-				Catch
-				End Try
-			End If
-		End If
-		'この呼び出しは、Windows フォーム デザイナで必要です。
-		InitializeComponent()
-	End Sub
-	'Form は、コンポーネント一覧に後処理を実行するために dispose をオーバーライドします。
-	Protected Overloads Overrides Sub Dispose(ByVal Disposing As Boolean)
-		If Disposing Then
-			If Not components Is Nothing Then
-				components.Dispose()
-			End If
-		End If
-		MyBase.Dispose(Disposing)
-	End Sub
-	'Windows フォーム デザイナで必要です。
-	Private components As System.ComponentModel.IContainer
-	Public ToolTip1 As System.Windows.Forms.ToolTip
-	Public WithEvents cmdCancel As System.Windows.Forms.Button
-	Public WithEvents cmdOk As System.Windows.Forms.Button
-	Public WithEvents txtPath As System.Windows.Forms.TextBox
-	Public WithEvents dirList As Microsoft.VisualBasic.Compatibility.VB6.DirListBox
-	Public WithEvents drvList As Microsoft.VisualBasic.Compatibility.VB6.DriveListBox
-	'メモ : 以下のプロシージャは Windows フォーム デザイナで必要です。
-	'Windows フォーム デザイナを使って変更できます。
-	'コード エディタを使って修正しないでください。
-	<System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+    Public Sub New()
+        MyBase.New()
+        If m_vb6FormDefInstance Is Nothing Then
+            If m_InitializingDefInstance Then
+                m_vb6FormDefInstance = Me
+            Else
+                Try
+                    If System.Reflection.Assembly.GetExecutingAssembly.EntryPoint.DeclaringType Is Me.GetType Then
+                        m_vb6FormDefInstance = Me
+                    End If
+                Catch
+                End Try
+            End If
+        End If
+        InitializeComponent()
+    End Sub
+    Protected Overloads Overrides Sub Dispose(ByVal Disposing As Boolean)
+        If Disposing Then
+            If Not components Is Nothing Then
+                components.Dispose()
+            End If
+        End If
+        MyBase.Dispose(Disposing)
+    End Sub
+    Private components As System.ComponentModel.IContainer
+    Public ToolTip1 As System.Windows.Forms.ToolTip
+    Public WithEvents cmdCancel As System.Windows.Forms.Button
+    Public WithEvents cmdOk As System.Windows.Forms.Button
+    Public WithEvents txtPath As System.Windows.Forms.TextBox
+    Public WithEvents dirList As Microsoft.VisualBasic.Compatibility.VB6.DirListBox
+    Public WithEvents drvList As Microsoft.VisualBasic.Compatibility.VB6.DriveListBox
+    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.cmdCancel = New System.Windows.Forms.Button
@@ -136,47 +128,44 @@ Friend Class Form2
         Me.ResumeLayout(False)
 
     End Sub
-#End Region 
-#Region "アップグレード ウィザードのサポート コード"
-	Private Shared m_vb6FormDefInstance As Form2
-	Private Shared m_InitializingDefInstance As Boolean
-	Public Shared Property DefInstance() As Form2
-		Get
-			If m_vb6FormDefInstance Is Nothing OrElse m_vb6FormDefInstance.IsDisposed Then
-				m_InitializingDefInstance = True
-				m_vb6FormDefInstance = New Form2()
-				m_InitializingDefInstance = False
-			End If
-			DefInstance = m_vb6FormDefInstance
-		End Get
-		Set
-			m_vb6FormDefInstance = Value
-		End Set
-	End Property
-#End Region 
-	Private Sub cmdCancel_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdCancel.Click
-		txtPath.Text = ""
-		Hide()
-	End Sub
-	
-	Private Sub cmdOk_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdOk.Click
-		Hide()
-	End Sub
-	
-	Private Sub dirList_Change(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles dirList.Change
-		txtPath.Text = dirList.Path
-	End Sub
-	
-	Private Sub drvList_SelectedIndexChanged(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles drvList.SelectedIndexChanged
-		dirList.Path = drvList.Drive
-	End Sub
-	
-	Private Sub Form2_Load(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles MyBase.Load
-		Form2.DefInstance.Top = VB6.TwipsToPixelsY((VB6.PixelsToTwipsY(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height) - VB6.PixelsToTwipsY(Form2.DefInstance.Height)) / 2)
-		Form2.DefInstance.Left = VB6.TwipsToPixelsX((VB6.PixelsToTwipsX(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width) - VB6.PixelsToTwipsX(Form2.DefInstance.Width)) / 2)
-		
-		drvList.Drive = Form1.DefInstance.txtPicDir.Text
-		dirList.Path = Form1.DefInstance.txtPicDir.Text
-		txtPath.Text = dirList.Path
-	End Sub
+    Private Shared m_vb6FormDefInstance As Form2
+    Private Shared m_InitializingDefInstance As Boolean
+    Public Shared Property DefInstance() As Form2
+        Get
+            If m_vb6FormDefInstance Is Nothing OrElse m_vb6FormDefInstance.IsDisposed Then
+                m_InitializingDefInstance = True
+                m_vb6FormDefInstance = New Form2
+                m_InitializingDefInstance = False
+            End If
+            DefInstance = m_vb6FormDefInstance
+        End Get
+        Set(ByVal Value As Form2)
+            m_vb6FormDefInstance = Value
+        End Set
+    End Property
+    Private Sub cmdCancel_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdCancel.Click
+        txtPath.Text = ""
+        Hide()
+    End Sub
+
+    Private Sub cmdOk_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdOk.Click
+        Hide()
+    End Sub
+
+    Private Sub dirList_Change(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles dirList.Change
+        txtPath.Text = dirList.Path
+    End Sub
+
+    Private Sub drvList_SelectedIndexChanged(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles drvList.SelectedIndexChanged
+        dirList.Path = drvList.Drive
+    End Sub
+
+    Private Sub Form2_Load(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles MyBase.Load
+        Form2.DefInstance.Top = VB6.TwipsToPixelsY((VB6.PixelsToTwipsY(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height) - VB6.PixelsToTwipsY(Form2.DefInstance.Height)) / 2)
+        Form2.DefInstance.Left = VB6.TwipsToPixelsX((VB6.PixelsToTwipsX(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Width) - VB6.PixelsToTwipsX(Form2.DefInstance.Width)) / 2)
+
+        drvList.Drive = Form1.DefInstance.txtPicDir.Text
+        dirList.Path = Form1.DefInstance.txtPicDir.Text
+        txtPath.Text = dirList.Path
+    End Sub
 End Class

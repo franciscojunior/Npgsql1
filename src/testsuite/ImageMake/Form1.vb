@@ -31,7 +31,6 @@ Imports Mono.Security.Protocol.Tls
 
 Friend Class Form1
     Inherits System.Windows.Forms.Form
-#Region "Windows フォーム デザイナによって生成されたコード"
     Public Sub New()
         MyBase.New()
         If m_vb6FormDefInstance Is Nothing Then
@@ -39,7 +38,6 @@ Friend Class Form1
                 m_vb6FormDefInstance = Me
             Else
                 Try
-                    'スタートアップ フォームについては、最初に作成されたインスタンスが既定インスタンスになります。
                     If System.Reflection.Assembly.GetExecutingAssembly.EntryPoint.DeclaringType Is Me.GetType Then
                         m_vb6FormDefInstance = Me
                     End If
@@ -47,10 +45,8 @@ Friend Class Form1
                 End Try
             End If
         End If
-        'この呼び出しは、Windows フォーム デザイナで必要です。
         InitializeComponent()
     End Sub
-    'Form は、コンポーネント一覧に後処理を実行するために dispose をオーバーライドします。
     Protected Overloads Overrides Sub Dispose(ByVal Disposing As Boolean)
         If Disposing Then
             If Not components Is Nothing Then
@@ -59,7 +55,6 @@ Friend Class Form1
         End If
         MyBase.Dispose(Disposing)
     End Sub
-    'Windows フォーム デザイナで必要です。
     Private components As System.ComponentModel.IContainer
     Public ToolTip1 As System.Windows.Forms.ToolTip
     Public WithEvents cmdDelete As System.Windows.Forms.Button
@@ -70,7 +65,7 @@ Friend Class Form1
     Public WithEvents cmdPeast As System.Windows.Forms.Button
     Public WithEvents txtShainNo As System.Windows.Forms.TextBox
     Public WithEvents txtName As System.Windows.Forms.TextBox
-    Public WithEvents txtHurigana As System.Windows.Forms.TextBox
+    Public WithEvents txtEMailaddr As System.Windows.Forms.TextBox
     Public WithEvents cmdEnd As System.Windows.Forms.Button
     Public WithEvents cmdSave As System.Windows.Forms.Button
     Public WithEvents txtTorokuNo As System.Windows.Forms.TextBox
@@ -93,9 +88,7 @@ Friend Class Form1
     Public WithEvents menCreate As System.Windows.Forms.MenuItem
     Public WithEvents menTouroku As System.Windows.Forms.MenuItem
     Public MainMenu1 As System.Windows.Forms.MainMenu
-    'メモ : 以下のプロシージャは Windows フォーム デザイナで必要です。
-    'Windows フォーム デザイナを使って変更できます。
-    'コード エディタを使って修正しないでください。
+
     Friend WithEvents Label10 As System.Windows.Forms.Label
     Friend WithEvents Label11 As System.Windows.Forms.Label
     Friend WithEvents Label12 As System.Windows.Forms.Label
@@ -116,7 +109,7 @@ Friend Class Form1
         Me.cmdPeast = New System.Windows.Forms.Button
         Me.txtShainNo = New System.Windows.Forms.TextBox
         Me.txtName = New System.Windows.Forms.TextBox
-        Me.txtHurigana = New System.Windows.Forms.TextBox
+        Me.txtEMailaddr = New System.Windows.Forms.TextBox
         Me.cmdSave = New System.Windows.Forms.Button
         Me.Picture4 = New System.Windows.Forms.PictureBox
         Me.RBBmp = New System.Windows.Forms.RadioButton
@@ -181,7 +174,7 @@ Friend Class Form1
         Me.Check1.Size = New System.Drawing.Size(192, 20)
         Me.Check1.TabIndex = 9
         Me.Check1.Text = "Picture is saved a local folder."
-        Me.ToolTip1.SetToolTip(Me.Check1, "ﾃﾞｰﾀﾍﾞｰｽの接続に関わらず、ﾌｫﾙﾀﾞｰへ写真を保存するかを選択できます。")
+        Me.ToolTip1.SetToolTip(Me.Check1, "It is not concerned with a database but preservation of picture to be a local holder.")
         '
         'cmdPicChange
         '
@@ -260,23 +253,23 @@ Friend Class Form1
         Me.txtName.Text = ""
         Me.ToolTip1.SetToolTip(Me.txtName, "FullName")
         '
-        'txtHurigana
+        'txtEMailaddr
         '
-        Me.txtHurigana.AcceptsReturn = True
-        Me.txtHurigana.AutoSize = False
-        Me.txtHurigana.BackColor = System.Drawing.SystemColors.Window
-        Me.txtHurigana.Cursor = System.Windows.Forms.Cursors.IBeam
-        Me.txtHurigana.Enabled = False
-        Me.txtHurigana.ForeColor = System.Drawing.SystemColors.WindowText
-        Me.txtHurigana.ImeMode = System.Windows.Forms.ImeMode.KatakanaHalf
-        Me.txtHurigana.Location = New System.Drawing.Point(56, 80)
-        Me.txtHurigana.MaxLength = 0
-        Me.txtHurigana.Name = "txtHurigana"
-        Me.txtHurigana.RightToLeft = System.Windows.Forms.RightToLeft.No
-        Me.txtHurigana.Size = New System.Drawing.Size(160, 19)
-        Me.txtHurigana.TabIndex = 3
-        Me.txtHurigana.Text = ""
-        Me.ToolTip1.SetToolTip(Me.txtHurigana, "E_Mail")
+        Me.txtEMailaddr.AcceptsReturn = True
+        Me.txtEMailaddr.AutoSize = False
+        Me.txtEMailaddr.BackColor = System.Drawing.SystemColors.Window
+        Me.txtEMailaddr.Cursor = System.Windows.Forms.Cursors.IBeam
+        Me.txtEMailaddr.Enabled = False
+        Me.txtEMailaddr.ForeColor = System.Drawing.SystemColors.WindowText
+        Me.txtEMailaddr.ImeMode = System.Windows.Forms.ImeMode.KatakanaHalf
+        Me.txtEMailaddr.Location = New System.Drawing.Point(56, 80)
+        Me.txtEMailaddr.MaxLength = 0
+        Me.txtEMailaddr.Name = "txtEMailaddr"
+        Me.txtEMailaddr.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.txtEMailaddr.Size = New System.Drawing.Size(160, 19)
+        Me.txtEMailaddr.TabIndex = 3
+        Me.txtEMailaddr.Text = ""
+        Me.ToolTip1.SetToolTip(Me.txtEMailaddr, "E_Mail")
         '
         'cmdSave
         '
@@ -344,7 +337,7 @@ Friend Class Form1
         Me.GroupBox2.TabIndex = 31
         Me.GroupBox2.TabStop = False
         Me.GroupBox2.Text = "Status"
-        Me.ToolTip1.SetToolTip(Me.GroupBox2, "ImageMakeの現在の状態を表示します")
+        Me.ToolTip1.SetToolTip(Me.GroupBox2, "ImageMake status")
         '
         'GroupBox1
         '
@@ -654,7 +647,7 @@ Friend Class Form1
         Me.Controls.Add(Me.cmdPeast)
         Me.Controls.Add(Me.txtShainNo)
         Me.Controls.Add(Me.txtName)
-        Me.Controls.Add(Me.txtHurigana)
+        Me.Controls.Add(Me.txtEMailaddr)
         Me.Controls.Add(Me.txtTorokuNo)
         Me.Controls.Add(Me.txtPicDir)
         Me.Controls.Add(Me.cmdEnd)
@@ -688,8 +681,7 @@ Friend Class Form1
         Me.ResumeLayout(False)
 
     End Sub
-#End Region
-#Region "アップグレード ウィザードのサポート コード"
+
     Private Shared m_vb6FormDefInstance As Form1
     Private Shared m_InitializingDefInstance As Boolean
     Public Shared Property DefInstance() As Form1
@@ -705,7 +697,8 @@ Friend Class Form1
             m_vb6FormDefInstance = Value
         End Set
     End Property
-#End Region
+
+
     Dim SaveStatus As Boolean
 
     Dim DbServer As String
@@ -813,7 +806,7 @@ menCreateErr:
         Form4.DefInstance.Close()
     End Sub
 
-    'Login(BIN)
+    'Login
     Public Sub menLogin_Popup(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles menLogin.Popup
         menLogin_Click(eventSender, eventArgs)
     End Sub
@@ -834,7 +827,7 @@ menCreateErr:
             Label4.Enabled = True
             txtName.Enabled = True
             Label3.Enabled = True
-            txtHurigana.Enabled = True
+            txtEMailaddr.Enabled = True
             cmdDelete.Enabled = True
             Label9.Text = ".Establish Connected Server"
         Else
@@ -842,7 +835,7 @@ menCreateErr:
             Label4.Enabled = False
             txtName.Enabled = False
             Label3.Enabled = False
-            txtHurigana.Enabled = False
+            txtEMailaddr.Enabled = False
             cmdDelete.Enabled = False
             Label9.Text = ".Not Connected Server"
         End If
@@ -1096,7 +1089,7 @@ data:
             NpgTrans = NpgConn.BeginTransaction(IsolationLevel.ReadCommitted)
             NpgCmd.Transaction = NpgTrans
 
-            NpgCmd.CommandText = "DELETE FROM " & TableName & " where IDNumber='" & txtTorokuNo.Text & "'"
+            NpgCmd.CommandText = "DELETE FROM " & TableName & " WHERE IDNumber='" & txtTorokuNo.Text & "'"
             NpgCmd.ExecuteNonQuery()
             'LargeObject 
             lbm = New LargeObjectManager(NpgConn)
@@ -1111,7 +1104,7 @@ data:
         connection()
         NpgConn.Open()
 
-        NpgDAdap = New Npgsql.NpgsqlDataAdapter("SELECT * FROM " & TableName & " where IDNumber='" & txtTorokuNo.Text & "'", NpgConn)
+        NpgDAdap = New Npgsql.NpgsqlDataAdapter("SELECT * FROM " & TableName & " WHERE IDNumber='" & txtTorokuNo.Text & "'", NpgConn)
         NpgCmdBld = New Npgsql.NpgsqlCommandBuilder(NpgDAdap)
 
         SysDset = New DataSet
@@ -1141,7 +1134,7 @@ data:
         '
         SysDrow("IDNumber") = txtShainNo.Text
         SysDrow("FullName") = txtName.Text
-        SysDrow("E_Mail") = txtHurigana.Text
+        SysDrow("E_Mail") = txtEMailaddr.Text
         SysDrow("EditNo") = txtTorokuNo.Text
         'SysDrow("Image") = MyData
         SysDrow("Image") = noid
@@ -1184,7 +1177,7 @@ Image:
 
         txtTorokuNo.Text = ""
         txtShainNo.Text = ""
-        txtHurigana.Text = ""
+        txtEMailaddr.Text = ""
         txtName.Text = ""
         PicImg = Nothing
         Picture3.Image = Nothing
@@ -1211,7 +1204,7 @@ Image:
         ' CHeck an indispensable item
         If txtShainNo.Text = "" Then
             MsgBox("Please input IDNumber.", , "Warning")
-            txtHurigana.Text = ""
+            txtEMailaddr.Text = ""
             txtName.Text = ""
             Exit Sub
         End If
@@ -1233,7 +1226,7 @@ Image:
         ' Display setting
         txtShainNo.Text = NpgDRead.GetString(0)
         txtName.Text = NpgDRead.GetString(1)
-        txtHurigana.Text = NpgDRead.GetString(2)
+        txtEMailaddr.Text = NpgDRead.GetString(2)
         txtTorokuNo.Text = NpgDRead.GetString(3)
         noid = NpgDRead.GetValue(4)
         nkind = NpgDRead.GetString(5)
@@ -1248,7 +1241,7 @@ Image:
         NpgTrans.Commit()
         NpgConn.Close()
         '
-        strBmpName = RTrim(txtTorokuNo.Text) & "ken.bmp"
+        strBmpName = RTrim(txtTorokuNo.Text) & "temp.bmp"
         strBmpPath = VB6.GetPath & "\" & strBmpName
 
         Dim K As Long
@@ -1269,10 +1262,10 @@ Image:
         GoTo Lastline
 
 NoData:
-        MsgBox("No RecorSysDset.")
+        MsgBox("No Record set.")
         NpgDRead.Close()
         NpgConn.Close()
-        txtHurigana.Text = ""
+        txtEMailaddr.Text = ""
         txtName.Text = ""
         GoTo cmdDBGet_End
 fserr:
@@ -1299,7 +1292,7 @@ cmdDBGet_End:
         On Error GoTo restart
 
         '
-        strBmpName = RTrim(txtTorokuNo.Text) & "ken.bmp"
+        strBmpName = RTrim(txtTorokuNo.Text) & "temp.bmp"
         strBmpPath = VB6.GetPath & "\" & strBmpName
         '
         fs = New FileStream(strBmpPath, IO.FileMode.Open, IO.FileAccess.Read)
@@ -1346,7 +1339,7 @@ restart:
             NpgTrans = NpgConn.BeginTransaction()
             NpgCmd.Transaction = NpgTrans
             ' Remove
-            NpgCmd.CommandText = "DELETE FROM " & TableName & " where IDNumber='" & txtTorokuNo.Text & "'"
+            NpgCmd.CommandText = "DELETE FROM " & TableName & " WHERE IDNumber='" & txtTorokuNo.Text & "'"
             NpgCmd.ExecuteNonQuery()
             ' LargeObject remove
             lbm = New LargeObjectManager(NpgConn)
@@ -1360,7 +1353,7 @@ restart:
 
         txtTorokuNo.Text = ""
         txtShainNo.Text = ""
-        txtHurigana.Text = ""
+        txtEMailaddr.Text = ""
         txtName.Text = ""
         PicImg = Nothing
         Picture4.Image = Nothing

@@ -2,54 +2,46 @@ Option Strict Off
 Option Explicit On
 Friend Class Form4
 	Inherits System.Windows.Forms.Form
-#Region "Windows フォーム デザイナによって生成されたコード"
-	Public Sub New()
-		MyBase.New()
-		If m_vb6FormDefInstance Is Nothing Then
-			If m_InitializingDefInstance Then
-				m_vb6FormDefInstance = Me
-			Else
-				Try 
-					'スタートアップ フォームについては、最初に作成されたインスタンスが既定インスタンスになります。
-					If System.Reflection.Assembly.GetExecutingAssembly.EntryPoint.DeclaringType Is Me.GetType Then
-						m_vb6FormDefInstance = Me
-					End If
-				Catch
-				End Try
-			End If
-		End If
-		'この呼び出しは、Windows フォーム デザイナで必要です。
-		InitializeComponent()
-	End Sub
-	'Form は、コンポーネント一覧に後処理を実行するために dispose をオーバーライドします。
-	Protected Overloads Overrides Sub Dispose(ByVal Disposing As Boolean)
-		If Disposing Then
-			If Not components Is Nothing Then
-				components.Dispose()
-			End If
-		End If
-		MyBase.Dispose(Disposing)
-	End Sub
-	'Windows フォーム デザイナで必要です。
-	Private components As System.ComponentModel.IContainer
-	Public ToolTip1 As System.Windows.Forms.ToolTip
-	Public WithEvents txtTableName As System.Windows.Forms.TextBox
-	Public WithEvents cmdCancel As System.Windows.Forms.Button
-	Public WithEvents cmdOk As System.Windows.Forms.Button
-	Public WithEvents txtUserPass As System.Windows.Forms.TextBox
-	Public WithEvents txtUserName As System.Windows.Forms.TextBox
-	Public WithEvents txtDbName As System.Windows.Forms.TextBox
-	Public WithEvents txtDbSouce As System.Windows.Forms.TextBox
-	Public WithEvents Label4 As System.Windows.Forms.Label
-	Public WithEvents Label3 As System.Windows.Forms.Label
-	Public WithEvents Label2 As System.Windows.Forms.Label
-	Public WithEvents Label1 As System.Windows.Forms.Label
-	Public WithEvents frmLogin As System.Windows.Forms.GroupBox
-	Public WithEvents Label5 As System.Windows.Forms.Label
-	'メモ : 以下のプロシージャは Windows フォーム デザイナで必要です。
-	'Windows フォーム デザイナを使って変更できます。
-	'コード エディタを使って修正しないでください。
-	<System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
+    Public Sub New()
+        MyBase.New()
+        If m_vb6FormDefInstance Is Nothing Then
+            If m_InitializingDefInstance Then
+                m_vb6FormDefInstance = Me
+            Else
+                Try
+                    If System.Reflection.Assembly.GetExecutingAssembly.EntryPoint.DeclaringType Is Me.GetType Then
+                        m_vb6FormDefInstance = Me
+                    End If
+                Catch
+                End Try
+            End If
+        End If
+        InitializeComponent()
+    End Sub
+    Protected Overloads Overrides Sub Dispose(ByVal Disposing As Boolean)
+        If Disposing Then
+            If Not components Is Nothing Then
+                components.Dispose()
+            End If
+        End If
+        MyBase.Dispose(Disposing)
+    End Sub
+    Private components As System.ComponentModel.IContainer
+    Public ToolTip1 As System.Windows.Forms.ToolTip
+    Public WithEvents txtTableName As System.Windows.Forms.TextBox
+    Public WithEvents cmdCancel As System.Windows.Forms.Button
+    Public WithEvents cmdOk As System.Windows.Forms.Button
+    Public WithEvents txtUserPass As System.Windows.Forms.TextBox
+    Public WithEvents txtUserName As System.Windows.Forms.TextBox
+    Public WithEvents txtDbName As System.Windows.Forms.TextBox
+    Public WithEvents txtDbSouce As System.Windows.Forms.TextBox
+    Public WithEvents Label4 As System.Windows.Forms.Label
+    Public WithEvents Label3 As System.Windows.Forms.Label
+    Public WithEvents Label2 As System.Windows.Forms.Label
+    Public WithEvents Label1 As System.Windows.Forms.Label
+    Public WithEvents frmLogin As System.Windows.Forms.GroupBox
+    Public WithEvents Label5 As System.Windows.Forms.Label
+    <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container
         Me.ToolTip1 = New System.Windows.Forms.ToolTip(Me.components)
         Me.txtTableName = New System.Windows.Forms.TextBox
@@ -82,7 +74,7 @@ Friend Class Form4
         Me.txtTableName.Size = New System.Drawing.Size(185, 20)
         Me.txtTableName.TabIndex = 4
         Me.txtTableName.Text = "lo_image"
-        Me.ToolTip1.SetToolTip(Me.txtTableName, "作成したいテーブル名を入力してください")
+        Me.ToolTip1.SetToolTip(Me.txtTableName, "Please input table name")
         '
         'cmdCancel
         '
@@ -96,7 +88,7 @@ Friend Class Form4
         Me.cmdCancel.Size = New System.Drawing.Size(80, 24)
         Me.cmdCancel.TabIndex = 6
         Me.cmdCancel.Text = "&Cancel"
-        Me.ToolTip1.SetToolTip(Me.cmdCancel, "ﾃｰﾌﾞﾙを作成せずにMain画面に戻ります")
+        Me.ToolTip1.SetToolTip(Me.cmdCancel, "Not create table,return to main screen.")
         '
         'cmdOk
         '
@@ -110,7 +102,7 @@ Friend Class Form4
         Me.cmdOk.Size = New System.Drawing.Size(80, 24)
         Me.cmdOk.TabIndex = 5
         Me.cmdOk.Text = "&Ok"
-        Me.ToolTip1.SetToolTip(Me.cmdOk, "新規にﾃｰﾌﾞﾙを作成します")
+        Me.ToolTip1.SetToolTip(Me.cmdOk, "Create table")
         '
         'frmLogin
         '
@@ -289,36 +281,33 @@ Friend Class Form4
         Me.ResumeLayout(False)
 
     End Sub
-#End Region 
-#Region "アップグレード ウィザードのサポート コード"
-	Private Shared m_vb6FormDefInstance As Form4
-	Private Shared m_InitializingDefInstance As Boolean
-	Public Shared Property DefInstance() As Form4
-		Get
-			If m_vb6FormDefInstance Is Nothing OrElse m_vb6FormDefInstance.IsDisposed Then
-				m_InitializingDefInstance = True
-				m_vb6FormDefInstance = New Form4()
-				m_InitializingDefInstance = False
-			End If
-			DefInstance = m_vb6FormDefInstance
-		End Get
-		Set
-			m_vb6FormDefInstance = Value
-		End Set
-	End Property
-#End Region 
-	Private Sub Frame1_DragDrop(ByRef Source As System.Windows.Forms.Control, ByRef X As Single, ByRef Y As Single)
-		
-	End Sub
-	
-	Private Sub cmdCancel_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdCancel.Click
-		Form1.DefInstance.TableChk = 0
-		Hide()
-	End Sub
-	
-	Private Sub cmdOk_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdOk.Click
-		Form1.DefInstance.TableChk = 1
-		Hide()
-	End Sub
+    Private Shared m_vb6FormDefInstance As Form4
+    Private Shared m_InitializingDefInstance As Boolean
+    Public Shared Property DefInstance() As Form4
+        Get
+            If m_vb6FormDefInstance Is Nothing OrElse m_vb6FormDefInstance.IsDisposed Then
+                m_InitializingDefInstance = True
+                m_vb6FormDefInstance = New Form4
+                m_InitializingDefInstance = False
+            End If
+            DefInstance = m_vb6FormDefInstance
+        End Get
+        Set(ByVal Value As Form4)
+            m_vb6FormDefInstance = Value
+        End Set
+    End Property
+    Private Sub Frame1_DragDrop(ByRef Source As System.Windows.Forms.Control, ByRef X As Single, ByRef Y As Single)
 
-  End Class
+    End Sub
+
+    Private Sub cmdCancel_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdCancel.Click
+        Form1.DefInstance.TableChk = 0
+        Hide()
+    End Sub
+
+    Private Sub cmdOk_Click(ByVal eventSender As System.Object, ByVal eventArgs As System.EventArgs) Handles cmdOk.Click
+        Form1.DefInstance.TableChk = 1
+        Hide()
+    End Sub
+
+End Class
