@@ -90,7 +90,6 @@ namespace Npgsql
                                     Connector = (NpgsqlConnector)Queue.Dequeue();
                                     Connector.Close();
                                 }
-                                Queue.InactiveTime = 0;
                             }
                             else
                             {
