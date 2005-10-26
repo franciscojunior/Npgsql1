@@ -73,7 +73,7 @@ namespace Npgsql
         
         private void TimerElapsedHandler(object sender, ElapsedEventArgs e)
         {
-            NpgsqlConnector   Connector;
+            NpgsqlConnector     Connector;
             lock (this)
             {
                 foreach (ConnectorQueue Queue in PooledConnectors.Values)
@@ -84,7 +84,11 @@ namespace Npgsql
                         {
                             if (Queue.InactiveTime >= Queue.ConnectionLifeTime)
                             {
-                                Int32 toBeClosed = (Queue.Count + Queue.UseCount - Queue.MinPoolSize + 1) / 2;
+                                Int32 diff = Queue.Count + Queue.UseCount - Queue.MinPoolSize;
+                                Int32 toBeClosed = (diff + 1) / 2;
+                                if (diff < 2)
+                                    diff = 2;
+                                Queue.InactiveTime -= Queue.ConnectionLifeTime / (int)(Math.Log(diff) / Math.Log(2));
                                 for (Int32 i = 0; i < toBeClosed; ++i)
                                 {
                                     Connector = (NpgsqlConnector)Queue.Dequeue();
@@ -103,7 +107,7 @@ namespace Npgsql
                     }
                     else
                     {
-                         Queue.InactiveTime = 0;
+                        Queue.InactiveTime = 0;
                     }
                 }
             }
