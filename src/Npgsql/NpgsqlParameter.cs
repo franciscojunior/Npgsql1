@@ -65,7 +65,8 @@ namespace Npgsql
         private DataRowVersion		    source_version = DataRowVersion.Current;
         private Object				    value = DBNull.Value;
         private System.Resources.ResourceManager resman;
-
+        
+        
         /// <summary>
 
         /// Initializes a new instance of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see> class.
@@ -74,7 +75,7 @@ namespace Npgsql
         {
             resman = new System.Resources.ResourceManager(this.GetType());
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME);
-            type_info = NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String));
+            //type_info = NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String));
         }
 
         /// <summary>
@@ -114,6 +115,8 @@ namespace Npgsql
                 {
                     throw new InvalidCastException(String.Format(resman.GetString("Exception_ImpossibleToCast"), value.GetType()));
                 }
+                
+                
 
             }
         }
@@ -354,6 +357,8 @@ namespace Npgsql
         {
             get
             {
+            	if (type_info == null)
+            		type_info = NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String));
                 return type_info;
             }
         }
