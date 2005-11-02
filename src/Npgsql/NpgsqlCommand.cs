@@ -251,7 +251,7 @@ namespace Npgsql
         internal NpgsqlConnector Connector {
             get
             {
-                if (connector == null && this.connection != null)
+                if (this.connection != null)
                     connector = this.connection.Connector;
 
                 return connector;
@@ -1247,7 +1247,7 @@ namespace Npgsql
             CheckConnectionState();
 
             // reset any responses just before getting new ones
-            connector.Mediator.ResetResponses();
+            Connector.Mediator.ResetResponses();
 
 
             if (parse == null)
