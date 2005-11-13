@@ -62,6 +62,7 @@
                 <include name="NpgsqlState.resx"/>
                 <include name="NpgsqlReadyState.resx"/>
                 <include name="PGUtil.resx"/>                                        
+                <include name="NpgsqlConnectionString.resx"/>                                        
                                 
 
             </resources>
