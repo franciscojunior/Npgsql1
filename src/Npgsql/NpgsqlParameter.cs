@@ -120,7 +120,21 @@ namespace Npgsql
 
             }
         }
-
+		
+		/// <summary>
+		/// Internal constructor to handle parameter creation from CommandBuilder passing a NpgsqlNativeTypeInfo directly.
+		/// </summary>
+		internal NpgsqlParameter(String parameterName, object value, NpgsqlNativeTypeInfo type_info)
+		{
+			resman = new System.Resources.ResourceManager(this.GetType());
+			NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, CLASSNAME, parameterName, value, type_info);
+			
+			this.ParameterName = parameterName;
+			this.value = (value == null) ? DBNull.Value : value;
+			
+			this.type_info = (type_info == null) ? NpgsqlTypesHelper.GetNativeTypeInfo(typeof(String)) : type_info;
+		}
+		
         /// <summary>
         /// Initializes a new instance of the <see cref="Npgsql.NpgsqlParameter">NpgsqlParameter</see>
         /// class with the parameter name and the data type.
