@@ -33,47 +33,13 @@ namespace NpgsqlTests
 
 
     [TestFixture]
-    public class ConnectionTests
+    public class ConnectionTests : BaseClassTests
     {
-        private NpgsqlConnection 	_conn = null;
-        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;";
-
-        [SetUp]
-        protected void SetUp()
-        {
-            //NpgsqlEventLog.Level = LogLevel.None;
-            //NpgsqlEventLog.Level = LogLevel.Debug;
-            //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
-            _conn = new NpgsqlConnection(_connString);
-        }
-
-        [TearDown]
-        protected void TearDown()
-        {
-            _conn.Close();
-        }
-
-
-        [Test]
-        public void Open()
-        {
-            try
-            {
-                _conn.Open();
-                //Assert.AreEqual("ConnectionOpen", ConnectionState.Open, _conn.State);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-
-
-        }
-
+        
         [Test]
         public void ChangeDatabase()
         {
-            _conn.Open();
+            
 
             _conn.ChangeDatabase("template1");
 
@@ -89,38 +55,25 @@ namespace NpgsqlTests
         [ExpectedException(typeof(InvalidOperationException))]
         public void NestedTransaction()
         {
-            _conn.Open();
+            
 
             NpgsqlTransaction t = null;
-            try
-            {
-                t = _conn.BeginTransaction();
+                
+            t = _conn.BeginTransaction();
 
-                t = _conn.BeginTransaction();
-            }
-            catch(Exception e)
-            {
-                // Catch exception so we call rollback the transaction initiated.
-                // This way, the connection pool doesn't get a connection with a transaction
-                // started.
-                t.Rollback();
-                throw e;
-            }
 
         }
 
         [Test]
         public void SequencialTransaction()
         {
-            _conn.Open();
+            
 
-            NpgsqlTransaction t = _conn.BeginTransaction();
+            _t.Rollback();
 
-            t.Rollback();
+            _t = _conn.BeginTransaction();
 
-            t = _conn.BeginTransaction();
-
-            t.Rollback();
+            
 
 
         }

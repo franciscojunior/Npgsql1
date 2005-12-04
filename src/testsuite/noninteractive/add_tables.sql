@@ -62,3 +62,13 @@ field_serial serial,
 field_char5 char(5),
 field_varchar5 varchar(5)
 );
+
+create table tableI(
+field_serial serial,
+"Field_Case_Sensitive" int4
+);
+
+create table metadatatest1(
+field_serial serial,
+field_pk    int4 primary key
+);

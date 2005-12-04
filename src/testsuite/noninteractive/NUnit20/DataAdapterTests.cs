@@ -36,34 +36,14 @@ namespace NpgsqlTests
 {
 
     [TestFixture]
-    public class DataAdapterTests
+    public class DataAdapterTests : BaseClassTests
     {
-
-        private NpgsqlConnection 	_conn = null;
-        private String 						_connString = "Server=localhost;User ID=npgsql_tests;Password=npgsql_tests;Database=npgsql_tests;";
-
-        [SetUp]
-        protected void SetUp()
-        {
-            //NpgsqlEventLog.Level = LogLevel.None;
-            //NpgsqlEventLog.Level = LogLevel.Debug;
-            //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
-            _conn = new NpgsqlConnection(_connString);
-        }
-
-        [TearDown]
-        protected void TearDown()
-        {
-            if (_conn.State != ConnectionState.Closed)
-                _conn.Close();
-        }
 
         [Test]
         public void InsertWithDataSet()
         {
 
-            _conn.Open();
-
+            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb", _conn);
@@ -113,7 +93,7 @@ namespace NpgsqlTests
             Assert.AreEqual(4, dr2[1]);
             Assert.AreEqual(7.3000000M, dr2[3]);
 
-            new NpgsqlCommand("delete from tableb where field_serial > 4", _conn).ExecuteNonQuery();
+            
 
 
 
@@ -123,8 +103,7 @@ namespace NpgsqlTests
         public void FillWithEmptyResultset()
         {
 
-            _conn.Open();
-
+            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = -1", _conn);
@@ -146,8 +125,7 @@ namespace NpgsqlTests
         public void UpdateLettingNullFieldValue()
         {
 
-            _conn.Open();
-            
+                        
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (2)", _conn);
             command.ExecuteNonQuery();
             
@@ -205,7 +183,7 @@ namespace NpgsqlTests
         [Test]
         public void FillWithDuplicateColumnName()
         {
-            _conn.Open();
+            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select field_serial, field_serial from tableb", _conn);
@@ -218,7 +196,7 @@ namespace NpgsqlTests
         public void UpdateWithDataSet()
         {
 
-            _conn.Open();
+            
             
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (2)", _conn);
             command.ExecuteNonQuery();
@@ -227,6 +205,8 @@ namespace NpgsqlTests
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = (select max(field_serial) from tableb)", _conn);
+            
+            NpgsqlCommandBuilder cb = new NpgsqlCommandBuilder(da);
             
             da.Fill(ds);
             
@@ -253,5 +233,62 @@ namespace NpgsqlTests
             
 
         }
+        
+        
+        [Test]
+        public void InsertWithCommandBuilderCaseSensitive()
+        {
+            
+
+            DataSet ds = new DataSet();
+
+            NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tablei", _conn);
+            NpgsqlCommandBuilder builder = new NpgsqlCommandBuilder(da);
+
+            da.Fill(ds);
+
+
+            DataTable dt = ds.Tables[0];
+
+            DataRow dr = dt.NewRow();
+            dr["Field_Case_Sensitive"] = 4;
+            
+            dt.Rows.Add(dr);
+
+
+            DataSet ds2 = ds.GetChanges();
+
+            da.Update(ds2);
+
+            ds.Merge(ds2);
+            ds.AcceptChanges();
+
+
+            NpgsqlDataReader dr2 = new NpgsqlCommand("select * from tablei", _conn).ExecuteReader();
+            dr2.Read();
+
+
+            Assert.AreEqual(4, dr2[1]);
+            Assert.AreEqual(7.3000000M, dr2[3]);
+
+            
+
+
+        }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     }
 }
