@@ -200,9 +200,13 @@
 
     <target name="tests" depends="build">
         <nant buildfile="./../testsuite/noninteractive/NUnit20/NpgsqlTests.build" inheritall="true"/>
-        <copy file="${ms.build.dir}/Npgsql.dll" todir="${nunit2tests.build.dir}"/>
+        <copy file="./../testsuite/noninteractive/NUnit20/NpgsqlTests.dll.config" todir="${nunit2tests.build.dir}" />
+	<copy file="${ms.build.dir}/Npgsql.dll" todir="${nunit2tests.build.dir}"/>
+	<copy file="${ms.build.dir}/Npgsql.dll.mdb" todir="${nunit2tests.build.dir}" failonerror="false"/>
+	<copy file="${ms.build.dir}/Npgsql.dll.pdb" todir="${nunit2tests.build.dir}" failonerror="false"/>
         <copy file="${tls.lib}" todir="${nunit2tests.build.dir}"/>
         <nunit2>
+	    <formatter type="Plain" usefile="true" extension=".log" outputdir="${nunit2tests.build.dir}" />
             <test assemblyname="${nunit2tests.build.dir}/NpgsqlTests.dll"/>
         </nunit2>
     </target>

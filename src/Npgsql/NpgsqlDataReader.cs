@@ -248,6 +248,7 @@ namespace Npgsql
         /// </summary>
         public DataTable GetSchemaTable()
         {
+            
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetSchemaTable");
 
             if(_currentResultsetSchema == null)
@@ -291,6 +292,7 @@ namespace Npgsql
         /// <summary>
         /// Return the data type OID of the column at index <param name="Index"></param>.
         /// </summary>
+        /// FIXME: Why this method returns String?
         public String GetDataTypeOID(Int32 Index)
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "GetDataTypeName");
@@ -889,7 +891,7 @@ namespace Npgsql
 
 			for (int i=0; i<keyLookup.primaryKey.Count; ++i)
 			{
-				if (fieldName == keyLookup.primaryKey[i])
+                if (fieldName == (String)keyLookup.primaryKey[i])
 					return true;
 			}
 
@@ -903,7 +905,7 @@ namespace Npgsql
 
 			for (int i=0; i<keyLookup.uniqueColumns.Count; ++i)
 			{
-				if (fieldName == keyLookup.uniqueColumns[i])
+                if (fieldName == (String)keyLookup.uniqueColumns[i])
 					return true;
 			}
 
@@ -924,6 +926,7 @@ namespace Npgsql
 
 		private KeyLookup GetKeys(Int32 tableOid)
 		{
+      
 			string getKeys = "select a.attname, ci.relname, i.indisprimary from pg_catalog.pg_class ct, pg_catalog.pg_class ci, pg_catalog.pg_attribute a, pg_catalog.pg_index i WHERE ct.oid=i.indrelid AND ci.oid=i.indexrelid AND a.attrelid=ci.oid AND i.indisunique AND ct.oid = :tableOid order by ci.relname";
 
 			KeyLookup lookup = new KeyLookup();
@@ -947,6 +950,7 @@ namespace Npgsql
 					// it means all values in this single column must be unique
 					while (dr.Read())
 					{
+         
 						columnName = dr.GetString(0);
 						currentKeyName = dr.GetString(1);
 						// if i.indisprimary

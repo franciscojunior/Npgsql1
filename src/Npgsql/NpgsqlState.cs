@@ -175,6 +175,7 @@ namespace Npgsql
                     {
                         NpgsqlError error = new NpgsqlError(context.BackendProtocolVersion);
                         error.ReadFromStream(stream, context.Encoding);
+                        error.ErrorSql = mediator.SqlSent;
 
                         mediator.Errors.Add(error);
 
@@ -446,6 +447,7 @@ namespace Npgsql
                     {
                         NpgsqlError error = new NpgsqlError(context.BackendProtocolVersion);
                         error.ReadFromStream(stream, context.Encoding);
+                        error.ErrorSql = mediator.SqlSent;
 
                         mediator.Errors.Add(error);
 
