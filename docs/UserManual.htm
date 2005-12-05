@@ -81,12 +81,97 @@ p.headnotes {
 
 <h2> 1. What is Npgsql? </h2>
 
-<p> Npgsql is a .Net Data Provider for <a href="http://www.postgresql.org">Postgresql Database Server</a>. </p>
+<p> <a href="http://pgfoundry.org/projects/npgsql/">Npgsql </a> is a .Net Data Provider for <a href="http://www.postgresql.org">Postgresql Database Server</a>. </p>
 
 <p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to use a PostgreSQL server to send and receive data. It is developed using the
 guidelines specified in the .Net docs.</p>
 
-<h2> 2. Npgsql Usage </h2>
+<h2> 2. How to get and compile Npgsql </h2>
+
+<h3> 2.1 Binary package </h3>
+<p> You can get Npgsql compiled for MS.Net and Mono in the <a href="http://pgfoundry.org/frs/?group_id=1000140">Files section </a> of the project.</p>
+<p> Inside this package you will have the following directory layout: </p>
+<p> Npgsql/bin/docs - Documentation </p>
+<p> Npgsql/bin/docs/apidocs - API Documentation </p>
+<p> Npgsql/bin/ms1.1 - Npgsql compiled for MS.Net 1.1 </p>
+<p> Npgsql/bin/mono - Npgsql compiled for Mono </p>
+
+<p>As soon as Npgsql is released for other platforms/versions, they will be added accordingly to this layout.<p>
+
+<h3> 2.2 Installing binary package </h3>
+
+<p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
+directory as a path to private components through a configuration file (using the probing element). Please, see the .Net docs for information
+on how the runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
+<p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
+So, for example the application directory is called "ASPNETApplication", Npgsql.dll and Mono.Security.dll must be placed in the "ASPNETApplication\bin" directory.
+If it's not, you will get a lot of compiling errors when trying to use Npgsql.</p>
+<p> You can also put the Npgsql assembly in the Global Cache Assembly. Since 0.4 version, Npgsql is strongly signed which means you can
+use gacutil to install it. Issue the following command to do it:</p>
+<pre class="CodeBox">
+gacutil -i Npgsql.dll
+</pre>
+
+<p> Please, refer to "Installing an Assembly in the Global Cache Assembly" section of MSDN docs for more help.
+
+<p> Alternatively, you can install Npgsql on GAC (Global Assembly Cache) in order to all your applications have access to it without needing to copy Npgsql.dll all times. Note that put Npgsql in GAC is required if you want to use Npgsql design time support on VS.Net. 
+
+<p> Note that Npgsql compiled for Mono doesn't need Mono.Security.dll as it is already integrated in Mono Runtime.</p>
+
+
+<p> After that, you are set to try the examples. Just go to <a href="#section3">section 3</a>. </p>
+
+<h3> 2.3 Getting Npgsql from cvs </h3>
+
+<p> To get Npgsql from cvs use the following info in your cvs client: </p>
+Server: cvs.pgfoundry.org
+<br />
+Repository: /cvsroot/npgsql
+<br />
+Module name: Npgsql
+<br />
+User: anonymous
+<br />
+Password:
+
+
+
+<p> If you are using cvs from command line, just do that: </p>
+cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql login
+<br />
+Hit Enter key when prompted for a password
+<br />
+cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql checkout Npgsql
+
+<p> You will start to get the code: </p>
+
+<pre class="CodeBox">
+$ cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql login
+Logging in to :pserver:anonymous@cvs.pgfoundry.org:2401/cvsroot/npgsql
+CVS password:
+$ cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql co Npgsql
+cvs checkout: Updating Npgsql
+cvs checkout: Updating Npgsql/admin
+U Npgsql/admin/release.pl
+cvs checkout: Updating Npgsql/docs
+U Npgsql/docs/Npgsql.zargo
+U Npgsql/docs/NpgsqlConnectionStateMachine.png
+U Npgsql/docs/SuggestedReadings.htm
+...
+</pre>
+
+
+<h3> 2.4 Compiling Npgsql</h3>
+
+<p>The officially supported method to compile Npgsql is using <a href="http://nant.sf.net">NAnt</a>.</p>
+
+<p>You just need to run <i>nant</i> from Npgsql/src/Npgsql folder and you are done. It will create a folder called build where it will put the assembly in the build/ms folder.</p>
+
+<p>To run nunit tests, you just need to call <i>nant tests</i>. Note that first you need to setup database for tests by executing the add_* scripts in the Npgsql/src/testsuite/noninteractive folder.
+
+<p>We will provide solution projects for other development platforms like VS.Net, SharpDevelop and MonoDevelop. We already received reports of success solution projects and will make them available soon.</p>
+
+<h2> <a name="section3"></a>3. Npgsql Usage </h2>
 
 <p> This section explains Npgsql usage in a .Net Application. If you are used to developing Data Access applications using the
 Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
@@ -686,6 +771,7 @@ public class t
 
 <h3>Working with binary data and bytea datatype</h3>
 
+<p> <font color="red"> Warning: </font> There is a known issue when working with bytea datatype and large data. Npgsql will consume very much memory. Please, if you need to insert more that 4MB of data, please, use Large Object API. For updates on this issue, check <a href="http://pgfoundry.org/tracker/index.php?func=detail&aid=1000458&group_id=1000140&atid=590">here </a> </p>
 <p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix "database" in its end.</p>
 <p> table schema: 
     create table tableBytea (field_serial serial, field_bytea bytea)
@@ -977,24 +1063,11 @@ public class c
 <p> That's it!. One last thing worth noting is that <font color="red"> you have to use transaction</font> in order to this work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished just after you do the function call.
 
 
-<h3> 2.1 Npgsql.dll file location </h3>
-
-<p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
-directory as a path to private components through a configuration file (using the probing element). Please, see the .Net docs for information
-on how the runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
-<p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
-So, for example the application directory is called "ASPNETApplication", Npgsql.dll must be placed in the "ASPNETApplication\bin" directory.
-If it's not, you will get a lot of compiling errors when trying to use Npgsql.</p>
-<p> You can also put the Npgsql assembly in the Global Cache Assembly. Since 0.4 version, Npgsql is strongly signed which means you can
-use gacutil to install it. Issue the following command to do it:</p>
-<pre class="CodeBox">
-gacutil -i Npgsql.dll
-</pre>
-
-<p> Please, refer to "Installing an Assembly in the Global Cache Assembly" section of MSDN docs for more help.
 
 
-<h3> 2.2 Using Npgsql Logging support </h3>
+
+
+<h3> 3.1 Using Npgsql Logging support </h3>
 
 <p> Sometimes it is necessary to trace Npgsql's behaviour to track errors. Npgsql can log messages to a specified file or to the console or both.
 
@@ -1078,7 +1151,7 @@ Entering NpgsqlConnection.Close()
 <p>I used the Debug level to show that a lot of information can be obtained. Of course, using the Normal level would be less verbose.
 Also, this same information was added to the file NpgsqlTests.LogFile.</p>
 
-<h3> 2.3 Npgsql design time support </h3>
+<h3> 3.2 Npgsql design time support - VS.Net support </h3>
 
 <p>
 Npgsql 0.6 and higher provide initial design time support.
@@ -1098,7 +1171,7 @@ There is also a Dialog to edit and validate the ConnectionString
 As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
 </p>
 
-<h2> 3. Current Npgsql Status </h2>
+<h2> 4. Current Npgsql Status </h2>
 
 <h3> Supported data types </h3>
 
