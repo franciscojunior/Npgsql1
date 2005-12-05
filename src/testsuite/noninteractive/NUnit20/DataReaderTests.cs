@@ -685,6 +685,46 @@ namespace NpgsqlTests
 
         }
         
+        [Test]
+        public void SchemaOnlyCommandBehaviorSupport()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea", _conn);
+
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SchemaOnly);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(0, i);
+
+
+        }
+        
+        
+        [Test]
+        public void SchemaOnlyCommandBehaviorSupportFunctioncall()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("funcb", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SchemaOnly);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(0, i);
+
+
+        }
+        
                
     }
 }
