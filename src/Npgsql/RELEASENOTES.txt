@@ -1,5 +1,37 @@
 
 
+2005-12-05
+
+    Npgsql 1.0 Beta1
+    
+    Features added:
+        
+        NpgsqlCommandBuilder: Implemented DeriveParameters.
+
+        Improved performance. Now Npgsql performs from 10% to 20% better!. (Josh Cooley)
+                
+        NpgsqlDataReader: Added support for IsUnique and IsKey in GetSchemaTable.  Also added check for CommandBehavior so that additional queries are only performed when CommandBehavior.KeyInfo is specified. Mono should now be able to fill a DataTable about 3x faster when not requesting key info (the default action). (Josh Cooley)
+        
+        [#1000443] sql in Exception. Now it is possible to retrieve the sql text which caused some error by checking the ErrorSql property of NpgsqlException and NpgsqlError.
+        
+    
+    Bug fixes:
+    
+        [gborg 1450] Fixed missing resource file with error messages of NpgsqlConnectionString. Whenever an error with connection string happend, instead of showing proper message
+        an exception was thrown.
+        
+        [gborg 1392] Fixed case sensitivity problems when using NpgsqlCommandBuilder. Now, all field and table names are properly quoted. Thanks Gridnine Systems (www.gridnine.com) for patch. [#1000447]  
+    
+        Fixed NpgsqlDataReader.FillSchemaTable_v3 to use primary keys information when it is available.  Thanks to Carlo Ieva (carloi) for spotting the problem. (Josh Cooley)
+        
+        [#1000401] Fixed connection pooling problems when idle connections weren't closed. Now they are properly closed after a configurable time is elapsed. Thanks Ivan (ivan-sun1) for fix.
+        
+        [gborg 1430] Fixed problem where Npgsql isn't setting NpgsqlParameter type correctly based on parameter type. It was being always set to String.
+        
+        [gborg 1403] Fixed weird problem with NpgsqlConnection.ChangeDatabase(). This problem only rise when trying to change the database in a connection of an existing command and trying to execute the command again. NpgsqlCommand wasn't getting the changed database connection correctly. Thanks Ueli Marti (ueli.marti) for testcase and heads up.
+        
+        [#1000462] FillSchema is reading entire table? Added support for SchemaOnly command behavior. Thanks Darin Keever (duwketx) for feedback.
+
 2005-08-24
 
     Npgsql 0.7.1
