@@ -1,8 +1,16 @@
 
 
-2005-12-05
+2005-12-06
 
     Npgsql 1.0 Beta1
+    
+    Important Notice about Assembly version.
+        
+        Starting with this version, we adopted a new assembly version number schema. We will use numbers near 100 to indicate beta and rc versions. 98 for beta and 99 for rc.
+        
+        This 1.0beta1 version has assembly version 0.98.1. Beta 2 will be 0.98.2, rc1 will be 0.99.1 and so on.
+        
+        We hope this change will help improve better feedback about what Npgsql version is being used.
     
     Features added:
         
