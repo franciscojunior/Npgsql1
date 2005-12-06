@@ -1650,7 +1650,7 @@ namespace NpgsqlTests
         [Test]
         public void AmbiguousFunctionParameterType()
         {
-            NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User Id=npgsql_tests;Password=npgsql_tests");
+            NpgsqlConnection conn = new NpgsqlConnection(_connString);
 
 
             NpgsqlCommand command = new NpgsqlCommand("ambiguousParameterType(:a, :b, :c, :d, :e, :f)", conn);
@@ -1685,7 +1685,7 @@ namespace NpgsqlTests
         [Test]
         public void AmbiguousFunctionParameterTypePrepared()
         {
-            NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User Id=npgsql_tests;Password=npgsql_tests");
+            NpgsqlConnection conn = new NpgsqlConnection(_connString);
 
 
             NpgsqlCommand command = new NpgsqlCommand("ambiguousParameterType(:a, :b, :c, :d, :e, :f)", conn);
