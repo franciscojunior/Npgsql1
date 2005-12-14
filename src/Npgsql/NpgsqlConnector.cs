@@ -234,6 +234,11 @@ namespace Npgsql
         {
             CurrentState.Bind(this, bind);
         }
+        
+        internal void Describe (NpgsqlDescribe describe)
+        {
+            CurrentState.Describe(this, describe);
+        }
 
         internal void Execute (NpgsqlExecute execute)
         {

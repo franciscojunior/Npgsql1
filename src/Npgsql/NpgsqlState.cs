@@ -93,6 +93,11 @@ namespace Npgsql
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
+        
+        public virtual void Describe(NpgsqlConnector context, NpgsqlDescribe describe)
+        {
+            throw new InvalidOperationException("Internal Error! " + this);
+        }
 
         public virtual void Close( NpgsqlConnector context )
         {
@@ -154,7 +159,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Stream);
+            Stream 	stream = context.Stream;
             NpgsqlMediator mediator = context.Mediator;
 
             // Often used buffer
@@ -424,7 +429,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ProcessBackendResponses");
 
-            BufferedStream 	stream = new BufferedStream(context.Stream);
+            Stream 	stream = context.Stream;
             NpgsqlMediator mediator = context.Mediator;
 
             // Often used buffers
@@ -572,6 +577,17 @@ namespace Npgsql
                     }
 
                     // Now wait for the AsciiRow messages.
+                    break;
+                case NpgsqlMessageTypes_Ver_3.ParameterDescription:
+                    
+                    // Do nothing,for instance,  just read...
+                    int lenght = PGUtil.ReadInt32(stream, inputBuffer);
+                    int nb_param = PGUtil.ReadInt16(stream, inputBuffer);
+                    for (int i=0; i < nb_param; i++)
+                    {
+                        int typeoid = PGUtil.ReadInt32(stream, inputBuffer);
+                    }
+                    
                     break;
 
                 case NpgsqlMessageTypes_Ver_3.DataRow:

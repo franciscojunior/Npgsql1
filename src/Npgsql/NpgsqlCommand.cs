@@ -598,18 +598,33 @@ namespace Npgsql
             if (parameters.Count != 0)
             {
                 Object[] parameterValues = new Object[parameters.Count];
+                Int16[] parameterFormatCodes = bind.ParameterFormatCodes;
+                
                 for (Int32 i = 0; i < parameters.Count; i++)
                 {
                     // Do not quote strings, or escape existing quotes - this will be handled by the backend.
                     // DBNull or null values are returned as null.
                     // TODO: Would it be better to remove this null special handling out of ConvertToBackend??
-                    parameterValues[i] = parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, true);
+                    
+                    // Do special handling of bytea values. They will be send in binary form.
+                    // TODO: Add binary format support for all supported types. Not only bytea.
+                    if (parameters[i].TypeInfo.NpgsqlDbType != NpgsqlDbType.Bytea)
+                    {
+                        
+                        parameterValues[i] = parameters[i].TypeInfo.ConvertToBackend(parameters[i].Value, true);
+                    }
+                    else
+                    {
+                        parameterFormatCodes[i] = (Int16) FormatCode.Binary;
+                        parameterValues[i]=(byte[])parameters[i].Value;
+                    }
                 }
                 bind.ParameterValues = parameterValues;
+                bind.ParameterFormatCodes = parameterFormatCodes;
             }
 
             Connector.Bind(bind);
-            Connector.Mediator.RequireReadyForQuery = false;
+            //Connector.Mediator.RequireReadyForQuery = false;
             Connector.Flush();
 
             connector.CheckErrorsAndNotifications();
@@ -687,20 +702,57 @@ namespace Npgsql
             else
             {
                 // Use the extended query parsing...
-                //planName = "NpgsqlPlan" + Connector.NextPlanIndex();
                 planName = Connector.NextPlanName();
                 String portalName = Connector.NextPortalName();
 
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
                 Connector.Parse(parse);
-                Connector.Mediator.RequireReadyForQuery = false;
+                //Connector.Mediator.RequireReadyForQuery = false;
                 Connector.Flush();
 
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();
 
-                bind = new NpgsqlBind("", planName, new Int16[] {0}, null, new Int16[] {0});
+                
+                // Description...
+                NpgsqlDescribe describe = new NpgsqlDescribe('S', planName);
+            
+            
+                Connector.Describe(describe);
+                
+                Connector.Sync();
+                
+                Npgsql.NpgsqlRowDescription returnRowDesc = Connector.Mediator.LastRowDescription;
+            
+                Int16[] resultFormatCodes;
+                
+                
+                if (returnRowDesc != null)
+                {
+                    resultFormatCodes = new Int16[returnRowDesc.NumFields];
+                    
+                    for (int i=0; i < returnRowDesc.NumFields; i++)
+                    {
+                        Npgsql.NpgsqlRowDescriptionFieldData returnRowDescData = returnRowDesc[i];
+                        if (returnRowDescData.type_info.NpgsqlDbType == NpgsqlTypes.NpgsqlDbType.Bytea)
+                        {
+                        // Binary format
+                            resultFormatCodes[i] = (Int16)FormatCode.Binary;
+                        }
+                        else 
+                        // Text Format
+                            resultFormatCodes[i] = (Int16)FormatCode.Text;
+                    }
+                
+                    
+                }
+                else
+                    resultFormatCodes = new Int16[]{0};
+                
+                bind = new NpgsqlBind("", planName, new Int16[Parameters.Count], null, resultFormatCodes);
+                
+                
             }
         }
 
