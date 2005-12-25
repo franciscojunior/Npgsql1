@@ -56,7 +56,7 @@ namespace Npgsql
             _conn = conn;
             _isolation = isolation;
 
-            StringBuilder commandText = new StringBuilder("BEGIN TRANSACTION ISOLATION LEVEL ");
+            StringBuilder commandText = new StringBuilder("BEGIN; SET TRANSACTION ISOLATION LEVEL ");
 
             if ( (isolation == IsolationLevel.RepeatableRead) || 
                  (isolation == IsolationLevel.Serializable)
