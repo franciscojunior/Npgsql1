@@ -213,7 +213,7 @@ namespace Npgsql
 								table_name = row.Table.TableName;
 							}
 						}
-						fields += GetQuotedName(schemaRow["BaseColumnName"]);
+						fields += GetQuotedName((string)schemaRow["BaseColumnName"]);
 						values += ":param_" + schemaRow["ColumnName"];
 						first = false;
 					}
@@ -258,8 +258,8 @@ namespace Npgsql
 							table_name = row.Table.TableName;
 						}
 					}
-					sets += String.Format("{0} = :s_param_{1}", GetQuotedName(schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
-					wheres += String.Format("(({0} is null) or ({0} = :w_param_{1}))", GetQuotedName(schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
+					sets += String.Format("{0} = :s_param_{1}", GetQuotedName((string)schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
+					wheres += String.Format("(({0} is null) or ({0} = :w_param_{1}))", GetQuotedName((string)schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
 					first = false;
 				}
                 NpgsqlCommand cmdaux = new NpgsqlCommand("update " + GetQuotedName(table_name) + " set " + sets + " where ( " + wheres + " )", data_adapter.SelectCommand.Connection);
@@ -310,7 +310,7 @@ namespace Npgsql
 							table_name = row.Table.TableName;
 						}
 					}
-					wheres += String.Format("(({0} is null) or ({0} = :param_{1}))", GetQuotedName(schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
+					wheres += String.Format("(({0} is null) or ({0} = :param_{1}))", GetQuotedName((string)schemaRow["BaseColumnName"]), schemaRow["ColumnName"]);
 					first = false;
 				}
                 NpgsqlCommand cmdaux = new NpgsqlCommand("delete from " + GetQuotedName(table_name) + " where ( " + wheres + " )", data_adapter.SelectCommand.Connection);
