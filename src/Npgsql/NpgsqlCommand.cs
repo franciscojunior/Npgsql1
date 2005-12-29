@@ -52,6 +52,7 @@ namespace Npgsql
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlCommand";
         private static ResourceManager resman = new ResourceManager(typeof(NpgsqlCommand));
+        private static readonly Regex parameterReplace = new Regex(@"(:[\w\.]*)|(@[\w\.]*)|(.)", RegexOptions.Singleline);
 
         private NpgsqlConnection            connection;
         private NpgsqlConnector             connector;
@@ -884,13 +885,9 @@ namespace Npgsql
             if (!addProcedureParenthesis)
             {
 
-                Regex a = new Regex(@"(:[\w]*)|(@[\w]*)|(.)", RegexOptions.Singleline);
-
-                //CheckParameters();
-
                 StringBuilder sb = new StringBuilder();
 
-                for ( Match m = a.Match(result); m.Success; m = m.NextMatch() )
+                for ( Match m = parameterReplace.Match(result); m.Success; m = m.NextMatch() )
                 {
                     String s = m.Groups[0].ToString();
 
@@ -1213,7 +1210,7 @@ namespace Npgsql
 
                 }
 
-                //[TODO] Check if there is any missing parameters in the query.
+                //[TODO] Check if there are any missing parameters in the query.
                 // For while, an error is thrown saying about the ':' char.
 
                 command.Append('(');
@@ -1254,7 +1251,7 @@ namespace Npgsql
 
             while(paramStart > -1)
             {
-                if((resLen > paramEnd) && !Char.IsLetterOrDigit(result, paramEnd))
+                if((resLen > paramEnd) && !Char.IsLetterOrDigit(result, paramEnd) && result[paramEnd] != '_')
                 {
                     result = result.Substring(0, paramStart) + paramVal + result.Substring(paramEnd);
                     found = true;
