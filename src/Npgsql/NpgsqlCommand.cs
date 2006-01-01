@@ -52,7 +52,7 @@ namespace Npgsql
         // Logging related values
         private static readonly String CLASSNAME = "NpgsqlCommand";
         private static ResourceManager resman = new ResourceManager(typeof(NpgsqlCommand));
-        private static readonly Regex parameterReplace = new Regex(@"(:[\w\.]*)|(@[\w\.]*)|(.)", RegexOptions.Singleline);
+        private static readonly Regex parameterReplace = new Regex(@"([:@][\w\.]*)", RegexOptions.Singleline);
 
         private NpgsqlConnection            connection;
         private NpgsqlConnector             connector;
@@ -69,6 +69,8 @@ namespace Npgsql
         private Boolean						invalidTransactionDetected = false;
         
         private CommandBehavior             commandBehavior;
+
+        private Int64                       lastInsertedOID = 0;
 
         // Constructors
 
@@ -353,6 +355,19 @@ namespace Npgsql
         }
 
         /// <summary>
+        /// Returns oid of inserted row. This is only updated when using executenonQuery and when command inserts just a single row. If table is created without oids, this will always be 0.
+        /// </summary>
+
+	public Int64 LastInsertedOID
+        {
+            get
+            {
+                return lastInsertedOID;
+            }
+        }
+
+
+        /// <summary>
         /// Attempts to cancel the execution of a <see cref="Npgsql.NpgsqlCommand">NpgsqlCommand</see>.
         /// </summary>
         /// <remarks>This Method isn't implemented yet.</remarks>
@@ -414,6 +429,9 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ExecuteNonQuery");
 
+            // Initialize lastInsertOID
+            lastInsertedOID = 0;
+
             ExecuteCommand();
             
             UpdateOutputParameters();
@@ -444,8 +462,14 @@ namespace Npgsql
                 // The number of rows affected is in the third token for insert queries
                 // and in the second token for update and delete queries.
                 // In other words, it is the last token in the 0-based array.
+            {
+                if (String.Compare(ret_string_tokens[0], "INSERT", true) == 0)
+                    // Get oid of inserted row.
+                    lastInsertedOID = Int32.Parse(ret_string_tokens[1]);
+                
 
                 return Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
+            }
             else
                 return -1;
         }
@@ -884,24 +908,22 @@ namespace Npgsql
             // If parenthesis don't need to be added, they were added by user with parameter names. Replace them.
             if (!addProcedureParenthesis)
             {
-
                 StringBuilder sb = new StringBuilder();
+                NpgsqlParameter p;
+                string[] queryparts = parameterReplace.Split(result);
 
-                for ( Match m = parameterReplace.Match(result); m.Success; m = m.NextMatch() )
+                foreach (String s in queryparts)
                 {
-                    String s = m.Groups[0].ToString();
+                    if (s == string.Empty)
+                        continue;
 
-                    if ((s.StartsWith(":") ||
-                         s.StartsWith("@")) &&
-                         Parameters.Contains(s))
+                    if ((s[0] == ':' || s[0] == '@') &&
+                        Parameters.TryGetValue(s, out p))
                     {
                         // It's a parameter. Lets handle it.
-
-                        NpgsqlParameter p = Parameters[s];
                         if ((p.Direction == ParameterDirection.Input) ||
                              (p.Direction == ParameterDirection.InputOutput))
                         {
-
                             // FIXME DEBUG ONLY
                             // adding the '::<datatype>' on the end of a parameter is a highly
                             // questionable practice, but it is great for debugging!
@@ -922,12 +944,10 @@ namespace Npgsql
                     }
                     else
                         sb.Append(s);
-
                 }
 
                 result = sb.ToString();
             }
-
 
             else
             {
