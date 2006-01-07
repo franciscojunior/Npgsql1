@@ -309,13 +309,30 @@ namespace NpgsqlTests
         {
             
 
-            NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :a or field_serial = :aa", _conn);
-            command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32, 4, "a"));
-            command.Parameters.Add(new NpgsqlParameter("aa", DbType.Int32, 4, "aa"));
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :test_name or field_serial = :test_name_long", _conn);
+            command.Parameters.Add(new NpgsqlParameter("test_name", DbType.Int32, 4, "a"));
+            command.Parameters.Add(new NpgsqlParameter("test_name_long", DbType.Int32, 4, "aa"));
 
             command.Parameters[0].Value = 2;
             command.Parameters[1].Value = 3;
 
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+        }
+        
+        [Test]
+        public void TestOverlappedParameterNamesWithPrepare()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_serial = :test_name or field_serial = :test_name_long", _conn);
+            command.Parameters.Add(new NpgsqlParameter("test_name", DbType.Int32, 4, "abc_de"));
+            command.Parameters.Add(new NpgsqlParameter("test_name_long", DbType.Int32, 4, "abc_defg"));
+
+            command.Parameters[0].Value = 2;
+            command.Parameters[1].Value = 3;
+
+            command.Prepare();
+            
             NpgsqlDataReader dr = command.ExecuteReader();
 
         }
@@ -681,6 +698,25 @@ namespace NpgsqlTests
             
             dr.Close();
             
+
+
+        }
+        
+        [Test]
+        public void SchemaOnlySingleRowCommandBehaviorSupport()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("select * from tablea", _conn);
+
+            NpgsqlDataReader dr = command.ExecuteReader(CommandBehavior.SchemaOnly | CommandBehavior.SingleRow);
+
+            
+            Int32 i = 0;
+            
+            while (dr.Read())
+                i++;
+            
+            Assert.AreEqual(0, i);
 
 
         }

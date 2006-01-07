@@ -269,7 +269,7 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(4, dr2[1]);
-            Assert.AreEqual(7.3000000M, dr2[3]);
+            
 
             
 

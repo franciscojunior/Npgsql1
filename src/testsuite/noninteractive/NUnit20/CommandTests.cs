@@ -958,6 +958,30 @@ namespace NpgsqlTests
 
         }
         
+        [Test]
+        public void ByteaInsertWithPrepareSupport()
+        {
+            
+
+
+            Byte[] toStore = { 1 };
+
+            NpgsqlCommand cmd = new NpgsqlCommand("insert into tablef(field_bytea) values (:val)", _conn);
+            cmd.Parameters.Add(new NpgsqlParameter("val", DbType.Binary));
+            cmd.Parameters[0].Value = toStore;
+            cmd.Prepare();
+            cmd.ExecuteNonQuery();
+
+            cmd = new NpgsqlCommand("select field_bytea from tablef where field_serial = (select max(field_serial) from tablef)", _conn);
+            
+            cmd.Prepare();
+            Byte[] result = (Byte[])cmd.ExecuteScalar();
+            
+            
+            Assert.AreEqual(toStore, result);
+
+        }
+        
         
         
 		[Test]
@@ -2137,6 +2161,146 @@ field_serial = :a
             
         }
 
+        [Test]
+        public void ReadUncommitedTransactionSupport()
+        {
+            String sql = "select 1 as test";
+            
+            NpgsqlConnection c = new NpgsqlConnection(_connString);
+            
+            c.Open();
+            
+            NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.ReadUncommitted);
+            
+            NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
+                
+            command.ExecuteReader();
+            
+            
+            
+            
+            
+        }
+        
+        [Test]
+        public void RepeatableReadTransactionSupport()
+        {
+            String sql = "select 1 as test";
+            
+            NpgsqlConnection c = new NpgsqlConnection(_connString);
+            
+            c.Open();
+            
+            NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.RepeatableRead);
+            
+            NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
+                
+            command.ExecuteReader();
+            
+            
+            c.Close();
+            
+            
+            
+            
+        }
+        
+        [Test]
+        public void SetTransactionToSerializable()
+        {
+            String sql = "show transaction_isolation;";
+            
+            NpgsqlConnection c = new NpgsqlConnection(_connString);
+            
+            c.Open();
+            
+            NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.Serializable);
+            
+            NpgsqlCommand command = new NpgsqlCommand(sql, c);
+            
+            String isolation = (String)command.ExecuteScalar();
+            
+            c.Close();
+                
+            Assert.AreEqual("serializable", isolation);
+            
+            
+            
+            
+            
+            
+            
+        }
+        
+        
+        [Test]
+        public void TestParameterNameWithDot()
+        {
+            
+            
+            String sql = "insert into tableh(field_char5) values ( :a.parameter );" ;
+    
+            String aValue = "atest";
+    
+            NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
+    
+            command.Parameters.Add(new NpgsqlParameter(":a.parameter", NpgsqlDbType.Char));
+    
+            command.Parameters[":a.parameter"].Value = aValue;
+            command.Parameters[":a.parameter"].Size = 5;
+            
+            
+            Int32 rowsAdded = -1;
+            try
+            {
+                rowsAdded = command.ExecuteNonQuery();
+            }
+            catch (NpgsqlException e)
+            {
+                Console.WriteLine(e.ErrorSql);
+            }
+            
+            NpgsqlCommand command2 = new NpgsqlCommand("select field_char5 from tableh where field_serial = (select max(field_serial) from tableh)", _conn);
+            
+            String a = (String)command2.ExecuteScalar();
+            
+            Assert.AreEqual(aValue, a);
+            
+    
+        }
+
+
+        [Test]
+        public void LastInsertedOidSupport()
+        {
+
+            NpgsqlCommand insertCommand = new NpgsqlCommand("insert into tablea(field_text) values ('a');", _conn);
+            // Insert this dummy row, just to enable us to see what was the last oid in order we can assert it later.
+            insertCommand.ExecuteNonQuery();
+
+            NpgsqlCommand selectCommand = new NpgsqlCommand("select max(oid) from tablea;", _conn);     
+
+
+            Int64 previousOid = (Int64) selectCommand.ExecuteScalar();
+
+            insertCommand.ExecuteNonQuery();
+
+            Assert.AreEqual(previousOid + 1, insertCommand.LastInsertedOID);
+
+            
+        }
+        
+        [Test]
+        public void SetServerVersionToNull()
+        {
+
+            ServerVersion o = _conn.ServerVersion;
+            
+            Boolean b = (o == null);
+            
+
+            
+        }
         
         
     }
