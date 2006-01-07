@@ -1,7 +1,7 @@
 
 Npgsql - .Net Data Provider for PostgreSQL
 
-Development Version 0.7 beta6
+Development Version 1.0beta2
 
 
 WHAT'S IT?
@@ -20,7 +20,7 @@ HISTORY
 DEVELOPERS
 ==========
     
-    We have the following developers who work or have worked with Npgsql since its beginning:
+    We have the following developers who work or have worked with Npgsql since its beginning, in no particular order:
     
     Brar Piening
     Francisco Figueiredo Jr.
@@ -29,6 +29,7 @@ DEVELOPERS
     Dave Page
     Ulrich Sprick
     Glen Parker
+    Josh Cooley
     
 
     
@@ -36,20 +37,9 @@ CONTACT INFO
 ============
     
     Web:
-    All info related to Npgsql can be found in its homepage: http://gborg.postgresql.org/project/npgsql
+    All info related to Npgsql can be found in its homepage: http://pgfoundry.org/projects/npgsql
     
-    Mailing Lists:
-    Info about the mailing lists of Npgsql can be found at: http://gborg.postgresql.org/mailman/listinfo/npgsql
     
 
-DOWNLOADS
-=========
-    
-    We have two types of releases: stable and development. 
-    Stable releases can be found at: http://gborg.postgresql.org/project/npgsql/download/download.php
-    Development releases can be found at:
-    http://gborg.postgresql.org/project/npgsql/download/download.php?branch=devel
-    
-    Although being development releases, these releases are usually production ready. When there are possible problems they will be stated so you can decide if you want to go with them or just give it a try.
     
 

@@ -1,5 +1,27 @@
 
 
+
+2006-01-08
+
+    Npgsql 1.0 Beta2
+    
+    Features added:
+        
+        Added Npgsql .Net 2.0 assembly versions for MS.Net and Mono.
+        
+        Improved performance. Thanks Hubert Fongarnand and Bryan Mayland who sent a lot of optimizations to Npgsql.
+        [#1000454] Getting identifier of an inserted row. Added property LastInsertedOID to NpgsqlCommand. This property only works when using a single insert command and the table was created with oids else it returns 0.
+    
+    Bug fixes:
+    
+        [bugzilla 76961] Fixed problem with ExecuteReader when using SchemaOnly and SingleRow behavior at same time. Thanks Kamil Skalski for feedback.
+        [#1000491] Fixed transaction isolation level setting. Thanks Ottó Havasvölgyi for heads up.
+        [#1000497] Dot in parameter name causes exception
+        [#1000500] Problem with parsing parameters when using Command.Prepare();
+        [#1000517] ServerVersion operator overload. Fixed. Thanks Otto for heads up.
+        
+
+
 2005-12-06
 
     Npgsql 1.0 Beta1
