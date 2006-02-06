@@ -1260,41 +1260,51 @@ namespace Npgsql
         }
 
 
-        private String ReplaceParameterValue(String result, String parameterName, String paramVal)
+        private static String ReplaceParameterValue(String result, String parameterName, String paramVal)
         {
-            Int32 resLen = result.Length;
-            Int32 paramStart = result.IndexOf(parameterName);
-            Int32 paramLen = parameterName.Length;
-            Int32 paramEnd = paramStart + paramLen;
-            Boolean found = false;
-
-
-            while(paramStart > -1)
-            {
-                if((resLen > paramEnd) && !Char.IsLetterOrDigit(result, paramEnd) && result[paramEnd] != '_')
-                {
-                    result = result.Substring(0, paramStart) + paramVal + result.Substring(paramEnd);
-                    found = true;
-                }
-                else if(resLen == paramEnd)
-                {
-                    result = result.Substring(0, paramStart)+ paramVal;
-                    found = true;
-                }
-                else
-                    break;
-                resLen = result.Length;
-                paramStart = result.IndexOf(parameterName, paramStart);
-                paramEnd = paramStart + paramLen;
-
-            }//while
-            if(!found)
-                throw new IndexOutOfRangeException (String.Format(resman.GetString("Exception_ParamNotInQuery"), parameterName));
-
-
-            return result;
-        }//ReplaceParameterValue
         
+            String quote_pattern = @"['][^']*[']";
+            String pattern = "[ \n\r\t,)(;]" + parameterName + "([ ,();\r\n\t]|$)";
+            Int32 start, end;
+            String withoutquote = result;
+            Boolean found = false;
+            // First of all
+            // Suppress quoted string from query (because we ave to ignore them)
+            MatchCollection results = Regex.Matches(result,quote_pattern);
+            foreach (Match match in results)
+            {
+                start = match.Index;
+                end = match.Index + match.Length;
+                String spaces = new String(' ', match.Length-2);
+                withoutquote = withoutquote.Substring(0,start + 1) + spaces + withoutquote.Substring(end - 1);
+            }
+            do
+            {
+                // Now we look for the searched parameters on the "withoutquote" string
+                results = Regex.Matches(withoutquote,pattern);
+                if (results.Count == 0)
+                // If no parameter is found, go out!
+                    break;
+                // We take the first parameter found
+                found = true;
+                Match match = results[0];
+                start = match.Index;
+                if ((match.Length - parameterName.Length) == 2)
+                    // If the found string is not the end of the string
+                    end = match.Index + match.Length - 1;
+                else
+                    // If the found string is the end of the string
+                    end = match.Index + match.Length;
+                result = result.Substring(0, start + 1) + paramVal + result.Substring(end);
+                withoutquote = withoutquote.Substring(0,start + 1) + paramVal + withoutquote.Substring(end);
+            }
+            while (true);
+            if (!found)
+                throw new IndexOutOfRangeException (String.Format(resman.GetString("Exception_ParamNotInQuery"),
+                    parameterName));
+            return result;
+        }
+
         
         private String AddSingleRowBehaviorSupport(String ResultCommandText)
         {
