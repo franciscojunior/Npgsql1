@@ -1264,7 +1264,7 @@ namespace Npgsql
         {
         
             String quote_pattern = @"['][^']*[']";
-            String pattern = "[ \n\r\t,)(;]" + parameterName + "([ ,();\r\n\t]|$)";
+            String pattern = "[- |\n\r\t,)(;=+/]" + parameterName + "([- |\n\r\t,)(;=+/]|$)";
             Int32 start, end;
             String withoutquote = result;
             Boolean found = false;
