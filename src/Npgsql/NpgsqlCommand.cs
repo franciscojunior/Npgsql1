@@ -733,7 +733,7 @@ namespace Npgsql
                 parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
 
                 Connector.Parse(parse);
-                //Connector.Mediator.RequireReadyForQuery = false;
+                Connector.Mediator.RequireReadyForQuery = false;
                 Connector.Flush();
 
                 // Check for errors and/or notifications and do the Right Thing.
