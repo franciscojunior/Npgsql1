@@ -120,7 +120,7 @@ namespace Npgsql
             }
             catch (Exception e)
             {
-                throw new NpgsqlException(e.ToString(), e);
+                throw new NpgsqlException(e.Message, e);
             }
         }
 
