@@ -649,8 +649,11 @@ namespace Npgsql
             }
 
             Connector.Bind(bind);
-            //Connector.Mediator.RequireReadyForQuery = false;
+            
+            // See Prepare() method for a discussion of this.
+            Connector.Mediator.RequireReadyForQuery = false;
             Connector.Flush();
+            
 
             connector.CheckErrorsAndNotifications();
         }
@@ -664,18 +667,6 @@ namespace Npgsql
         public Object ExecuteScalar()
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ExecuteScalar");
-
-            /*if ((type == CommandType.Text) || (type == CommandType.StoredProcedure))
-              if (parse == null)
-            			connection.Query(this); 
-               else
-               {
-                 BindParameters();
-                 connection.Execute(new NpgsqlExecute(bind.PortalName, 0));
-               }
-            else
-            	throw new NotImplementedException(resman.GetString("Exception_CommandTypeTableDirect"));
-            */
 
             ExecuteCommand();
 
@@ -726,56 +717,78 @@ namespace Npgsql
             }
             else
             {
-                // Use the extended query parsing...
-                planName = Connector.NextPlanName();
-                String portalName = Connector.NextPortalName();
-
-                parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
-
-                Connector.Parse(parse);
-                Connector.Mediator.RequireReadyForQuery = false;
-                Connector.Flush();
-
-                // Check for errors and/or notifications and do the Right Thing.
-                connector.CheckErrorsAndNotifications();
-
-                
-                // Description...
-                NpgsqlDescribe describe = new NpgsqlDescribe('S', planName);
-            
-            
-                Connector.Describe(describe);
-                
-                Connector.Sync();
-                
-                Npgsql.NpgsqlRowDescription returnRowDesc = Connector.Mediator.LastRowDescription;
-            
-                Int16[] resultFormatCodes;
-                
-                
-                if (returnRowDesc != null)
+                try
                 {
-                    resultFormatCodes = new Int16[returnRowDesc.NumFields];
                     
-                    for (int i=0; i < returnRowDesc.NumFields; i++)
+                    // Use the extended query parsing...
+                    planName = Connector.NextPlanName();
+                    String portalName = Connector.NextPortalName();
+    
+                    parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
+    
+                    Connector.Parse(parse);
+                    
+                    // We need that because Flush() doesn't cause backend to send
+                    // ReadyForQuery on error. Without ReadyForQuery, we don't return 
+                    // from query extended processing.
+                    
+                    // We could have used Connector.Flush() which sends us back a
+                    // ReadyForQuery, but on postgresql server below 8.1 there is an error
+                    // with extended query processing which hinders us from using it.
+                    Connector.Mediator.RequireReadyForQuery = false;
+                    Connector.Flush();
+                    
+                    // Check for errors and/or notifications and do the Right Thing.
+                    connector.CheckErrorsAndNotifications();
+    
+                    
+                    // Description...
+                    NpgsqlDescribe describe = new NpgsqlDescribe('S', planName);
+                
+                
+                    Connector.Describe(describe);
+                    
+                    Connector.Sync();
+                    
+                    Npgsql.NpgsqlRowDescription returnRowDesc = Connector.Mediator.LastRowDescription;
+                
+                    Int16[] resultFormatCodes;
+                    
+                    
+                    if (returnRowDesc != null)
                     {
-                        Npgsql.NpgsqlRowDescriptionFieldData returnRowDescData = returnRowDesc[i];
-                        if (returnRowDescData.type_info.NpgsqlDbType == NpgsqlTypes.NpgsqlDbType.Bytea)
+                        resultFormatCodes = new Int16[returnRowDesc.NumFields];
+                        
+                        for (int i=0; i < returnRowDesc.NumFields; i++)
                         {
-                        // Binary format
-                            resultFormatCodes[i] = (Int16)FormatCode.Binary;
+                            Npgsql.NpgsqlRowDescriptionFieldData returnRowDescData = returnRowDesc[i];
+                            
+                            
+                            if (returnRowDescData.type_info != null && returnRowDescData.type_info.NpgsqlDbType == NpgsqlTypes.NpgsqlDbType.Bytea)
+                            {
+                            // Binary format
+                                resultFormatCodes[i] = (Int16)FormatCode.Binary;
+                            }
+                            else 
+                            // Text Format
+                                resultFormatCodes[i] = (Int16)FormatCode.Text;
                         }
-                        else 
-                        // Text Format
-                            resultFormatCodes[i] = (Int16)FormatCode.Text;
-                    }
-                
                     
+                        
+                    }
+                    else
+                        resultFormatCodes = new Int16[]{0};
+                    
+                    bind = new NpgsqlBind("", planName, new Int16[Parameters.Count], null, resultFormatCodes);
+                }    
+                catch
+                {
+                    // See ExecuteCommand method for a discussion of this.
+                    Connector.Sync();
+                    
+                    throw;
                 }
-                else
-                    resultFormatCodes = new Int16[]{0};
                 
-                bind = new NpgsqlBind("", planName, new Int16[Parameters.Count], null, resultFormatCodes);
                 
                 
             }
@@ -1377,7 +1390,7 @@ namespace Npgsql
                     // Check for errors and/or notifications and do the Right Thing.
                     connector.CheckErrorsAndNotifications();
                 }
-                finally
+                catch
                 {
                     // As per documentation:
                     // "[...] When an error is detected while processing any extended-query message,
@@ -1386,6 +1399,8 @@ namespace Npgsql
                     // So, send a sync command if we get any problems.
 
                     connector.Sync();
+                    
+                    throw;
                 }
             }
         }
