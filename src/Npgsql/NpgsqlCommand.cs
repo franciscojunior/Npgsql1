@@ -704,6 +704,9 @@ namespace Npgsql
 
             // Check the connection state.
             CheckConnectionState();
+            
+            // reset any responses just before getting new ones
+            Connector.Mediator.ResetResponses();
 
             if (! Connector.SupportsPrepare)
             {
@@ -719,6 +722,7 @@ namespace Npgsql
             {
                 try
                 {
+                    
                     
                     // Use the extended query parsing...
                     planName = Connector.NextPlanName();
