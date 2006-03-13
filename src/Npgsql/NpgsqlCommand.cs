@@ -350,7 +350,6 @@ namespace Npgsql
 
             set
             {
-                throw new NotImplementedException();
             }
         }
 
