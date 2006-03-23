@@ -131,7 +131,7 @@ namespace Npgsql
         /// to handle backend requests.
         /// </summary>
         ///
-        protected virtual void ProcessBackendResponses( NpgsqlConnector context )
+        internal virtual void ProcessBackendResponses( NpgsqlConnector context )
         {
 
             try
@@ -408,6 +408,9 @@ namespace Npgsql
                     Int32 PID = PGUtil.ReadInt32(stream, inputBuffer);
                     String notificationResponse = PGUtil.ReadString( stream, context.Encoding );
                     mediator.AddNotification(new NpgsqlNotificationEventArgs(PID, notificationResponse));
+                    
+                    if (context.IsNotificationThreadRunning)
+                        readyForQuery = true;
 
                     // Wait for ReadForQuery message
                     break;
@@ -696,6 +699,9 @@ namespace Npgsql
                         PGUtil.ReadString( stream, context.Encoding );
                         mediator.AddNotification(new NpgsqlNotificationEventArgs(PID, notificationResponse));
                     }
+                    
+                    if (context.IsNotificationThreadRunning)
+                        readyForQuery = true;
 
                     // Wait for ReadForQuery message
                     break;

@@ -722,6 +722,7 @@ namespace Npgsql
                 try
                 {
                     
+                    Connector.StopNotificationThread();
                     
                     // Use the extended query parsing...
                     planName = Connector.NextPlanName();
@@ -790,6 +791,10 @@ namespace Npgsql
                     Connector.Sync();
                     
                     throw;
+                }
+                finally
+                {
+                    Connector.ResumeNotificationThread();
                 }
                 
                 
@@ -1372,14 +1377,22 @@ namespace Npgsql
 
             // reset any responses just before getting new ones
             Connector.Mediator.ResetResponses();
+            
+            connector.StopNotificationThread();
 
 
             if (parse == null)
             {
-                Connector.Query(this);
+                connector.Query(this);
 
+
+                connector.ResumeNotificationThread();
+                
                 // Check for errors and/or notifications and do the Right Thing.
                 connector.CheckErrorsAndNotifications();
+                
+                
+                
             }
             else
             {
@@ -1404,6 +1417,10 @@ namespace Npgsql
                     connector.Sync();
                     
                     throw;
+                }
+                finally
+                {
+                    connector.ResumeNotificationThread();
                 }
             }
         }

@@ -264,6 +264,18 @@ namespace Npgsql
                 return connection_string.ToString(ConnectionStringKeys.Database);
             }
         }
+        
+        /// <summary>
+        /// Gets flag indicating if we should use Synchronous notification or not.
+        /// The default value is false.
+        /// </summary>
+        public Boolean SyncNotification
+        {
+            get
+            {
+                return connection_string.ToBool(ConnectionStringKeys.SyncNotification, ConnectionStringDefaults.SyncNotification);
+            }
+        }
 
         /// <summary>
         /// Gets the current state of the connection.
@@ -400,9 +412,13 @@ namespace Npgsql
 
             // Get a Connector.  The connector returned is guaranteed to be connected and ready to go.
             connector = NpgsqlConnectorPool.ConnectorPoolMgr.RequestConnector (this);
-
+            
             connector.Notice += NoticeDelegate;
             connector.Notification += NotificationDelegate;
+            
+            if (SyncNotification)
+                connector.AddNotificationThread();
+            
         }
 
         /// <summary>
@@ -446,8 +462,14 @@ namespace Npgsql
 
                     connector.Notification -= NotificationDelegate;
                     connector.Notice -= NoticeDelegate;
+                    
+                    if (SyncNotification)
+                        connector.RemoveNotificationThread();
 
                     NpgsqlConnectorPool.ConnectorPoolMgr.ReleaseConnector(this, connector);
+                    
+                    
+                    
                     connector = null;
                 }
             }
