@@ -706,8 +706,11 @@ namespace Npgsql
             
             // reset any responses just before getting new ones
             Connector.Mediator.ResetResponses();
+            
+            // Set command timeout.
+            connector.Mediator.CommandTimeout = CommandTimeout;
 
-            if (! Connector.SupportsPrepare)
+            if (! connector.SupportsPrepare)
             {
                 return;	// Do nothing.
             }
@@ -722,15 +725,15 @@ namespace Npgsql
                 try
                 {
                     
-                    Connector.StopNotificationThread();
+                    connector.StopNotificationThread();
                     
                     // Use the extended query parsing...
-                    planName = Connector.NextPlanName();
-                    String portalName = Connector.NextPortalName();
+                    planName = connector.NextPlanName();
+                    String portalName = connector.NextPortalName();
     
                     parse = new NpgsqlParse(planName, GetParseCommandText(), new Int32[] {});
     
-                    Connector.Parse(parse);
+                    connector.Parse(parse);
                     
                     // We need that because Flush() doesn't cause backend to send
                     // ReadyForQuery on error. Without ReadyForQuery, we don't return 
@@ -739,8 +742,8 @@ namespace Npgsql
                     // We could have used Connector.Flush() which sends us back a
                     // ReadyForQuery, but on postgresql server below 8.1 there is an error
                     // with extended query processing which hinders us from using it.
-                    Connector.Mediator.RequireReadyForQuery = false;
-                    Connector.Flush();
+                    connector.Mediator.RequireReadyForQuery = false;
+                    connector.Flush();
                     
                     // Check for errors and/or notifications and do the Right Thing.
                     connector.CheckErrorsAndNotifications();
@@ -750,11 +753,11 @@ namespace Npgsql
                     NpgsqlDescribe describe = new NpgsqlDescribe('S', planName);
                 
                 
-                    Connector.Describe(describe);
+                    connector.Describe(describe);
                     
-                    Connector.Sync();
+                    connector.Sync();
                     
-                    Npgsql.NpgsqlRowDescription returnRowDesc = Connector.Mediator.LastRowDescription;
+                    Npgsql.NpgsqlRowDescription returnRowDesc = connector.Mediator.LastRowDescription;
                 
                     Int16[] resultFormatCodes;
                     
@@ -788,13 +791,13 @@ namespace Npgsql
                 catch
                 {
                     // See ExecuteCommand method for a discussion of this.
-                    Connector.Sync();
+                    connector.Sync();
                     
                     throw;
                 }
                 finally
                 {
-                    Connector.ResumeNotificationThread();
+                    connector.ResumeNotificationThread();
                 }
                 
                 
@@ -1377,6 +1380,9 @@ namespace Npgsql
 
             // reset any responses just before getting new ones
             Connector.Mediator.ResetResponses();
+            
+            // Set command timeout.
+            connector.Mediator.CommandTimeout = CommandTimeout;
             
             connector.StopNotificationThread();
 
