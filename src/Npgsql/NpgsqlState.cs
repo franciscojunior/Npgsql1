@@ -33,6 +33,7 @@ using System.Collections;
 using System.Text;
 using System.Resources;
 
+
 namespace Npgsql
 {
     ///<summary> This class represents the base class for the state pattern design pattern
@@ -98,6 +99,11 @@ namespace Npgsql
         {
             throw new InvalidOperationException("Internal Error! " + this);
         }
+        
+        public virtual void CancelRequest(NpgsqlConnector context)
+        {
+            throw new InvalidOperationException("Internal Error! " + this);
+        }
 
         public virtual void Close( NpgsqlConnector context )
         {
@@ -136,6 +142,13 @@ namespace Npgsql
 
             try
             {
+                
+                // Process commandTimeout behavior.
+                
+                if ((context.Mediator.CommandTimeout > 0) && (!context.Socket.Poll(1000000 * context.Mediator.CommandTimeout, SelectMode.SelectRead)))
+                    context.CancelRequest();
+                
+                
                 switch (context.BackendProtocolVersion)
                 {
                 case ProtocolVersion.Version2 :

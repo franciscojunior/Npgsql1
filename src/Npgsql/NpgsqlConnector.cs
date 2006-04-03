@@ -724,6 +724,23 @@ namespace Npgsql
             }
             catch {}
         }
+        
+        internal void CancelRequest()
+        {
+            
+            NpgsqlConnector CancelConnector = new NpgsqlConnector(ConnectionString, false, false);
+            
+            CancelConnector._backend_keydata = BackEndKeyData;
+            
+            
+            // Get a raw connection, possibly SSL...
+            CancelConnector.CurrentState.Open(CancelConnector);
+            
+            // Cancel current request.
+            CancelConnector.CurrentState.CancelRequest(CancelConnector);
+            
+            
+        }
 
 
         ///<summary>
