@@ -1048,6 +1048,10 @@ namespace Npgsql
 
             // reset any responses just before getting new ones
             connector.Mediator.ResetResponses();
+            
+            // Set command timeout.
+            connector.Mediator.CommandTimeout = CommandTimeout;
+            
             return ret;
 
 
@@ -1109,6 +1113,9 @@ namespace Npgsql
             
             // reset any responses just before getting new ones
             connector.Mediator.ResetResponses();
+            
+            // Set command timeout.
+            connector.Mediator.CommandTimeout = CommandTimeout;
             
             return sb.ToString();
                     
@@ -1383,6 +1390,7 @@ namespace Npgsql
             
             // Set command timeout.
             connector.Mediator.CommandTimeout = CommandTimeout;
+            
             
             connector.StopNotificationThread();
 
