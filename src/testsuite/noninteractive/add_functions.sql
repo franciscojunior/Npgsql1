@@ -35,3 +35,31 @@ create function testreturnrecord() returns record as 'select 4 ,5' language 'sql
 
 CREATE OR REPLACE FUNCTION testmultcurfunc() RETURNS SETOF refcursor AS 'DECLARE ref1 refcursor; ref2 refcursor; BEGIN OPEN ref1 FOR SELECT 1; RETURN NEXT ref1; OPEN ref2 FOR SELECT 2; RETURN next ref2; RETURN; END;' LANGUAGE 'plpgsql';
 
+CREATE OR REPLACE FUNCTION funcwaits() returns integer as 
+' 
+declare t integer;
+begin
+
+t := 0;
+
+while t < 1000000 loop
+t := t + 1;
+end loop;
+
+return t;
+end;
+'
+
+
+LANGUAGE 'plpgsql';
+
+
+create function testreturnrefcursor() returns refcursor as 
+'
+declare ref refcursor;
+begin
+	open ref for select * from tablea;
+	return ref;
+end;
+
+' language 'plpgsql' volatile called on null input security invoker;
