@@ -1,5 +1,26 @@
 
+2006-04-09
 
+    Npgsql 1.0 RC1
+   
+    Features added:
+    
+    	Synchronous notification. Client applications now don't need to keep sending empty commands in order to force Npgsql to get Notifications.
+        This is now done automatically by Npgsql. For that, put Syncnotification=true in your connection string. Default is false.
+
+    Bug fixes:
+    
+        [#1000500] Problem with parsing parameters when using Command.Prepare(); Thanks Hubert Fongarnand for patch!
+        
+        [#1000531] Npgsql.NpgsqlError is not serializable => Remoting problem. Thanks Souleymane MBENGUE for heads up.
+        
+        [#1000546] prepare with wrong sql stmt hangs.
+        
+        [#1000561] Constructors NpgsqlException class does't initialize "errors" field. Thanks olegmad at yandex dot ru for heads up.
+        
+        [#1000458] Enormous memory increase (and application crash) with large BYTEA parameter. Thanks Hubert Fongarnand for patch!
+
+        [#1000583] NotImplementedException() in UpdatedRowSource. 
 
 2006-01-08
 
