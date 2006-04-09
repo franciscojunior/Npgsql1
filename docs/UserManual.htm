@@ -223,9 +223,10 @@ public class NpgsqlUserManual
         /// MinPoolSize:                Min size of connection pool. Default: 1;
         /// MaxPoolSize:                Max size of connection pool. Default: 20;
         /// Encoding:                   Encoding to be used; 
-        /// Timeout:                    Time to wait for connection open in seconds.
+        /// Timeout:                    Time to wait for connection open in seconds. Default is 15.
         /// Sslmode:                    Mode for ssl connection control. 
-        
+        /// ConnectionLifeTime:         Time to wait before closing unused connections in the pool in seconds. Default is 15.
+        /// SyncNotification:           Specifies if Npgsql should use synchronous notifications
         Encoding can the ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
         Min pool size when specified will make NpgsqlConnection pre allocates this number of connections with the server.
         Sslmode can be one of the following values: 
@@ -1060,8 +1061,10 @@ public class c
 
 </pre>
 
-<p> That's it!. One last thing worth noting is that <font color="red"> you have to use transaction</font> in order to this work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished just after you do the function call.
+<p> That's it!. One last thing worth noting is that <font color="red"> you have to use transaction</font> in order to this work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished just after you do the function call.</p>
 
+<p> If you have parameters in your function, <font color="red"> you still have to put just the function name </font> as command text and add parameters to NpgsqlCommand.Parameters collection as usual. Npgsql will take care of using your parameters correctly.
+</p>
 
 
 
