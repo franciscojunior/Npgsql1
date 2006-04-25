@@ -2302,6 +2302,24 @@ field_serial = :a
             
         }
         
+        [Test]
+        
+        public void VerifyFunctionNameWithDeriveParameters()
+        {
+            try
+            {
+                NpgsqlCommand invalidCommandName = new NpgsqlCommand("invalidfunctionname", _conn);
+                
+                NpgsqlCommandBuilder.DeriveParameters(invalidCommandName);
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual(e.Message, "invalidfunctionname does not exist in pg_proc");
+            }
+        
+            
+        }
+        
         
     }
 
