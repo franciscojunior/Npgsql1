@@ -193,11 +193,17 @@ namespace Npgsql
             if ((_behavior & CommandBehavior.CloseConnection) == CommandBehavior.CloseConnection)
             {
                 _connection.Close();
-
             }
 
             _isClosed = true;
+            if (this.ReaderClosed != null)
+	            this.ReaderClosed(this, EventArgs.Empty);
         }
+        
+        /// <summary>
+        /// Is raised whenever Close() is called.
+        /// </summary>
+        public event EventHandler ReaderClosed;
 
         /// <summary>
         /// Advances the data reader to the next result, when multiple result sets were returned by the PostgreSQL backend.
