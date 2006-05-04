@@ -466,7 +466,10 @@ namespace Npgsql
             get
             {
                 NpgsqlEventLog.LogIndexerGet(LogLevel.Debug, CLASSNAME, name);
-                return GetValue(_currentResultset.RowDescription.FieldIndex(name));
+                Int32 fieldIndex = _currentResultset.RowDescription.FieldIndex(name);
+                if (fieldIndex == -1)
+                    throw new IndexOutOfRangeException("Field not found");
+                return GetValue(fieldIndex);
             }
         }
 

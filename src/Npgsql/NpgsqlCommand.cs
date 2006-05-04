@@ -451,21 +451,24 @@ namespace Npgsql
             String[] ret_string_tokens = firstCompletedResponse.Split(null);        // whitespace separator.
 
 
-            // Check if the command was insert, delete or update.
+            // Check if the command was insert, delete, update, fetch or move.
             // Only theses commands return rows affected.
             // [FIXME] Is there a better way to check this??
             if ((String.Compare(ret_string_tokens[0], "INSERT", true) == 0) ||
                     (String.Compare(ret_string_tokens[0], "UPDATE", true) == 0) ||
-                    (String.Compare(ret_string_tokens[0], "DELETE", true) == 0))
-
-                // The number of rows affected is in the third token for insert queries
-                // and in the second token for update and delete queries.
-                // In other words, it is the last token in the 0-based array.
+                    (String.Compare(ret_string_tokens[0], "DELETE", true) == 0) ||
+                    (String.Compare(ret_string_tokens[0], "FETCH", true) == 0) ||
+                    (String.Compare(ret_string_tokens[0], "MOVE", true) == 0))
+                
+                
             {
                 if (String.Compare(ret_string_tokens[0], "INSERT", true) == 0)
                     // Get oid of inserted row.
                     lastInsertedOID = Int32.Parse(ret_string_tokens[1]);
                 
+                // The number of rows affected is in the third token for insert queries
+                // and in the second token for update and delete queries.
+                // In other words, it is the last token in the 0-based array.
 
                 return Int32.Parse(ret_string_tokens[ret_string_tokens.Length - 1]);
             }
@@ -499,16 +502,12 @@ namespace Npgsql
                     
                     foreach (NpgsqlParameter p in Parameters)
                     {
-                        try
+                        if (nrs.RowDescription.FieldIndex(p.ParameterName.Substring(1)) > -1)
                         {
-                            if (nrs.RowDescription.FieldIndex(p.ParameterName.Substring(1)) > -1)
-                            {
-                                hasMapping = true;
-                                break;
-                            }
+                            hasMapping = true;
+                            break;
                         }
-                        catch(ArgumentOutOfRangeException)
-                        {}
+                        
                     }
                                         
                     
@@ -519,13 +518,14 @@ namespace Npgsql
                             if (((p.Direction == ParameterDirection.Output) ||
                                 (p.Direction == ParameterDirection.InputOutput)) && (i < nrs.RowDescription.NumFields ))
                             {
-                                try
+                                Int32 fieldIndex = nrs.RowDescription.FieldIndex(p.ParameterName.Substring(1));
+                                
+                                if (fieldIndex > -1)
                                 {
-                                    p.Value = nar[nrs.RowDescription.FieldIndex(p.ParameterName.Substring(1))];
+                                    p.Value = nar[fieldIndex];
                                     i++;
                                 }
-                                catch(ArgumentOutOfRangeException)
-                                {}
+                                
                             }
                         }
                         
