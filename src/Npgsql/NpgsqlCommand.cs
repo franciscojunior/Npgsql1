@@ -1018,11 +1018,13 @@ namespace Npgsql
         
         private Boolean CheckFunctionReturn(String ReturnType)
         {
-
-            String returnRecordQuery = "select count(*) > 0 from pg_proc where prorettype = ( select oid from pg_type where typname = :typename ) and proargtypes=:proargtypes and proname=:proname;";
+            String returnRecordQuery = "select count(*) > 0 from pg_proc p left join pg_namespace n on p.pronamespace = n.oid where prorettype = ( select oid from pg_type where typname = :typename ) and proargtypes=:proargtypes and proname=:proname and n.nspname=:nspname";
 
             StringBuilder parameterTypes = new StringBuilder("");
 
+            
+            // Process parameters
+            
             foreach(NpgsqlParameter p in Parameters)
             {
                 if ((p.Direction == ParameterDirection.Input) ||
@@ -1032,16 +1034,40 @@ namespace Npgsql
                 }
             }
 
+            
+            // Process schema name.
+            
+            String schemaName = String.Empty;
+            String procedureName = String.Empty;
+            
+            
+            String[] schemaProcedureName = CommandText.Split('.');
+            
+            if (schemaProcedureName.Length == 2)
+            {
+                schemaName = schemaProcedureName[0];
+                procedureName = schemaProcedureName[1];
+            }
+            else
+            {
+                schemaName = "public";
+                procedureName = CommandText;
+            }
+                
+            
+            
 
             NpgsqlCommand c = new NpgsqlCommand(returnRecordQuery, Connection);
             
             c.Parameters.Add(new NpgsqlParameter("typename", NpgsqlDbType.Text));
             c.Parameters.Add(new NpgsqlParameter("proargtypes", NpgsqlDbType.Text));
             c.Parameters.Add(new NpgsqlParameter("proname", NpgsqlDbType.Text));
+            c.Parameters.Add(new NpgsqlParameter("nspname", NpgsqlDbType.Text));
             
             c.Parameters[0].Value = ReturnType;
             c.Parameters[1].Value = parameterTypes.ToString();
-            c.Parameters[2].Value = CommandText;
+            c.Parameters[2].Value = procedureName;
+            c.Parameters[3].Value = schemaName;
             
 
             Boolean ret = (Boolean) c.ExecuteScalar();
