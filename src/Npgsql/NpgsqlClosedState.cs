@@ -84,6 +84,8 @@ namespace Npgsql
                 Stream stream = tcpc.GetStream();*/
                 
                 Socket socket = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
+                
+                socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.SendTimeout, context.ConnectionTimeout*1000);
 
                 socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
 
