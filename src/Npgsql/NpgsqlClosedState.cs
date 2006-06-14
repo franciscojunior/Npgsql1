@@ -26,6 +26,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections;
+using System.Threading;
 
 using Mono.Security.Protocol.Tls;
 
@@ -37,6 +38,8 @@ namespace Npgsql
 
         private static NpgsqlClosedState _instance = new NpgsqlClosedState();
         private static readonly String CLASSNAME = "NpgsqlClosedState";
+        
+        private ManualResetEvent connectDone = new ManualResetEvent(false);
 
         private NpgsqlClosedState() : base()
         { }
@@ -77,6 +80,7 @@ namespace Npgsql
             
             try
             {
+                
                 NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Open");
     
                 /*TcpClient tcpc = new TcpClient();
@@ -85,9 +89,20 @@ namespace Npgsql
                 
                 Socket socket = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
                 
-                socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.SendTimeout, context.ConnectionTimeout*1000);
+                /*socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.SendTimeout, context.ConnectionTimeout*1000);*/
+                
+                connectDone.Reset();
+                
 
-                socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
+                //socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
+                
+                socket.BeginConnect(new IPEndPoint(ResolveIPHost(context.Host), context.Port), new AsyncCallback(ConnectionDone), socket);
+                
+                if (!connectDone.WaitOne(context.ConnectionTimeout*1000, true))
+                {
+                    socket.Close();
+                    throw new Exception(resman.GetString("Exception_ConnectionTimeout"));
+                }
 
                 Stream stream = new NetworkStream(socket, true);
 
@@ -132,6 +147,13 @@ namespace Npgsql
             {
                 throw new NpgsqlException(e.Message, e);
             }
+        }
+        
+        private void ConnectionDone(IAsyncResult ar)
+        {
+            Socket s = (Socket) ar.AsyncState;
+            s.EndConnect(ar);
+            connectDone.Set();
         }
 
     }
