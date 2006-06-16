@@ -684,15 +684,10 @@ namespace NpgsqlTypes
                     // Translate enum value to its underlying type. 
                     return (String)Convert.ChangeType(Enum.Format(NativeData.GetType(), NativeData, "d"), typeof(String), CultureInfo.InvariantCulture);
                 }
-                else if (NativeData is Double) 
+                else if (NativeData is IFormattable) 
                 {
-                    return ((Double)NativeData).ToString("N", ni);
-                    
+                    return ((IFormattable)NativeData).ToString(null, ni);
                 }
-                else if (NativeData is Decimal) 
-                {
-                    return ((Decimal)NativeData).ToString("N", ni);
-                } 
                 
                 return NativeData.ToString();
                 
