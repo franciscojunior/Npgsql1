@@ -151,9 +151,16 @@ namespace Npgsql
         
         private void ConnectionDone(IAsyncResult ar)
         {
-            Socket s = (Socket) ar.AsyncState;
-            s.EndConnect(ar);
-            connectDone.Set();
+            try
+            {
+                Socket s = (Socket) ar.AsyncState;
+                s.EndConnect(ar);
+                connectDone.Set();
+            }
+            catch (Exception e)
+            {
+                throw new NpgsqlException(e.Message, e);
+            }
         }
 
     }
