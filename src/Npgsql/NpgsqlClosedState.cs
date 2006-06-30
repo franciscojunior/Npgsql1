@@ -41,6 +41,9 @@ namespace Npgsql
         
         private ManualResetEvent connectDone = new ManualResetEvent(false);
 
+        private Exception asyncConnectException = null;
+
+
         private NpgsqlClosedState() : base()
         { }
 
@@ -92,6 +95,11 @@ namespace Npgsql
                 /*socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.SendTimeout, context.ConnectionTimeout*1000);*/
                 
                 connectDone.Reset();
+
+                // This variable holds any exception thrown by async thread when trying
+                // to connect. This is necessary because any exception thrown by it isn't propagated to main thread which made the connect call.
+                // See http://pgfoundry.org/forum/forum.php?thread_id=853&forum_id=519 for discussion about that.
+                asyncConnectException = null;
                 
 
                 //socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
@@ -103,6 +111,9 @@ namespace Npgsql
                     socket.Close();
                     throw new Exception(resman.GetString("Exception_ConnectionTimeout"));
                 }
+
+                if (asyncConnectException != null)
+                    throw new NpgsqlException(asyncConnectException.Message, asyncConnectException);
 
                 Stream stream = new NetworkStream(socket, true);
 
@@ -155,12 +166,19 @@ namespace Npgsql
             {
                 Socket s = (Socket) ar.AsyncState;
                 s.EndConnect(ar);
-                connectDone.Set();
+                
             }
             catch (Exception e)
             {
-                throw new NpgsqlException(e.Message, e);
+                asyncConnectException = e;
             }
+
+            finally
+            {
+                connectDone.Set();
+            }
+            
+            
         }
 
     }
