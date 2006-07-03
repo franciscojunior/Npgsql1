@@ -66,6 +66,7 @@ namespace Npgsql
 
         private NpgsqlRowDescriptionFieldData[]  fields_data;
         private string[]                fields_index;
+        private Hashtable               field_name_index_table;
 
         private ProtocolVersion          protocol_version;
 
@@ -105,6 +106,10 @@ namespace Npgsql
 
 			fields_data = new NpgsqlRowDescriptionFieldData[num_fields];
 			fields_index = new string[num_fields];
+            
+            field_name_index_table = new Hashtable(num_fields);
+            
+            
             // Now, iterate through each field getting its data.
             for (Int16 i = 0; i < num_fields; i++)
             {
@@ -125,6 +130,9 @@ namespace Npgsql
                 fields_data[i] = fd;
 
                 fields_index[i] = fd.name;
+                
+                if (!field_name_index_table.ContainsKey(fd.name))
+                    field_name_index_table.Add(fd.name, i);
             }
         }
 
@@ -144,6 +152,8 @@ namespace Npgsql
 
 			fields_data = new NpgsqlRowDescriptionFieldData[num_fields];
 			fields_index = new string[num_fields];
+            field_name_index_table = new Hashtable(num_fields);
+            
             for (Int16 i = 0; i < num_fields; i++)
             {
                 fd = new NpgsqlRowDescriptionFieldData();
@@ -159,6 +169,9 @@ namespace Npgsql
 
 				fields_data[i] = fd;
 				fields_index[i] = fd.name;
+                
+                if (!field_name_index_table.ContainsKey(fd.name))
+                    field_name_index_table.Add(fd.name, i);
             }
         }
 
@@ -180,7 +193,15 @@ namespace Npgsql
 
         public Int16 FieldIndex(String fieldName)
         {
+            
+            
 			// First try to find the index with IndexOf (case-sensitive)
+            
+            Object result1 = field_name_index_table[fieldName];
+            
+            if (result1 != null)
+                return (Int16)result1;
+            
 			Int16 result = (Int16)Array.IndexOf(fields_index, fieldName, 0, fields_index.Length);
 
 			if (result != -1)

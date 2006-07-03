@@ -144,7 +144,17 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToDateTime(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
+            
             // Get the date time parsed in all expected formats for timestamp.
+
+            // First check for special values infinity and -infinity.
+
+            if (BackendData == "infinity")
+                return DateTime.MaxValue;
+
+            if (BackendData == "-infinity")
+                return DateTime.MinValue;
+
             return DateTime.ParseExact(BackendData,
                                         DateTimeFormats,
                                         DateTimeFormatInfo.InvariantInfo,
@@ -224,6 +234,10 @@ namespace NpgsqlTypes
         /// </summary>
         internal static String ToDateTime(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
         {
+            if (DateTime.MaxValue.Equals(NativeData))
+                return "infinity";
+            if (DateTime.MinValue.Equals(NativeData))
+                return "-infinity";
             return ((DateTime)NativeData).ToString("yyyy-MM-dd HH:mm:ss.ffffff", DateTimeFormatInfo.InvariantInfo);
         }
 
@@ -251,7 +265,7 @@ namespace NpgsqlTypes
             return "$" + ((IFormattable)NativeData).ToString(null, CultureInfo.InvariantCulture.NumberFormat);
         }
         
-        
+
     }
 
 
@@ -418,7 +432,7 @@ namespace NpgsqlTypes
         /// </summary>
         internal static Object ToCircle(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
         {
-        	Match m = circleRegex.Match(BackendData);
+            Match m = circleRegex.Match(BackendData);
             return new NpgsqlCircle(
                     new NpgsqlPoint(
                     Single.Parse(m.Groups[1].ToString(), NumberStyles.Any,
@@ -427,6 +441,15 @@ namespace NpgsqlTypes
                                  CultureInfo.InvariantCulture.NumberFormat)),
                     Single.Parse(m.Groups[3].ToString(), NumberStyles.Any,
                                  CultureInfo.InvariantCulture.NumberFormat));
+            
+        }
+
+        /// <summary>
+        /// Inet.
+        /// </summary>
+        internal static Object ToInet(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            return new NpgsqlInet(BackendData);
             
         }
     }
@@ -519,6 +542,17 @@ namespace NpgsqlTypes
         {
             NpgsqlCircle      C = (NpgsqlCircle)NativeData;
             return String.Format(CultureInfo.InvariantCulture, "{0},{1},{2}", C.Center.X, C.Center.Y, C.Radius);
+        }
+
+        /// <summary>
+        /// Convert to a postgres inet.
+        /// </summary>
+        internal static String ToIPAddress(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
+        {
+                if (NativeData is NpgsqlInet)
+                    return ((NpgsqlInet)NativeData).ToString();
+                else
+                    return ((System.Net.IPAddress)NativeData).ToString();
         }
     }
 }
