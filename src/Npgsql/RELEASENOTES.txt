@@ -1,3 +1,45 @@
+2006-07-09
+
+    Npgsql 1.0 RC2
+    
+    Features added:
+    
+        NpgsqlCommand now returns number of affected rows when issuing fetch and move commands. Thanks Federico Di Gregorio (fog at initd dot org) for patch.
+        
+        Added ReaderClosed event. It is fired whenever NpgsqlDataReader is closed. Thanks Mikko Korkalo (keitsi at minttupuffet dot net) for the patch.
+        
+        Added support to full schema.procedurename when specifying a procedure name to be called in NpgsqlCommand.
+
+        Added support for Inet data type. Use NpgsqlDbType.Inet when adding parameters. Native types supported are NpgsqlInet and IPAddress. Thanks Magnus Hagander ( mha at sollentuna dot net ) for patch.
+
+        Added new connectionstring key "CommandTimeout" which allows developer to specify a commandtimeout value for commands used with this connection. This value is used when creating a new NpgsqlCommand passing a NpgsqlConnection or when specifying Connection property of a NpgsqlCommand.
+        
+    Bug fixes: 
+        [#1000615] Missing null check in DeriveParameters. Now it throws the correct exception: InvalidOperationException when the function name isn't valid.
+        
+        [gborg 1185] Field name not found exception is thrown when working with parameters. Thanks regmaster at gmx dot li for heads up and patch and Michael Farr (mfarr at paradise dot net dot nz )
+        
+        Fixed NpgsqlConnection.GetSchema.  Changed NpgsqlSchema.BuildCommand to handle multiple restrictions correctly.  Now includes AND keywords between restrictions. (Josh Cooley)
+        
+        [#1001313] Strongly typed dataset.  Fixed NpgsqlCommandBuilder.cs to use just the column name from the DataTable so that the case is consistent in the parameter names. (Josh Cooley)
+        
+        [#1000656] ConnectionTimeout doesn't work. Thanks Stephen L (jleelim at hotmail dot com) for heads up and tips about fixing it.
+        
+        [#1000655] Keeping NpsqlException details (code, detail, notice) between retrows in transaction mode... Thanks Hubert Fongarnand for patch!
+
+        [#1000551] Incorrect conversion of decimal type causes ERROR: 22P02: invalid input syntax for type numeric. When using prepared commands, decimal numbers were being sent with wrong culture. Now it is sent correctly with InvariantCulture. Thanks Radomir Simic (strasha at gmail dot com),  Valentin Gjorgjioski (gjorgjioski at gmail dot com) and Artem Gelun (admin at enoteka dot ru) for tests and feedback.
+
+        Fixed NpgsqlCommandBuilder.cs to always qualify table names with the schema name so that the command builder can be used with tables in other schemas. (Josh Cooley)
+
+        Improved IDataReader.GetOrdinal() implementation. Added a hashtable to NpgsqlRowDescription to make FieldIndex(String) calls faster. This was giving performance problems to NHibernate.
+
+        [#1000667] Problem with -infinity::timestamp and infinity::timestamp. Thanks  Alejandro Gasca ( agasca @nospam@ yahoo dot com ) for heads up.
+
+        Fixed possible memory leak when multiple command builders attached to a single NpgsqlDataAdapter. Thanks  Alejandro Gasca ( agasca @nospam@ yahoo dot com ) for heads up. (Josh Cooley)
+
+        Fixed DataRow state problem where an insert fails.  The command builder no longer accepts the changes (but the NpgsqlDataAdapter still does). Thanks  Alejandro Gasca ( agasca @nospam@ yahoo dot com ) for heads up. (Josh Cooley)
+
+        [#1000612] ConnectionTimeout in NpgsqlConnection object. Now, there is a new key in connection string called CommandTimeout to allow developer to specify command timeouts for commands using these connection.
 
 2006-04-09
 
