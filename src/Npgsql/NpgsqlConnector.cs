@@ -213,6 +213,14 @@ namespace Npgsql
                 return ConnectionString.ToInt32(ConnectionStringKeys.Timeout, ConnectionStringDefaults.Timeout);
             }
         }
+
+        internal Int32 CommandTimeout
+        {
+            get
+            {
+                return ConnectionString.ToInt32(ConnectionStringKeys.CommandTimeout, ConnectionStringDefaults.CommandTimeout);
+            }
+        }
         
 
         /// <summary>

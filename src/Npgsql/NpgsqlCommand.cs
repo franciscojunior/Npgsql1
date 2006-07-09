@@ -110,10 +110,11 @@ namespace Npgsql
                 this.connector = connection.Connector;
 
             parameters = new NpgsqlParameterCollection();
-            timeout = 20;
             type = CommandType.Text;
             this.Transaction = transaction;
             commandBehavior = CommandBehavior.Default;
+
+            SetCommandTimeout();
             
             
         }
@@ -134,6 +135,8 @@ namespace Npgsql
             commandBehavior = CommandBehavior.Default;
             
             parameters = new NpgsqlParameterCollection();
+
+            // Internal commands aren't affected by command timeout value provided by user.
             timeout = 20;
         }
 
@@ -168,7 +171,8 @@ namespace Npgsql
         /// <value>The time (in seconds) to wait for the command to execute.
         /// The default is 20 seconds.</value>
         [DefaultValue(20)]
-        public Int32 CommandTimeout {
+        public Int32 CommandTimeout
+        {
             get
             {
                 return timeout;
@@ -190,7 +194,8 @@ namespace Npgsql
         /// </summary>
         /// <value>One of the <see cref="System.Data.CommandType">CommandType</see> values. The default is <see cref="System.Data.CommandType">CommandType.Text</see>.</value>
         [Category("Data"), DefaultValue(CommandType.Text)]
-        public CommandType CommandType {
+        public CommandType CommandType
+        {
             get
             {
                 return type;
@@ -223,7 +228,8 @@ namespace Npgsql
         /// </summary>
         /// <value>The connection to a data source. The default value is a null reference.</value>
         [Category("Behavior"), DefaultValue(null)]
-        public NpgsqlConnection Connection {
+        public NpgsqlConnection Connection
+        {
             get
             {
                 NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "Connection");
@@ -247,11 +253,14 @@ namespace Npgsql
                 if (this.connection != null)
                     connector = this.connection.Connector;
 
+                SetCommandTimeout();
+                
                 NpgsqlEventLog.LogPropertySet(LogLevel.Debug, CLASSNAME, "Connection", value);
             }
         }
 
-        internal NpgsqlConnector Connector {
+        internal NpgsqlConnector Connector
+        {
             get
             {
                 if (this.connection != null)
@@ -276,7 +285,8 @@ namespace Npgsql
         [Category("Data"), DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         #endif
         
-        public NpgsqlParameterCollection Parameters {
+        public NpgsqlParameterCollection Parameters
+        {
             get
             {
                 NpgsqlEventLog.LogPropertyGet(LogLevel.Debug, CLASSNAME, "Parameters");
@@ -1463,8 +1473,17 @@ namespace Npgsql
                     connector.ResumeNotificationThread();
                 }
             }
+
         }
-        
+
+        private void SetCommandTimeout()
+        {
+            if (Connector != null)
+                timeout = Connector.CommandTimeout;
+            else
+                timeout = ConnectionStringDefaults.CommandTimeout;
+        }
+
         
          
         
