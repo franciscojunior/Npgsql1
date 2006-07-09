@@ -78,5 +78,26 @@ namespace NpgsqlTests
 
         }
 
+        [Test]
+        public void ConnectionRefused()
+        {
+            try
+            {
+                NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=44444;User Id=npgsql_tets;Password=j");
+
+                conn.Open();
+            }
+
+            catch (NpgsqlException e)
+            {
+                Assert.AreEqual(e.Message, "Connection refused");
+            }
+            
+
+
+
+
+        }
+
     }
 }

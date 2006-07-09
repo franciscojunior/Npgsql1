@@ -761,6 +761,44 @@ namespace NpgsqlTests
 
         }
         
+        
+        [Test]
+        [ExpectedException(typeof(IndexOutOfRangeException))]
+        public void FieldNameDoesntExist()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("select field_serial from tablea", _conn);
+            
+
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+            dr.Read();
+            
+            Object a = dr["field_int"];
+            
+
+
+        }
+        
+        [Test]
+        [ExpectedException(typeof(IndexOutOfRangeException))]
+        public void FieldIndexDoesntExist()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("select field_serial from tablea", _conn);
+            
+
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+            dr.Read();
+            
+            Object a = dr[5];
+            
+            
+
+
+        }
+        
                
     }
 }

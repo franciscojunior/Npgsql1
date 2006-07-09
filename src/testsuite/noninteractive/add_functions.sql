@@ -63,3 +63,13 @@ begin
 end;
 
 ' language 'plpgsql' volatile called on null input security invoker;
+
+
+create function testreturnvoid() returns void as
+'
+begin
+	insert into tablea(field_text) values (''testvoid'');
+	return;
+end;
+' language 'plpgsql';
+

@@ -68,6 +68,15 @@ field_serial serial,
 "Field_Case_Sensitive" int4
 );
 
+create table tableJ(
+field_serial serial,
+field_inet inet
+);
+
+create table "CaseSensitiveTable"(
+field_serial serial
+);
+
 create table metadatatest1(
 field_serial serial,
 field_pk    int4 primary key

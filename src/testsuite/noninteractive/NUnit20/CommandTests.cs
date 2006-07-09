@@ -27,6 +27,7 @@ using NUnit.Framework;
 using NUnit.Core;
 using System.Data;
 using System.Globalization;
+using System.Net;
 using NpgsqlTypes;
 
 
@@ -2072,6 +2073,27 @@ field_serial = :a
         }
         
         [Test]
+        public void ProcedureNameWithSchemaSupport()
+        {
+            
+            
+            NpgsqlCommand command = new NpgsqlCommand("public.testreturnrecord", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.Add(new NpgsqlParameter(":a", NpgsqlDbType.Integer));
+            command.Parameters[0].Direction = ParameterDirection.Output;
+
+            command.Parameters.Add(new NpgsqlParameter(":b", NpgsqlDbType.Integer));
+            command.Parameters[1].Direction = ParameterDirection.Output;
+
+            command.ExecuteNonQuery();
+            
+            Assert.AreEqual(4, command.Parameters[0].Value);
+            Assert.AreEqual(5, command.Parameters[1].Value);
+            
+        }
+        
+        [Test]
         public void ReturnRecordSupport()
         {
             
@@ -2320,6 +2342,184 @@ field_serial = :a
             
         }
         
+        
+        [Test]
+        public void DoubleSingleQuotesValueSupport()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
+            command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Text));
+
+            command.Parameters[0].Value = "''";
+
+            Int32 rowsAdded = command.ExecuteNonQuery();
+
+            Assert.AreEqual(1, rowsAdded);
+
+            command.CommandText = "select * from tablea where field_text = :a";
+
+
+            NpgsqlDataReader dr = command.ExecuteReader();
+            
+            Assert.IsTrue(dr.Read());
+
+            
+
+
+
+        }
+        
+        [Test]
+        public void ReturnInfinityDateTimeSupportNpgsqlDbType()
+        {
+            
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values ('infinity'::timestamp);", _conn);
+            
+
+            command.ExecuteNonQuery();
+            
+            
+            command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = (select max(field_serial) from tableb);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(DateTime.MaxValue, result);
+            
+            
+
+        }
+
+        [Test]
+        public void ReturnMinusInfinityDateTimeSupportNpgsqlDbType()
+        {
+            
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values ('-infinity'::timestamp);", _conn);
+            
+
+            command.ExecuteNonQuery();
+            
+            
+            command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = (select max(field_serial) from tableb);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(DateTime.MinValue, result);
+            
+            
+
+        }
+
+        [Test]
+        public void InsertInfinityDateTimeSupportNpgsqlDbType()
+        {
+            
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Timestamp);
+
+            p.Value = DateTime.MaxValue;
+            
+            command.Parameters.Add(p);
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = (select max(field_serial) from tableb);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(DateTime.MaxValue, result);
+            
+            
+
+        }
+
+        [Test]
+        public void InsertMinusInfinityDateTimeSupportNpgsqlDbType()
+        {
+            
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Timestamp);
+
+            p.Value = DateTime.MinValue;
+            
+            command.Parameters.Add(p);
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = (select max(field_serial) from tableb);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(DateTime.MinValue, result);
+            
+            
+
+        }
+
+        [Test]
+        public void InetTypeSupport()
+        {
+
+            
+            
+
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablej(field_inet) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Inet);
+
+            p.Value = new NpgsqlInet("127.0.0.1");
+            
+            command.Parameters.Add(p);
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_inet from tablej where field_serial = (select max(field_serial) from tablej);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
+            
+            
+
+        }
+
+        [Test]
+        public void IPAddressTypeSupport()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablej(field_inet) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Inet);
+
+            p.Value = IPAddress.Parse("127.0.0.1");
+            
+            command.Parameters.Add(p);
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_inet from tablej where field_serial = (select max(field_serial) from tablej);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
+            
+            
+
+        }
         
     }
 
