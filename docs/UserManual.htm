@@ -222,12 +222,13 @@ public class NpgsqlUserManual
         /// Pooling:                    True or False. Controls whether connection pooling is used. Default = True;
         /// MinPoolSize:                Min size of connection pool. Default: 1;
         /// MaxPoolSize:                Max size of connection pool. Default: 20;
-        /// Encoding:                   Encoding to be used; 
+        /// Encoding:                   Encoding to be used; Can be ASCII or UNICODE. Default is ASCII. Use UNICODE if you are having problems with accents.
         /// Timeout:                    Time to wait for connection open in seconds. Default is 15.
+        /// CommandTimeout:             Time to wait for command to finish execution before throw an exception. In seconds. Default is 20.
         /// Sslmode:                    Mode for ssl connection control. 
         /// ConnectionLifeTime:         Time to wait before closing unused connections in the pool in seconds. Default is 15.
         /// SyncNotification:           Specifies if Npgsql should use synchronous notifications
-        Encoding can the ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
+        Encoding can be ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
         Min pool size when specified will make NpgsqlConnection pre allocates this number of connections with the server.
         Sslmode can be one of the following values: 
             Prefer - If it is possible to connect using ssl, it will be used.
@@ -1279,6 +1280,14 @@ As result you will have an icon named NpgsqlConnection in the Data-Tab of the To
         <td>Varchar</td>
         <td>String</td>
         <td>String</td>
+    </tr>
+    <tr class="H2">
+        <td>inet</td>
+        <td>Inet</td>
+        <td>Object</td>
+        <td>NpgsqlInet, IPAddress <br />
+        (there is an implicity cast operator to convert NpgsqlInet objects into IPAddress if you need to use IPAddress and have only NpgsqlInet)
+        </td>
     </tr>
     
 </table>
