@@ -186,6 +186,9 @@ namespace NpgsqlTypes
 
                 NativeTypeMapping.AddTypeAlias("bytea", typeof(Byte[]));
 
+                NativeTypeMapping.AddType("bit", NpgsqlDbType.Bit, DbType.Boolean, true,
+                new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBit));
+
                 NativeTypeMapping.AddType("bool", NpgsqlDbType.Boolean, DbType.Boolean, false,
                 new ConvertNativeToBackendHandler(BasicNativeToBackendTypeConverter.ToBoolean));
 
@@ -331,6 +334,8 @@ namespace NpgsqlTypes
                     new NpgsqlBackendTypeInfo(0, "bytea", NpgsqlDbType.Bytea, DbType.Binary, typeof(Byte[]),
                         new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToBinary)),
 
+                    new NpgsqlBackendTypeInfo(0, "bit", NpgsqlDbType.Bit, DbType.Boolean, typeof(Boolean),
+                        new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToBit)),
 
                     new NpgsqlBackendTypeInfo(0, "bool", NpgsqlDbType.Boolean, DbType.Boolean, typeof(Boolean),
                         new ConvertBackendToNativeHandler(BasicBackendToNativeTypeConverter.ToBoolean)),

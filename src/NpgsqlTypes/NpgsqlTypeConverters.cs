@@ -139,6 +139,15 @@ namespace NpgsqlTypes
             return (BackendData.ToLower() == "t" ? true : false);
         }
 
+
+        /// <summary>
+        /// Convert a postgresql bit to a System.Boolean.
+        /// </summary>
+        internal static Object ToBit(NpgsqlBackendTypeInfo TypeInfo, String BackendData, Int16 TypeSize, Int32 TypeModifier)
+        {
+            return (BackendData.ToLower() == "1" ? true : false);
+        }
+
         /// <summary>
         /// Convert a postgresql datetime to a System.DateTime.
         /// </summary>
@@ -227,6 +236,19 @@ namespace NpgsqlTypes
         internal static String ToBoolean(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
         {
             return ((bool)NativeData) ? "TRUE" : "FALSE";
+        }
+
+        /// <summary>
+        /// Convert to a postgresql bit.
+        /// </summary>
+        internal static String ToBit(NpgsqlNativeTypeInfo TypeInfo, Object NativeData)
+        {
+            // Convert boolean values to bit or convert int32 values to bit - odd values are 1 and
+            // even numbers are 0.
+            if (NativeData is Boolean)
+                return ((Boolean)NativeData) ? "1" : "0";
+            else
+                return (((Int32)NativeData) % 2 == 1) ? "1" : "0";
         }
 
         /// <summary>
