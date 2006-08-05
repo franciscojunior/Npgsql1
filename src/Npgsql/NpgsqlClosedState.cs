@@ -104,16 +104,23 @@ namespace Npgsql
 
                 //socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
                 
-                socket.BeginConnect(new IPEndPoint(ResolveIPHost(context.Host), context.Port), new AsyncCallback(ConnectionDone), socket);
-                
-                if (!connectDone.WaitOne(context.ConnectionTimeout*1000, true))
+                IAsyncResult result = socket.BeginConnect(new IPEndPoint(ResolveIPHost(context.Host), context.Port), null, null);
+
+                if (!result.AsyncWaitHandle.WaitOne(context.ConnectionTimeout*1000, true))
                 {
                     socket.Close();
                     throw new Exception(resman.GetString("Exception_ConnectionTimeout"));
                 }
 
-                if (asyncConnectException != null)
-                    throw new NpgsqlException(asyncConnectException.Message, asyncConnectException);
+                try
+                {
+                    socket.EndConnect(result);
+                }
+                catch (Exception ex)
+                {
+                    socket.Close();
+                    throw;
+                }
 
                 Stream stream = new NetworkStream(socket, true);
 
@@ -158,27 +165,6 @@ namespace Npgsql
             {
                 throw new NpgsqlException(e.Message, e);
             }
-        }
-        
-        private void ConnectionDone(IAsyncResult ar)
-        {
-            try
-            {
-                Socket s = (Socket) ar.AsyncState;
-                s.EndConnect(ar);
-                
-            }
-            catch (Exception e)
-            {
-                asyncConnectException = e;
-            }
-
-            finally
-            {
-                connectDone.Set();
-            }
-            
-            
         }
 
     }
