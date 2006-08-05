@@ -38,10 +38,6 @@ namespace Npgsql
 
         private static NpgsqlClosedState _instance = new NpgsqlClosedState();
         private static readonly String CLASSNAME = "NpgsqlClosedState";
-        
-        private ManualResetEvent connectDone = new ManualResetEvent(false);
-
-        private Exception asyncConnectException = null;
 
 
         private NpgsqlClosedState() : base()
@@ -93,14 +89,6 @@ namespace Npgsql
                 Socket socket = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
                 
                 /*socket.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.SendTimeout, context.ConnectionTimeout*1000);*/
-                
-                connectDone.Reset();
-
-                // This variable holds any exception thrown by async thread when trying
-                // to connect. This is necessary because any exception thrown by it isn't propagated to main thread which made the connect call.
-                // See http://pgfoundry.org/forum/forum.php?thread_id=853&forum_id=519 for discussion about that.
-                asyncConnectException = null;
-                
 
                 //socket.Connect(new IPEndPoint(ResolveIPHost(context.Host), context.Port));
                 
