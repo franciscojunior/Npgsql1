@@ -144,7 +144,7 @@ namespace Npgsql
             _oidToNameMapping = new NpgsqlBackendTypeMapping();
             _planIndex = 0;
             _portalIndex = 0;
-            _notificationThreadStopCount = -99;
+            _notificationThreadStopCount = 1;
             _notificationAutoResetEvent = new AutoResetEvent(true);
 
         }
@@ -305,6 +305,25 @@ namespace Npgsql
         }
 
 
+
+        /// <summary>
+        /// This method is responsible for releasing all resources associated with this Connector.
+        /// </summary>
+
+        internal void ReleaseResources()
+        {
+            ReleasePlansPortals();
+            ReleaseRegisteredListen();
+
+
+        }
+
+        internal void ReleaseRegisteredListen()
+        {
+            Query(new NpgsqlCommand("unlisten *", this));
+
+        }
+
         /// <summary>
         /// This method is responsible to release all portals used by this Connector.
         /// </summary>
@@ -323,6 +342,8 @@ namespace Npgsql
 
 
         }
+
+        
 
 
 
@@ -788,7 +809,7 @@ namespace Npgsql
             
             // Special case in order to not get problems with thread synchronization.
             // It will be turned to 0 when synch thread is created.
-            _notificationThreadStopCount = -99;  
+            _notificationThreadStopCount = 1;  
             
         }
         
