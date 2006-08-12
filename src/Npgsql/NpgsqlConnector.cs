@@ -385,11 +385,19 @@ namespace Npgsql
         {
             if (Notification != null)
             {
-                foreach (NpgsqlNotificationEventArgs E in _mediator.Notifications)
-                {
-                    Notification(this, E);
+
+                    foreach (NpgsqlNotificationEventArgs E in _mediator.Notifications)
+                    {
+                        // Wrap our notification thread call while running on user land code.
+                        // This prevents our thread of possibly dying there if there is no exception handling.
+                        try
+                        {
+                            Notification(this, E);
+                        }
+                        catch(Exception){}
+                    }
                 }
-            }
+
         }
 
         /// <summary>
