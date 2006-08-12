@@ -196,15 +196,22 @@ namespace Npgsql
         {
             
             
-            // First try to find with hashtable. 
+            // First try to find with hashtable, case sensitive.
             
             Object result1 = field_name_index_table[fieldName];
             
             if (result1 != null)
                 return (Int16)result1;
+            
+
+            result1 = field_name_index_table[fieldName.ToLower(CultureInfo.InvariantCulture)];
+
+            if (result1 != null)
+                return (Int16)result1;
 
             // Then the index with IndexOf (case-sensitive)
 
+            
             Int16 result = (Int16)Array.IndexOf(fields_index, fieldName, 0, fields_index.Length);
 
             if (result != -1)
