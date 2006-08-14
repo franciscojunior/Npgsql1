@@ -1289,7 +1289,15 @@ As result you will have an icon named NpgsqlConnection in the Data-Tab of the To
         (there is an implicity cast operator to convert NpgsqlInet objects into IPAddress if you need to use IPAddress and have only NpgsqlInet)
         </td>
     </tr>
-    
+   
+    <tr class="H2">
+        <td>bit</td>
+        <td>Bit</td>
+        <td>Boolean</td>
+        <td>Boolean, Int32 <br />
+        (If you use an Int32 value, odd values will be translated to bit 1 and even values to bit 0)
+        </td>
+    </tr>
 </table>
 </div>
 
