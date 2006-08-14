@@ -1128,6 +1128,23 @@ namespace NpgsqlTests
         }
 
         [Test]
+        public void DateTimeSupportTimezone2()
+        {
+            
+           
+
+            
+            NpgsqlCommand command = new NpgsqlCommand("set time zone 5; select field_timestamp_with_timezone from tableg where field_serial = 1;", _conn);
+            
+            String s = command.ExecuteScalar().ToString();
+           
+            Assert.AreEqual("2002-02-02 16:00:23Z", s);
+            
+                        
+        }
+
+
+        [Test]
         public void NumericSupport()
         {
             
@@ -1692,10 +1709,10 @@ namespace NpgsqlTests
             p = new NpgsqlParameter("d", DbType.String);
             p.Value = "a";
             command.Parameters.Add(p);
-            p = new NpgsqlParameter("e", DbType.String);
+            p = new NpgsqlParameter("e", NpgsqlDbType.Char);
             p.Value = "a";
             command.Parameters.Add(p);
-            p = new NpgsqlParameter("f", DbType.String);
+            p = new NpgsqlParameter("f", NpgsqlDbType.Varchar);
             p.Value = "a";
             command.Parameters.Add(p);
 
@@ -2132,6 +2149,7 @@ field_serial = :a
             
             
         }
+
         
         [Test]
         public void ParameterTypeTimestamp()
@@ -2501,6 +2519,137 @@ field_serial = :a
         {
 
             NpgsqlCommand command = new NpgsqlCommand("insert into tablej(field_inet) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Inet);
+
+            p.Value = IPAddress.Parse("127.0.0.1");
+            
+            command.Parameters.Add(p);
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_inet from tablej where field_serial = (select max(field_serial) from tablej);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
+            
+            
+
+        }
+
+        [Test]
+        public void BitTypeSupportWithPrepare()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Bit);
+
+            p.Value = true;
+            
+            command.Parameters.Add(p);
+
+            command.Prepare();
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_bit from tablek where field_serial = (select max(field_serial) from tablek);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(true, result);
+            
+            
+
+        }
+
+        [Test]
+        public void BitTypeSupport()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Bit);
+
+            p.Value = true;
+            
+            command.Parameters.Add(p);
+
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_bit from tablek where field_serial = (select max(field_serial) from tablek);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(true, result);
+            
+            
+
+        }
+
+        [Test]
+        public void BitTypeSupport2()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Bit);
+
+            p.Value = 3;
+            
+            command.Parameters.Add(p);
+
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_bit from tablek where field_serial = (select max(field_serial) from tablek);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(true, result);
+            
+            
+
+        }
+
+
+        [Test]
+        public void BitTypeSupport3()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
+            
+
+            NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Bit);
+
+            p.Value = 6;
+            
+            command.Parameters.Add(p);
+
+
+            command.ExecuteNonQuery();
+            
+            command = new NpgsqlCommand("select field_bit from tablek where field_serial = (select max(field_serial) from tablek);", _conn);
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(false, result);
+            
+            
+
+        }
+
+        //[Test]
+        public void FunctionReceiveCharParameter()
+        {
+
+            NpgsqlCommand command = new NpgsqlCommand("d/;", _conn);
             
 
             NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Inet);
