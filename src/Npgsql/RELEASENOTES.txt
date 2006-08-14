@@ -1,3 +1,24 @@
+
+2006-08-14
+
+    Npgsql 1.0 RC3
+
+    Features added:
+
+        Added bit data type support. NpgsqlDbType.Bit parameters can receive Boolean or Int32 values. Odd Int32 values are converted to 1 and even values to 0. Thanks Frans Bouma for heads up.
+
+
+    Bug fixes:
+
+        Fixed culture problems when getting field index. Npgsql wasn't comparing field names correctly. Thanks Joe Audette (joe_audette at yahoo dot com) for patch.
+        Changed the synchronization mechanism for asynchronous socket connections.  This prevents a race condition that allows an unopened socket to be passed to a NetworkStream.  See thread at http://pgfoundry.org/forum/message.php?msg_id=1001604 and http://pgfoundry.org/forum/forum.php?thread_id=853&forum_id=519 for more information. (Josh Cooley)
+        Fixed problem with AsyncNotification handling. It was incorrectly lefting data on stream. This was causing problems with ms.net. See http://pgfoundry.org/forum/forum.php?thread_id=828&forum_id=519. Big thanks to Josh Cooley for his help on fixing this problem.
+        Added missing code to release any listen registered in connection before returning it to pool.This could cause later connections retrieved from pool to receive events user didn't add listen for.
+        Improved Notification handling by wrapping calls with try catch to avoid potential problems with exceptions without exception blocks inside user code. This could kill our notification thread.
+        [#1000685] NpgsqlCommandBuilder doesn't set parameters values of row (Npgsql ver RC2): Fixed command builders GetInsertCommand, GetUpdateCommand, and GetDeleteCommand to use the values from the row passed when called directly. (Josh Cooley)
+
+
+
 2006-07-09
 
     Npgsql 1.0 RC2
