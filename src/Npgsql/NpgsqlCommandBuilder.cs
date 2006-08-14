@@ -85,13 +85,13 @@ namespace Npgsql
             switch (value.StatementType)
             {
                 case StatementType.Insert:
-                    value.Command = GetInsertCommand(value.Row);
+                    value.Command = GetInsertCommand(value.Row, false);
                     break;
                 case StatementType.Update:
-                    value.Command = GetUpdateCommand(value.Row);
+                    value.Command = GetUpdateCommand(value.Row, false);
                     break;
                 case StatementType.Delete:
-                    value.Command = GetDeleteCommand(value.Row);
+                    value.Command = GetDeleteCommand(value.Row, false);
                     break;
             }
 
@@ -193,6 +193,11 @@ namespace Npgsql
 
         public NpgsqlCommand GetInsertCommand (DataRow row)
         {
+            return GetInsertCommand(row, true);
+        }
+
+        private NpgsqlCommand GetInsertCommand(DataRow row, bool setParameterValues)
+        {
             if (insert_command == null)
             {
                 string fields = "";
@@ -241,10 +246,19 @@ namespace Npgsql
                 cmdaux.Connection = data_adapter.SelectCommand.Connection;
                 insert_command = cmdaux;
             }
+            if (setParameterValues)
+            {
+                SetParameterValuesFromRow(insert_command, row);
+            }
             return insert_command;
         }
 
         public NpgsqlCommand GetUpdateCommand (DataRow row)
+        {
+            return GetUpdateCommand(row, true);
+        }
+
+        private NpgsqlCommand GetUpdateCommand(DataRow row, bool setParameterValues)
         {
             if (update_command == null)
             {
@@ -299,10 +313,19 @@ namespace Npgsql
                 update_command = cmdaux;
 
             }
+            if (setParameterValues)
+            {
+                SetParameterValuesFromRow(update_command, row);
+            }
             return update_command;
         }
 
         public NpgsqlCommand GetDeleteCommand (DataRow row)
+        {
+            return GetDeleteCommand(row, true);
+        }
+
+        private NpgsqlCommand GetDeleteCommand(DataRow row, bool setParameterValues)
         {
             if (delete_command == null)
             {
@@ -347,6 +370,10 @@ namespace Npgsql
                 cmdaux.CommandText = "delete from " + QualifiedTableName(schema_name, table_name) + " where ( " + wheres + " )";
                 cmdaux.Connection = data_adapter.SelectCommand.Connection;
                 delete_command = cmdaux;
+            }
+            if (setParameterValues)
+            {
+                SetParameterValuesFromRow(delete_command, row);
             }
             return delete_command;
         }
@@ -425,6 +452,14 @@ namespace Npgsql
             else
             {
                 return GetQuotedName(schema) + "." + GetQuotedName(tableName);
+            }
+        }
+
+        private static void SetParameterValuesFromRow(NpgsqlCommand command, DataRow row)
+        {
+            foreach (NpgsqlParameter parameter in command.Parameters)
+            {
+                parameter.Value = row[parameter.SourceColumn, parameter.SourceVersion];
             }
         }
     }
