@@ -30,8 +30,6 @@ using NUnit.Framework;
 namespace NpgsqlTests
 {
 
-
-
     [TestFixture]
     public class ConnectionTests : BaseClassTests
     {
@@ -39,8 +37,6 @@ namespace NpgsqlTests
         [Test]
         public void ChangeDatabase()
         {
-            
-
             _conn.ChangeDatabase("template1");
 
             NpgsqlCommand command = new NpgsqlCommand("select current_database()", _conn);
@@ -48,34 +44,25 @@ namespace NpgsqlTests
             String result = (String)command.ExecuteScalar();
 
             Assert.AreEqual("template1", result);
-
         }
 
         [Test]
         [ExpectedException(typeof(InvalidOperationException))]
         public void NestedTransaction()
         {
-            
-
-            NpgsqlTransaction t = null;
+            NpgsqlTransaction t;
                 
             t = _conn.BeginTransaction();
-
-
+            if(t == null)
+              return;
         }
 
         [Test]
         public void SequencialTransaction()
         {
-            
-
             _t.Rollback();
 
             _t = _conn.BeginTransaction();
-
-            
-
-
         }
 
         [Test]
@@ -92,12 +79,6 @@ namespace NpgsqlTests
             {
                 Assert.AreEqual(e.Message, "Connection refused");
             }
-            
-
-
-
-
         }
-
     }
 }

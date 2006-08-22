@@ -15,7 +15,6 @@ namespace NpgsqlTests
 
         protected override void SetUp()
         {
-            
             base.SetUp();
             string sql = @"	CREATE TABLE public.preparetest
                          (
@@ -30,7 +29,6 @@ namespace NpgsqlTests
             NpgsqlCommand cmd = new NpgsqlCommand(sql, _conn);
             cmd.ExecuteNonQuery();
             CommitTransaction = true;
-
         }
 
 
@@ -50,8 +48,6 @@ namespace NpgsqlTests
         [Test]
         public void TestInt8Null()
         {
-
-
             NpgsqlCommand cmd = GetCommand();
 
 
@@ -68,16 +64,11 @@ namespace NpgsqlTests
 
             // This will fail
             cmd.ExecuteNonQuery();
-
-
-
-
         }
 
         [Test]
         public void TestInt4Null()
         {
-
             NpgsqlCommand cmd = GetCommand();
 
 
@@ -93,15 +84,11 @@ namespace NpgsqlTests
 
             // This will fail
             cmd.ExecuteNonQuery();
-
-
-
         }
 
         [Test]
         public void TestVarcharNull()
         {
-
             NpgsqlCommand cmd = GetCommand();
 
 
@@ -117,9 +104,6 @@ namespace NpgsqlTests
 
             // This inserts a string with the value 'NULL'
             cmd.ExecuteNonQuery();
-
-
-
         }
 
         private NpgsqlCommand GetCommand()
@@ -153,7 +137,6 @@ namespace NpgsqlTests
         [Test]
         public void TestSubquery()
         {
-
             string sql = "SELECT testid FROM preparetest WHERE :p1 IN (SELECT varchar_notnull FROM preparetest)";
             NpgsqlCommand cmd = new NpgsqlCommand(sql, _conn);
             NpgsqlParameter p1 = new NpgsqlParameter(":p1", DbType.String);
@@ -161,14 +144,11 @@ namespace NpgsqlTests
             cmd.Parameters.Add(p1);
 
 
-            int result = cmd.ExecuteNonQuery(); // Succeeds
+            cmd.ExecuteNonQuery(); // Succeeds
 
             cmd.Prepare(); // Fails
 
-            result = cmd.ExecuteNonQuery();
-
-
-
+            cmd.ExecuteNonQuery();
         }
     }
 }

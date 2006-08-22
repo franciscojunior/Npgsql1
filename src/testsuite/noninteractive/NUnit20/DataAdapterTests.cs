@@ -42,8 +42,6 @@ namespace NpgsqlTests
         [Test]
         public void InsertWithDataSet()
         {
-
-            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb", _conn);
@@ -92,18 +90,11 @@ namespace NpgsqlTests
 
             Assert.AreEqual(4, dr2[1]);
             Assert.AreEqual(7.3000000M, dr2[3]);
-
-            
-
-
-
         }
 
         [Test]
         public void FillWithEmptyResultset()
         {
-
-            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = -1", _conn);
@@ -117,15 +108,11 @@ namespace NpgsqlTests
             Assert.AreEqual("field_int2", ds.Tables[0].Columns[1].ColumnName);
             Assert.AreEqual("field_timestamp", ds.Tables[0].Columns[2].ColumnName);
             Assert.AreEqual("field_numeric", ds.Tables[0].Columns[3].ColumnName);
-
-            
         }
 
         [Test]
         public void UpdateLettingNullFieldValue()
         {
-
-                        
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (2)", _conn);
             command.ExecuteNonQuery();
             
@@ -134,7 +121,7 @@ namespace NpgsqlTests
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = (select max(field_serial) from tableb)", _conn);
             da.InsertCommand = new NpgsqlCommand(";", _conn);
-			da.UpdateCommand = new NpgsqlCommand("update tableb set field_int2 = :a, field_timestamp = :b, field_numeric = :c where field_serial = :d", _conn);
+      			da.UpdateCommand = new NpgsqlCommand("update tableb set field_int2 = :a, field_timestamp = :b, field_numeric = :c where field_serial = :d", _conn);
 
             da.UpdateCommand.Parameters.Add(new NpgsqlParameter("a", DbType.Int16));
 
@@ -157,6 +144,7 @@ namespace NpgsqlTests
             da.Fill(ds);
             
             DataTable dt = ds.Tables[0];
+            Assert.IsNotNull(dt);
 
             DataRow dr = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1];
             
@@ -174,30 +162,21 @@ namespace NpgsqlTests
             dr2.Read();
             
             Assert.AreEqual(4, dr2["field_int2"]);
-
-
-            
-
         }
 
         [Test]
         public void FillWithDuplicateColumnName()
         {
-            
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select field_serial, field_serial from tableb", _conn);
 
             da.Fill(ds);
-
         }
         
         [Test]
         public void UpdateWithDataSet()
         {
-
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (2)", _conn);
             command.ExecuteNonQuery();
             
@@ -207,10 +186,12 @@ namespace NpgsqlTests
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tableb where field_serial = (select max(field_serial) from tableb)", _conn);
             
             NpgsqlCommandBuilder cb = new NpgsqlCommandBuilder(da);
+            Assert.IsNotNull(cb);
             
             da.Fill(ds);
             
             DataTable dt = ds.Tables[0];
+            Assert.IsNotNull(dt);
 
             DataRow dr = ds.Tables[0].Rows[ds.Tables[0].Rows.Count - 1];
             
@@ -228,22 +209,16 @@ namespace NpgsqlTests
             dr2.Read();
             
             Assert.AreEqual(4, dr2["field_int2"]);
-
-
-            
-
         }
-        
         
         [Test]
         public void InsertWithCommandBuilderCaseSensitive()
         {
-            
-
             DataSet ds = new DataSet();
 
             NpgsqlDataAdapter da = new NpgsqlDataAdapter("select * from tablei", _conn);
             NpgsqlCommandBuilder builder = new NpgsqlCommandBuilder(da);
+            Assert.IsNotNull(builder);
 
             da.Fill(ds);
 
@@ -269,26 +244,6 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(4, dr2[1]);
-            
-
-            
-
-
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
     }
 }

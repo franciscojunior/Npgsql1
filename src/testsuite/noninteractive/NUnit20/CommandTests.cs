@@ -56,6 +56,7 @@ namespace NpgsqlTests
             command.Parameters.Add(new NpgsqlParameter("Parameter4", DbType.DateTime));
 
             IDbDataParameter idbPrmtr = command.Parameters["Parameter1"];
+            Assert.IsNotNull(idbPrmtr);
             command.Parameters[0].Value = 1;
 
             // Get by indexers.
@@ -69,9 +70,6 @@ namespace NpgsqlTests
             Assert.AreEqual(":Parameter2", command.Parameters[1].ParameterName);
             Assert.AreEqual(":Parameter3", command.Parameters[2].ParameterName);
             Assert.AreEqual("Parameter4", command.Parameters[3].ParameterName);
-
-
-
         }
 
         [Test]
@@ -80,7 +78,6 @@ namespace NpgsqlTests
             
             NpgsqlCommand command = new NpgsqlCommand(";", _conn);
             command.ExecuteNonQuery();
-
         }
         
         
@@ -95,45 +92,34 @@ namespace NpgsqlTests
             
             Assert.AreEqual(":Parameter1", command.Parameters[0].ParameterName);
             Assert.AreEqual(":Parameter2", command.Parameters[1].ParameterName);
-
         }
-        
-        
         
 
         [Test]
         public void FunctionCallFromSelect()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select * from funcB()", _conn);
 
             NpgsqlDataReader reader = command.ExecuteReader();
 
-            Assertion.AssertNotNull(reader);
+            Assert.IsNotNull(reader);
             //reader.FieldCount
-
         }
 
         [Test]
         public void ExecuteScalar()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select count(*) from tablea", _conn);
 
             Object result = command.ExecuteScalar();
 
             Assert.AreEqual(5, result);
             //reader.FieldCount
-
         }
         
         [Test]
         public void TransactionSetOk()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("select count(*) from tablea", _conn);
             
             command.Transaction = _t;
@@ -141,16 +127,12 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(5, result);
-            
-
         }
         
         
         [Test]
         public void InsertStringWithBackslashes()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:p0)", _conn);
             
             command.Parameters.Add(new NpgsqlParameter("p0", NpgsqlDbType.Text));
@@ -172,16 +154,12 @@ namespace NpgsqlTests
             
             
             //reader.FieldCount
-
         }
-        
                
         
         [Test]
         public void UseStringParameterWithNoNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:p0)", _conn);
             
             command.Parameters.Add(new NpgsqlParameter("p0", "test"));
@@ -207,15 +185,12 @@ namespace NpgsqlTests
             
             
             //reader.FieldCount
-
         }
         
         
         [Test]
         public void UseIntegerParameterWithNoNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_int4) values (:p0)", _conn);
             
             command.Parameters.Add(new NpgsqlParameter("p0", 5));
@@ -235,21 +210,16 @@ namespace NpgsqlTests
             result = command2.ExecuteScalar();
             
             
-            
             Assert.AreEqual(5, result);
             
             
-            
             //reader.FieldCount
-
         }
         
         
         //[Test]
         public void UseSmallintParameterWithNoNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_int4) values (:p0)", _conn);
             
             command.Parameters.Add(new NpgsqlParameter("p0", (Int16)5));
@@ -264,28 +234,20 @@ namespace NpgsqlTests
             
             
             NpgsqlCommand command2 = new NpgsqlCommand("select field_int4 from tablea where field_serial = (select max(field_serial) from tablea)", _conn);
-            
 
             result = command2.ExecuteScalar();
-            
             
             
             Assert.AreEqual(5, result);
             
             
-            
             //reader.FieldCount
-
         }
         
         
-        
-
         [Test]
         public void FunctionCallReturnSingleValue()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC();", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -293,7 +255,6 @@ namespace NpgsqlTests
 
             Assert.AreEqual(5, result);
             //reader.FieldCount
-
         }
         
         
@@ -304,15 +265,12 @@ namespace NpgsqlTests
             
             _t.Rollback();
             _t.Rollback();
-            
         }
 
 
         [Test]
         public void FunctionCallReturnSingleValueWithPrepare()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC()", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -321,14 +279,11 @@ namespace NpgsqlTests
 
             Assert.AreEqual(5, result);
             //reader.FieldCount
-
         }
 
         [Test]
         public void FunctionCallWithParametersReturnSingleValue()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -339,15 +294,11 @@ namespace NpgsqlTests
             Int64 result = (Int64) command.ExecuteScalar();
 
             Assert.AreEqual(1, result);
-
-
         }
 
         [Test]
         public void FunctionCallWithParametersReturnSingleValueNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -358,17 +309,12 @@ namespace NpgsqlTests
             Int64 result = (Int64) command.ExecuteScalar();
 
             Assert.AreEqual(1, result);
-
         }
-
-
 
 
         [Test]
         public void FunctionCallWithParametersPrepareReturnSingleValue()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -384,15 +330,11 @@ namespace NpgsqlTests
             Int64 result = (Int64) command.ExecuteScalar();
 
             Assert.AreEqual(1, result);
-
-
         }
 
         [Test]
         public void FunctionCallWithParametersPrepareReturnSingleValueNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -408,17 +350,12 @@ namespace NpgsqlTests
             Int64 result = (Int64) command.ExecuteScalar();
 
             Assert.AreEqual(1, result);
-
-
         }
-
 
 
         [Test]
         public void FunctionCallWithParametersPrepareReturnSingleValueNpgsqlDbType2()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(@a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -434,33 +371,23 @@ namespace NpgsqlTests
             Int64 result = (Int64) command.ExecuteScalar();
 
             Assert.AreEqual(1, result);
-
-
         }
 
 
         [Test]
         public void FunctionCallReturnResultSet()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcB()", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
             NpgsqlDataReader dr = command.ExecuteReader();
-
-
-
-
+            Assert.IsNotNull(dr);
         }
 
 
         [Test]
         public void CursorStatement()
         {
-
-            
-
             Int32 i = 0;
 
             
@@ -497,69 +424,48 @@ namespace NpgsqlTests
             command.CommandText = "close te;";
 
             command.ExecuteNonQuery();
-
-            
-
-
-
         }
 
         [Test]
         public void PreparedStatementNoParameters()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select * from tablea;", _conn);
 
             command.Prepare();
-
             
             NpgsqlDataReader dr = command.ExecuteReader();
-
-
+            Assert.IsNotNull(dr);
         }
         
         
         [Test]
         public void PreparedStatementInsert()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:p0);", _conn);
             command.Parameters.Add(new NpgsqlParameter("p0", NpgsqlDbType.Text));
             command.Parameters["p0"].Value = "test";
             
-
             command.Prepare();
-
             
             NpgsqlDataReader dr = command.ExecuteReader();
-            
-            
-
-
+            Assert.IsNotNull(dr);
         }
         
         [Test]
         public void RTFStatementInsert()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:p0);", _conn);
             command.Parameters.Add(new NpgsqlParameter("p0", NpgsqlDbType.Text));
             command.Parameters["p0"].Value = @"{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{";
                        
             
             NpgsqlDataReader dr = command.ExecuteReader();
+            Assert.IsNotNull(dr);
             
             
             String result = (String)new NpgsqlCommand("select field_text from tablea where field_serial = (select max(field_serial) from tablea);", _conn).ExecuteScalar();
             
-            
-            
             Assert.AreEqual(@"{\rtf1\ansi\ansicpg1252\uc1 \deff0\deflang1033\deflangfe1033{", result);
-
-
         }
         
         
@@ -567,31 +473,20 @@ namespace NpgsqlTests
         [Test]
         public void PreparedStatementInsertNullValue()
         {
-
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_int4) values (:p0);", _conn);
             command.Parameters.Add(new NpgsqlParameter("p0", NpgsqlDbType.Integer));
             command.Parameters["p0"].Value = DBNull.Value;
-            
 
             command.Prepare();
 
-            
             NpgsqlDataReader dr = command.ExecuteReader();
-            
-
-
+            Assert.IsNotNull(dr);
         }
-        
         
 
         [Test]
         public void PreparedStatementWithParameters()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_int4 = :a and field_int8 = :b;", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
@@ -607,17 +502,12 @@ namespace NpgsqlTests
             command.Parameters[1].Value = 5;
 
             NpgsqlDataReader dr = command.ExecuteReader();
-
-
-
-
+            Assert.IsNotNull(dr);
         }
 
         [Test]
         public void PreparedStatementWithParametersNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select * from tablea where field_int4 = :a and field_int8 = :b;", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Integer));
@@ -633,17 +523,12 @@ namespace NpgsqlTests
             command.Parameters[1].Value = 5;
 
             NpgsqlDataReader dr = command.ExecuteReader();
-
-
-
-
+            Assert.IsNotNull(dr);
         }
         
         [Test]
         public void FunctionCallWithImplicitParameters()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -664,8 +549,6 @@ namespace NpgsqlTests
         [Test]
         public void PreparedFunctionCallWithImplicitParameters()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -684,12 +567,9 @@ namespace NpgsqlTests
         }
         
         
-        
         [Test]
         public void FunctionCallWithImplicitParametersWithNoParameters()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -703,8 +583,6 @@ namespace NpgsqlTests
         [Test]
         public void FunctionCallOutputParameter()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("funcC()", _conn);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -723,8 +601,6 @@ namespace NpgsqlTests
         [Test]
         public void FunctionCallOutputParameter2()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("funcC", _conn);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -743,8 +619,6 @@ namespace NpgsqlTests
         [Test]
         public void OutputParameterWithoutName()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("funcC", _conn);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -763,8 +637,6 @@ namespace NpgsqlTests
         [Test]
         public void FunctionReturnVoid()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("test(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -776,15 +648,11 @@ namespace NpgsqlTests
             
                         
             command.ExecuteNonQuery();
-            
-            
         }
         
         [Test]
         public void StatementOutputParameters()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("select 4, 5;", _conn);
                         
             NpgsqlParameter p = new NpgsqlParameter("a", DbType.Int32);
@@ -817,8 +685,6 @@ namespace NpgsqlTests
         [Test]
         public void FunctionCallInputOutputParameter()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -839,8 +705,6 @@ namespace NpgsqlTests
         [Test]
         public void StatementMappedOutputParameters()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("select 3, 4 as param1, 5 as param2, 6;", _conn);
                         
             NpgsqlParameter p = new NpgsqlParameter("param2", NpgsqlDbType.Integer);
@@ -867,7 +731,6 @@ namespace NpgsqlTests
             Assert.AreEqual(4, command.Parameters["param1"].Value);
             Assert.AreEqual(5, command.Parameters["param2"].Value);
             Assert.AreEqual(-1, command.Parameters["p"].Value);
-            
         }
 
 
@@ -888,22 +751,17 @@ namespace NpgsqlTests
 
             command = new NpgsqlCommand("notify notifytest;", _conn);
             command.ExecuteNonQuery();
-
-
-
         }
 
         private void NotificationSupportHelper(Object sender, NpgsqlNotificationEventArgs args)
         {
             throw new InvalidOperationException();
         }
+
 		
-		[Test]
+    		[Test]
         public void ByteSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Byte));
@@ -915,16 +773,12 @@ namespace NpgsqlTests
             Assert.AreEqual(1, rowsAdded);
 
             command.Parameters.Clear();
-            
         }
         
         
-		[Test]
+    		[Test]
         public void ByteaSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select field_bytea from tablef where field_serial = 1", _conn);
 
 
@@ -932,28 +786,21 @@ namespace NpgsqlTests
             
 
             Assert.AreEqual(2, result.Length);
-
         }
         
         [Test]
         public void ByteaInsertSupport()
         {
-            
-
-
             Byte[] toStore = { 1 };
 
-			NpgsqlCommand cmd = new NpgsqlCommand("insert into tablef(field_bytea) values (:val)", _conn);
-			cmd.Parameters.Add(new NpgsqlParameter("val", DbType.Binary));
-			cmd.Parameters[0].Value = toStore;
-			cmd.ExecuteNonQuery();
+  		    	NpgsqlCommand cmd = new NpgsqlCommand("insert into tablef(field_bytea) values (:val)", _conn);
+      	    cmd.Parameters.Add(new NpgsqlParameter("val", DbType.Binary));
+  		    	cmd.Parameters[0].Value = toStore;
+      			cmd.ExecuteNonQuery();
 
-			cmd = new NpgsqlCommand("select field_bytea from tablef where field_serial = (select max(field_serial) from tablef)", _conn);
+  	  	  	cmd = new NpgsqlCommand("select field_bytea from tablef where field_serial = (select max(field_serial) from tablef)", _conn);
 			
-			Byte[] result = (Byte[])cmd.ExecuteScalar();
-			
-			
-			
+    			  Byte[] result = (Byte[])cmd.ExecuteScalar();
 			
             Assert.AreEqual(1, result.Length);
 
@@ -980,43 +827,31 @@ namespace NpgsqlTests
             
             
             Assert.AreEqual(toStore, result);
-
         }
         
         
         
-		[Test]
+    		[Test]
         public void ByteaParameterSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select field_bytea from tablef where field_bytea = :bytesData", _conn);
             
             Byte[] bytes = new Byte[]{45,44};
             
             command.Parameters.Add(":bytesData", NpgsqlTypes.NpgsqlDbType.Bytea);
-			command.Parameters[":bytesData"].Value = bytes;
+      			command.Parameters[":bytesData"].Value = bytes;
 
 
             Object result = command.ExecuteNonQuery();
             
 
             Assert.AreEqual(-1, result);
-
         }
         
         
-        
-        
-		[Test]
+    		[Test]
         public void EnumSupport()
         {
-        
-            
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Smallint));
@@ -1027,17 +862,11 @@ namespace NpgsqlTests
             Int32 rowsAdded = command.ExecuteNonQuery();
 
             Assert.AreEqual(1, rowsAdded);
-
-            
-            
         }
 
         [Test]
         public void DateTimeSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = 2;", _conn);
 
             DateTime d = (DateTime)command.ExecuteScalar();
@@ -1054,16 +883,12 @@ namespace NpgsqlTests
             command.Parameters[0].Value = dt;
 
             command.ExecuteScalar();
-
         }
 
 
         [Test]
         public void DateTimeSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select field_timestamp from tableb where field_serial = 2;", _conn);
 
             DateTime d = (DateTime)command.ExecuteScalar();
@@ -1080,76 +905,55 @@ namespace NpgsqlTests
             command.Parameters[0].Value = dt;
 
             command.ExecuteScalar();
-
         }
 
         [Test]
         public void DateSupport()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_date from tablec where field_serial = 1;", _conn);
 
             DateTime d = (DateTime)command.ExecuteScalar();
 
 
             Assert.AreEqual("2002-03-04", d.ToString("yyyy-MM-dd"));
-
         }
 
         [Test]
         public void TimeSupport()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_time from tablec where field_serial = 2;", _conn);
 
             DateTime d = (DateTime)command.ExecuteScalar();
 
 
             Assert.AreEqual("10:03:45.345", d.ToString("HH:mm:ss.fff"));
-
         }
         
         [Test]
         public void DateTimeSupportTimezone()
         {
-            
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("set time zone 5;select field_timestamp_with_timezone from tableg where field_serial = 1;", _conn);
             
             DateTime d = (DateTime)command.ExecuteScalar();
             
             
             Assert.AreEqual("2002-02-02 16:00:23Z", d.ToString("u"));
-            
-                        
         }
 
         [Test]
         public void DateTimeSupportTimezone2()
         {
-            
-           
-
-            
             NpgsqlCommand command = new NpgsqlCommand("set time zone 5; select field_timestamp_with_timezone from tableg where field_serial = 1;", _conn);
             
             String s = command.ExecuteScalar().ToString();
            
             Assert.AreEqual("2002-02-02 16:00:23Z", s);
-            
-                        
         }
 
 
         [Test]
         public void NumericSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_numeric) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Decimal));
 
@@ -1169,18 +973,11 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(7.4000000M, result);
-
-
-
-
         }
 
         [Test]
         public void NumericSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_numeric) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Numeric));
 
@@ -1200,19 +997,12 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(7.4000000M, result);
-
-
-
-
         }
 
 
         [Test]
         public void InsertSingleValue()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float4) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter(":a", DbType.Single));
 
@@ -1232,16 +1022,12 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(7.4F, result);
-
         }
 
 
         [Test]
         public void InsertSingleValueNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float4) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter(":a", NpgsqlDbType.Real));
 
@@ -1261,16 +1047,12 @@ namespace NpgsqlTests
 
 
             Assert.AreEqual(7.4F, result);
-
         }
         
         
         [Test]
         public void DoubleValueSupportWithExtendedQuery()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select count(*) from tabled where field_float8 = :a", _conn);
             command.Parameters.Add(new NpgsqlParameter(":a", NpgsqlDbType.Double));
 
@@ -1282,15 +1064,11 @@ namespace NpgsqlTests
 
             
             Assert.AreEqual(1, rows);
-
         }
 
         [Test]
         public void InsertDoubleValue()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float8) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter(":a", DbType.Double));
 
@@ -1309,16 +1087,12 @@ namespace NpgsqlTests
 
             Assert.AreEqual(1, rowsAdded);
             Assert.AreEqual(7.4D, result);
-
         }
 
 
         [Test]
         public void InsertDoubleValueNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tabled(field_float8) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter(":a", NpgsqlDbType.Double));
 
@@ -1337,16 +1111,12 @@ namespace NpgsqlTests
 
             Assert.AreEqual(1, rowsAdded);
             Assert.AreEqual(7.4D, result);
-
         }
 
 
         [Test]
         public void NegativeNumericSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select * from tableb where field_serial = 4", _conn);
 
 
@@ -1356,16 +1126,12 @@ namespace NpgsqlTests
             Decimal result = dr.GetDecimal(3);
 
             Assert.AreEqual(-4.3000000M, result);
-
         }
 
 
         [Test]
         public void PrecisionScaleNumericSupport()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("select * from tableb where field_serial = 4", _conn);
 
 
@@ -1377,14 +1143,11 @@ namespace NpgsqlTests
             Assert.AreEqual(-4.3000000M, (Decimal)result);
             //Assert.AreEqual(11, result.Precision);
             //Assert.AreEqual(7, result.Scale);
-
         }
 
         [Test]
         public void InsertNullString()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.String));
@@ -1401,16 +1164,11 @@ namespace NpgsqlTests
             Int64 result = (Int64)command.ExecuteScalar();
 
             Assert.AreEqual(4, result);
-
-
-
         }
 
         [Test]
         public void InsertNullStringNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Text));
@@ -1427,9 +1185,6 @@ namespace NpgsqlTests
             Int64 result = (Int64)command.ExecuteScalar();
 
             Assert.AreEqual(4, result);
-
-
-
         }
 
 
@@ -1437,8 +1192,6 @@ namespace NpgsqlTests
         [Test]
         public void InsertNullDateTime()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.DateTime));
@@ -1455,17 +1208,12 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar();
 
             Assert.AreEqual(4, result);
-
-
-
         }
 
 
         [Test]
         public void InsertNullDateTimeNpgsqlDbType()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Timestamp));
@@ -1482,9 +1230,6 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar();
 
             Assert.AreEqual(4, result);
-
-
-
         }
 
 
@@ -1492,9 +1237,6 @@ namespace NpgsqlTests
         [Test]
         public void InsertNullInt16()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Int16));
@@ -1511,17 +1253,12 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
             Assert.AreEqual(4, result);
-
-
         }
 
 
         [Test]
         public void InsertNullInt16NpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_int2) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Smallint));
@@ -1538,17 +1275,12 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
             Assert.AreEqual(4, result);
-
-
         }
 
 
         [Test]
         public void InsertNullInt32()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_int4) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
@@ -1565,16 +1297,12 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
             Assert.AreEqual(5, result);
-
         }
 
 
         [Test]
         public void InsertNullNumeric()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_numeric) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Decimal));
@@ -1591,15 +1319,11 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
             Assert.AreEqual(3, result);
-
         }
 
         [Test]
         public void InsertNullBoolean()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_bool) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.Boolean));
@@ -1620,10 +1344,34 @@ namespace NpgsqlTests
         }
 
         [Test]
-        public void AnsiStringSupport()
+        public void InsertBoolean()
         {
             
 
+
+            NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_bool) values (:a)", _conn);
+
+            command.Parameters.Add(new NpgsqlParameter("a", DbType.Boolean));
+
+            command.Parameters[0].Value = false;
+
+            Int32 rowsAdded = command.ExecuteNonQuery();
+
+            Assert.AreEqual(1, rowsAdded);
+
+            command.CommandText = "select field_bool from tablea where field_serial = (select max(field_serial) from tablea)";
+            command.Parameters.Clear();
+
+            Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
+
+            Assert.AreEqual(false, result);
+
+        }
+
+        [Test]
+        public void AnsiStringSupport()
+        {
+         
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
 
             command.Parameters.Add(new NpgsqlParameter("a", DbType.AnsiString));
@@ -1640,22 +1388,17 @@ namespace NpgsqlTests
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
             Assert.AreEqual(1, result);
-
         }
 
 
         [Test]
         public void MultipleQueriesFirstResultsetEmpty()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values ('a'); select count(*) from tablea;", _conn);
 
             Object result = command.ExecuteScalar();
 
             Assert.AreEqual(6, result);
-
-
         }
 
         [Test]
@@ -1669,8 +1412,6 @@ namespace NpgsqlTests
             command.Connection.Open();
             command.ExecuteReader();
             command.Connection.Close();
-
-
         }
 
         [Test]
@@ -1684,8 +1425,6 @@ namespace NpgsqlTests
             command.Connection.Open();
             command.ExecuteReader();
             command.Connection.Close();
-
-
         }
 
 
@@ -1720,8 +1459,6 @@ namespace NpgsqlTests
             command.Connection.Open();
             command.ExecuteScalar();
             command.Connection.Close();
-
-
         }
         
         [Test]
@@ -1756,18 +1493,18 @@ namespace NpgsqlTests
             command.Prepare();
             command.ExecuteScalar();
             command.Connection.Close();
-
-
         }
 
 
+        
+        // The following two methods don't need checks because what is being tested is the 
+        // execution of parameter replacing which happens on ExecuteNonQuery method. So, if these
+        // methods don't throw exception, they are ok.
         [Test]
         public void TestParameterReplace()
         {
-            
-
             String sql = @"select * from tablea where
-field_serial = :a
+                            field_serial = :a
                          ";
 
 
@@ -1777,15 +1514,12 @@ field_serial = :a
 
             command.Parameters[0].Value = 2;
 
-            Int32 rowsAdded = command.ExecuteNonQuery();
-
+            command.ExecuteNonQuery();
         }
         
         [Test]
         public void TestParameterReplace2()
         {
-            
-
             String sql = @"select * from tablea where
                          field_serial = :a+1
                          ";
@@ -1797,15 +1531,12 @@ field_serial = :a
 
             command.Parameters[0].Value = 1;
 
-            Int32 rowsAdded = command.ExecuteNonQuery();
-
+            command.ExecuteNonQuery();
         }
         
         [Test]
         public void TestParameterNameInParameterValue()
         {
-            
-
             String sql = "insert into tablea(field_text, field_int4) values ( :a, :b );" ;
 
             String aValue = "test :b";
@@ -1821,6 +1552,7 @@ field_serial = :a
             command.Parameters[":b"].Value = 1;
 
             Int32 rowsAdded = command.ExecuteNonQuery();
+            Assert.AreEqual(rowsAdded, 1);
             
             
             NpgsqlCommand command2 = new NpgsqlCommand("select field_text, field_int4 from tablea where field_serial = (select max(field_serial) from tablea)", _conn);
@@ -1838,19 +1570,11 @@ field_serial = :a
             
             Assert.AreEqual(aValue, a);
             Assert.AreEqual(1, b);
-            
-            
-            
-            
-
         }
 
         [Test]
         public void TestPointSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_point from tablee where field_serial = 1", _conn);
 
             NpgsqlPoint p = (NpgsqlPoint) command.ExecuteScalar();
@@ -1863,9 +1587,6 @@ field_serial = :a
         [Test]
         public void TestBoxSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_box from tablee where field_serial = 2", _conn);
 
             NpgsqlBox box = (NpgsqlBox) command.ExecuteScalar();
@@ -1874,16 +1595,11 @@ field_serial = :a
             Assert.AreEqual(4, box.UpperRight.Y);
             Assert.AreEqual(4, box.LowerLeft.X);
             Assert.AreEqual(3, box.LowerLeft.Y);
-
-
         }
 
         [Test]
         public void TestLSegSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_lseg from tablee where field_serial = 3", _conn);
 
             NpgsqlLSeg lseg = (NpgsqlLSeg) command.ExecuteScalar();
@@ -1892,16 +1608,11 @@ field_serial = :a
             Assert.AreEqual(3, lseg.Start.Y);
             Assert.AreEqual(5, lseg.End.X);
             Assert.AreEqual(4, lseg.End.Y);
-
-
         }
 
         [Test]
         public void TestClosedPathSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_path from tablee where field_serial = 4", _conn);
 
             NpgsqlPath path = (NpgsqlPath) command.ExecuteScalar();
@@ -1912,16 +1623,11 @@ field_serial = :a
             Assert.AreEqual(3, path[0].Y);
             Assert.AreEqual(5, path[1].X);
             Assert.AreEqual(4, path[1].Y);
-
-
         }
 
         [Test]
         public void TestOpenPathSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_path from tablee where field_serial = 5", _conn);
 
             NpgsqlPath path = (NpgsqlPath) command.ExecuteScalar();
@@ -1932,8 +1638,6 @@ field_serial = :a
             Assert.AreEqual(3, path[0].Y);
             Assert.AreEqual(5, path[1].X);
             Assert.AreEqual(4, path[1].Y);
-
-
         }
 
 
@@ -1941,9 +1645,6 @@ field_serial = :a
         [Test]
         public void TestPolygonSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_polygon from tablee where field_serial = 6", _conn);
 
             NpgsqlPolygon polygon = (NpgsqlPolygon) command.ExecuteScalar();
@@ -1953,17 +1654,12 @@ field_serial = :a
             Assert.AreEqual(3, polygon[0].Y);
             Assert.AreEqual(5, polygon[1].X);
             Assert.AreEqual(4, polygon[1].Y);
-
-
         }
 
 
         [Test]
         public void TestCircleSupport()
         {
-
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select field_circle from tablee where field_serial = 7", _conn);
 
             NpgsqlCircle circle = (NpgsqlCircle) command.ExecuteScalar();
@@ -1971,43 +1667,33 @@ field_serial = :a
             Assert.AreEqual(4, circle.Center.X);
             Assert.AreEqual(3, circle.Center.Y);
             Assert.AreEqual(5, circle.Radius);
-
-
-
         }
         
         [Test]
         public void SetParameterValueNull()
         {
-            
-
-
             NpgsqlCommand cmd = new NpgsqlCommand("insert into tablef(field_bytea) values (:val)", _conn);
-			NpgsqlParameter param = cmd.CreateParameter();
-			param.ParameterName="val";
+      			NpgsqlParameter param = cmd.CreateParameter();
+      			param.ParameterName="val";
             param.NpgsqlDbType = NpgsqlDbType.Bytea;
-			param.Value = DBNull.Value;
+      			param.Value = DBNull.Value;
 			
-			cmd.Parameters.Add(param);
+      			cmd.Parameters.Add(param);
 			
-			cmd.ExecuteNonQuery();
+      			cmd.ExecuteNonQuery();
 
-			cmd = new NpgsqlCommand("select field_bytea from tablef where field_serial = (select max(field_serial) from tablef)", _conn);
+      			cmd = new NpgsqlCommand("select field_bytea from tablef where field_serial = (select max(field_serial) from tablef)", _conn);
 			
-			Object result = cmd.ExecuteScalar();
-			
+      			Object result = cmd.ExecuteScalar();
 			
 			
             Assert.AreEqual(DBNull.Value, result);
-
         }
         
         
         [Test]
         public void TestCharParameterLength()
         {
-            
-    
             String sql = "insert into tableh(field_char5) values ( :a );" ;
     
             String aValue = "atest";
@@ -2020,7 +1706,7 @@ field_serial = :a
             command.Parameters[":a"].Size = 5;
             
             Int32 rowsAdded = command.ExecuteNonQuery();
-            
+            Assert.AreEqual(rowsAdded, 1);
             
             NpgsqlCommand command2 = new NpgsqlCommand("select field_char5 from tableh where field_serial = (select max(field_serial) from tableh)", _conn);
             
@@ -2034,15 +1720,11 @@ field_serial = :a
             
             
             Assert.AreEqual(aValue, a);
-            
-    
         }
         
         [Test]
         public void ParameterHandlingOnQueryWithParameterPrefix()
         {
-            
-
             NpgsqlCommand command = new NpgsqlCommand("select to_char(field_time, 'HH24:MI') from tablec where field_serial = :a;", _conn);
             
             NpgsqlParameter p = new NpgsqlParameter("a", NpgsqlDbType.Integer);
@@ -2054,16 +1736,11 @@ field_serial = :a
 
 
             Assert.AreEqual("10:03", d);
-
         }
         
         [Test]
         public void MultipleRefCursorSupport()
         {
-            
-            
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("testmultcurfunc", _conn);
             command.CommandType = CommandType.StoredProcedure;
             
@@ -2082,18 +1759,13 @@ field_serial = :a
             dr.Close();
             
             
-            
             Assert.AreEqual(1, one);
             Assert.AreEqual(2, two);
-            
-            
         }
         
         [Test]
         public void ProcedureNameWithSchemaSupport()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("public.testreturnrecord", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -2107,14 +1779,11 @@ field_serial = :a
             
             Assert.AreEqual(4, command.Parameters[0].Value);
             Assert.AreEqual(5, command.Parameters[1].Value);
-            
         }
         
         [Test]
         public void ReturnRecordSupport()
         {
-            
-            
             NpgsqlCommand command = new NpgsqlCommand("testreturnrecord", _conn);
             command.CommandType = CommandType.StoredProcedure;
 
@@ -2128,9 +1797,6 @@ field_serial = :a
             
             Assert.AreEqual(4, command.Parameters[0].Value);
             Assert.AreEqual(5, command.Parameters[1].Value);
-            
-
-
         }
         
         
@@ -2138,7 +1804,6 @@ field_serial = :a
         [Test]
         public void ParameterTypeBoolean()
         {
-            
             NpgsqlParameter p = new NpgsqlParameter();
             
             p.ParameterName = "test";
@@ -2146,15 +1811,12 @@ field_serial = :a
             p.Value = true;
             
             Assert.AreEqual(NpgsqlDbType.Boolean, p.NpgsqlDbType);
-            
-            
         }
 
         
         [Test]
         public void ParameterTypeTimestamp()
         {
-            
             NpgsqlParameter p = new NpgsqlParameter();
             
             p.ParameterName = "test";
@@ -2162,15 +1824,12 @@ field_serial = :a
             p.Value = DateTime.Now;
             
             Assert.AreEqual(NpgsqlDbType.Timestamp, p.NpgsqlDbType);
-            
-            
         }
         
         
         [Test]
         public void ParameterTypeText()
         {
-            
             NpgsqlParameter p = new NpgsqlParameter();
             
             p.ParameterName = "test";
@@ -2178,8 +1837,6 @@ field_serial = :a
             p.Value = "teste";
             
             Assert.AreEqual(NpgsqlDbType.Text, p.NpgsqlDbType);
-            
-            
         }
         
         [Test]
@@ -2196,9 +1853,6 @@ field_serial = :a
             {
                 Assert.AreEqual(sql, ex.ErrorSql);
             }
-            
-            
-            
         }
 
         [Test]
@@ -2211,15 +1865,11 @@ field_serial = :a
             c.Open();
             
             NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.ReadUncommitted);
+            Assert.IsNotNull(t);
             
             NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
                 
             command.ExecuteReader();
-            
-            
-            
-            
-            
         }
         
         [Test]
@@ -2232,17 +1882,13 @@ field_serial = :a
             c.Open();
             
             NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.RepeatableRead);
+            Assert.IsNotNull(t);
             
             NpgsqlCommand command = new NpgsqlCommand(sql, _conn);
                 
             command.ExecuteReader();
             
-            
             c.Close();
-            
-            
-            
-            
         }
         
         [Test]
@@ -2255,6 +1901,7 @@ field_serial = :a
             c.Open();
             
             NpgsqlTransaction t = c.BeginTransaction(IsolationLevel.Serializable);
+            Assert.IsNotNull(t);
             
             NpgsqlCommand command = new NpgsqlCommand(sql, c);
             
@@ -2263,21 +1910,12 @@ field_serial = :a
             c.Close();
                 
             Assert.AreEqual("serializable", isolation);
-            
-            
-            
-            
-            
-            
-            
         }
         
         
         [Test]
         public void TestParameterNameWithDot()
         {
-            
-            
             String sql = "insert into tableh(field_char5) values ( :a.parameter );" ;
     
             String aValue = "atest";
@@ -2299,14 +1937,14 @@ field_serial = :a
             {
                 Console.WriteLine(e.ErrorSql);
             }
+
+            Assert.AreEqual(rowsAdded, 1);
             
             NpgsqlCommand command2 = new NpgsqlCommand("select field_char5 from tableh where field_serial = (select max(field_serial) from tableh)", _conn);
             
             String a = (String)command2.ExecuteScalar();
             
             Assert.AreEqual(aValue, a);
-            
-    
         }
 
 
@@ -2336,10 +1974,8 @@ field_serial = :a
 
             ServerVersion o = _conn.ServerVersion;
             
-            Boolean b = (o == null);
-            
-
-            
+            if(o == null)
+              return;
         }
         
         [Test]
@@ -2356,15 +1992,12 @@ field_serial = :a
             {
                 Assert.AreEqual(e.Message, "invalidfunctionname does not exist in pg_proc");
             }
-        
-            
         }
         
         
         [Test]
         public void DoubleSingleQuotesValueSupport()
         {
-            
             NpgsqlCommand command = new NpgsqlCommand("insert into tablea(field_text) values (:a)", _conn);
             command.Parameters.Add(new NpgsqlParameter("a", NpgsqlDbType.Text));
 
@@ -2380,19 +2013,11 @@ field_serial = :a
             NpgsqlDataReader dr = command.ExecuteReader();
             
             Assert.IsTrue(dr.Read());
-
-            
-
-
-
         }
         
         [Test]
         public void ReturnInfinityDateTimeSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values ('infinity'::timestamp);", _conn);
             
 
@@ -2404,17 +2029,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(DateTime.MaxValue, result);
-            
-            
-
         }
 
         [Test]
         public void ReturnMinusInfinityDateTimeSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values ('-infinity'::timestamp);", _conn);
             
 
@@ -2426,17 +2045,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(DateTime.MinValue, result);
-            
-            
-
         }
 
         [Test]
         public void InsertInfinityDateTimeSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a);", _conn);
             
 
@@ -2453,17 +2066,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(DateTime.MaxValue, result);
-            
-            
-
         }
 
         [Test]
         public void InsertMinusInfinityDateTimeSupportNpgsqlDbType()
         {
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tableb(field_timestamp) values (:a);", _conn);
             
 
@@ -2480,19 +2087,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(DateTime.MinValue, result);
-            
-            
-
         }
 
         [Test]
         public void InetTypeSupport()
         {
-
-            
-            
-
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablej(field_inet) values (:a);", _conn);
             
 
@@ -2509,15 +2108,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
-            
-            
-
         }
 
         [Test]
         public void IPAddressTypeSupport()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablej(field_inet) values (:a);", _conn);
             
 
@@ -2534,15 +2129,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
-            
-            
-
         }
 
         [Test]
         public void BitTypeSupportWithPrepare()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
             
 
@@ -2561,15 +2152,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(true, result);
-            
-            
-
         }
 
         [Test]
         public void BitTypeSupport()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
             
 
@@ -2587,15 +2174,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(true, result);
-            
-            
-
         }
 
         [Test]
         public void BitTypeSupport2()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
             
 
@@ -2613,16 +2196,12 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(true, result);
-            
-            
-
         }
 
 
         [Test]
         public void BitTypeSupport3()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("insert into tablek(field_bit) values (:a);", _conn);
             
 
@@ -2640,15 +2219,11 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(false, result);
-            
-            
-
         }
 
         //[Test]
         public void FunctionReceiveCharParameter()
         {
-
             NpgsqlCommand command = new NpgsqlCommand("d/;", _conn);
             
 
@@ -2665,12 +2240,7 @@ field_serial = :a
             Object result = command.ExecuteScalar();
             
             Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
-            
-            
-
         }
-        
     }
-
 }
 
