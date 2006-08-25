@@ -113,7 +113,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar();
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
             //reader.FieldCount
         }
         
@@ -126,7 +126,7 @@ namespace NpgsqlTests
             
             Object result = command.ExecuteScalar();
             
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
         }
         
         
@@ -253,7 +253,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar();
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
             //reader.FieldCount
         }
         
@@ -277,7 +277,7 @@ namespace NpgsqlTests
             command.Prepare();
             Object result = command.ExecuteScalar();
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
             //reader.FieldCount
         }
 
@@ -575,7 +575,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar();
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
             //reader.FieldCount
 
         }
@@ -595,7 +595,7 @@ namespace NpgsqlTests
                         
             command.ExecuteNonQuery();
             
-            Assert.AreEqual(5, command.Parameters["a"].Value);
+            Assert.AreEqual(6, command.Parameters["a"].Value);
         }
         
         [Test]
@@ -613,7 +613,7 @@ namespace NpgsqlTests
                         
             command.ExecuteNonQuery();
             
-            Assert.AreEqual(5, command.Parameters["@a"].Value);
+            Assert.AreEqual(6, command.Parameters["@a"].Value);
         }
         
         [Test]
@@ -631,7 +631,7 @@ namespace NpgsqlTests
                         
             command.ExecuteNonQuery();
             
-            Assert.AreEqual(5, command.Parameters[0].Value);
+            Assert.AreEqual(6, command.Parameters[0].Value);
         }
         
         [Test]
@@ -1296,7 +1296,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
         }
 
 
@@ -1339,7 +1339,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar(); // The missed cast is needed as Server7.2 returns Int32 and Server7.3+ returns Int64
 
-            Assert.AreEqual(5, result);
+            Assert.AreEqual(6, result);
 
         }
 
@@ -1398,7 +1398,7 @@ namespace NpgsqlTests
 
             Object result = command.ExecuteScalar();
 
-            Assert.AreEqual(6, result);
+            Assert.AreEqual(7, result);
         }
 
         [Test]
