@@ -384,8 +384,7 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Cancel");
 
-            // [TODO] Finish method implementation.
-            throw new NotImplementedException();
+            Connector.CancelRequest();
         }
         
         /// <summary>
@@ -678,6 +677,7 @@ namespace Npgsql
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "ExecuteScalar");
 
             ExecuteCommand();
+
 
             // Now get the results.
             // Only the first column of the first row must be returned.
