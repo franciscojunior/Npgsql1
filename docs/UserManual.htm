@@ -1068,6 +1068,126 @@ public class c
 </p>
 
 
+<h3>Retrieving last inserted id on a table with serial values</h3>
+
+<p> This example was contributed by Josh Cooley when answering an <a href="http://pgfoundry.org/forum/forum.php?thread_id=943&forum_id=519">user question</a> on Npgsql Forums. This code assumes you have the following table and function in your database:</p>
+
+<pre class="CodeBox">
+ create table test_seq (field_serial serial, test_text text);
+
+ CREATE OR REPLACE FUNCTION ins_seq("varchar")
+        RETURNS test_seq AS
+        'insert into test_seq (test_text) values ($1);
+        select * from test_seq where test_text = $1'
+        LANGUAGE 'sql' VOLATILE;
+
+</pre>
+
+<p>And this is the code:</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+
+public class c
+{
+    public static void Main(String[] args)
+    {
+        //NpgsqlEventLog.Level = LogLevel.Debug;
+        //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+        //NpgsqlEventLog.EchoMessages = true;
+
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;User id=npgsql_tests;password=npgsql_tests;");
+
+
+        using (NpgsqlDataAdapter adapter = new NpgsqlDataAdapter("select * from test_seq", conn))
+        {
+            
+            DataTable table = new DataTable();
+            adapter.Fill(table);
+            adapter.InsertCommand = new NpgsqlCommand("ins_seq", adapter.SelectCommand.Connection);
+            adapter.InsertCommand.Parameters.Add("foo", NpgsqlTypes.NpgsqlDbType.Varchar, 100, "test_text");
+            adapter.InsertCommand.CommandType = CommandType.StoredProcedure;
+
+            DataRow row = table.NewRow();
+            row["test_text"] = "asdfqwert";
+            table.Rows.Add(row);
+            adapter.Update(table);
+
+            foreach (DataRow rowItem in table.Rows)
+            {
+                Console.WriteLine("key {0}, value {1}", rowItem[0], rowItem[1]);
+            }
+
+            Console.ReadLine();
+        }
+        
+    }
+}
+
+</pre>
+
+
+<h3>Cancelling a command in progress </h3>
+
+<p> Npgsql from cvs since 2006-08-28 is able to cancel commands in progress. To do that, you have to call Cancel method of NpgsqlCommand. Note that this has to be done with another thread as the main thread will be blocked waiting for command to finish. Also, this main thread will raise an exception due to user cancellation. The error code will be 57014. Here is a sample code which demonstrates how to do that:</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+using System.Threading;
+
+
+public class c
+{
+
+        static NpgsqlConnection conn = null;
+        static NpgsqlCommand command = null;
+
+        public static void Main(String[] args)
+        {
+                //NpgsqlEventLog.Level = LogLevel.Debug;
+                //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+                //NpgsqlEventLog.EchoMessages = true;
+
+                try
+                {
+
+                conn = new NpgsqlConnection("Server=127.0.0.1;User id=npgsql_tests;password=npgsql_tests;");
+                conn.Open();
+
+                NpgsqlCommand d = new NpgsqlCommand();
+
+                Thread t = new Thread(new ThreadStart(CancelRequest));
+
+
+                command = new NpgsqlCommand("select * from funcwaits()", conn);
+
+                Console.WriteLine("Cancelling command...");
+                t.Start();
+
+                Console.WriteLine(command.ExecuteScalar());
+                conn.Close();
+                }
+                catch(NpgsqlException e)
+                {
+                        if (e.Code == "57014")
+                                Console.WriteLine("Command was cancelled");
+                }
+        }
+
+        public static void CancelRequest()
+        {
+                command.Cancel();
+                Console.WriteLine("command cancelled");
+        }
+}
+
+</pre>
 
 
 
