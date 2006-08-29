@@ -9,7 +9,7 @@ using System.Data;
 using Npgsql;
 
 class Npsql {
-	static string version = "0.2b";
+	static string version = "0.3b";
 	public static void supsql(NpgsqlCommand command)
 	{
 		if(String.Compare(command.CommandText,0,"\\l",0,2) ==0)
@@ -113,6 +113,11 @@ class Npsql {
 			do
 			{
 				Int32 j,i;
+
+				//  this is empty result check.
+				if (!dr.HasRows)
+					continue;
+
 				j = dr.FieldCount;
 				DataTable dt = dr.GetSchemaTable();
 				DataRowCollection schemarows = dt.Rows;
