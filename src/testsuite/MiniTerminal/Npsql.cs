@@ -1,15 +1,15 @@
 //
 // Npsql.cs
 // Date: 2005.02.11
-// author: Hiroshi Saito(saito@inetrt.skcapi.co.jp)
-// Description: It is used by PostgreSQL 8.0
+// author: Hiroshi Saito(z-saito@guitar.ocn.ne.jp)
+// Description: It is used by PostgreSQL 8.1
 //
 using System;
 using System.Data;
 using Npgsql;
 
 class Npsql {
-	static string version = "0.3b";
+	static string version = "0.4b";
 	public static void supsql(NpgsqlCommand command)
 	{
 		if(String.Compare(command.CommandText,0,"\\l",0,2) ==0)
@@ -29,22 +29,23 @@ class Npsql {
 	public static void helpmsg()
 	{
 		Console.WriteLine("usage:");
-		Console.WriteLine("  Npsql HOSTNAME [[DBNAME] USERNAME[/PASSWORD]]\n");
+		Console.WriteLine("  Npsql [HOSTNAME[:PORT]] [[DBNAME] USERNAME[/PASSWORD]]\n");
 		Console.WriteLine("  DBNAME    specify database name to connect to (default: template1)");
 		Console.WriteLine("  USERNAME  user name to connect to (default: postgres)");
 		Console.WriteLine("");
 	}
         public static int Main(string[] args)
         {
-                String url = "localhost";
+
+		String url = "localhost";
 		String dbn = "template1";
 		String usr = "postgres";
-		if (args.Length <= 0)
+
+		if ((args.Length == 1)||(args.Length == 2))
 		{
-			helpmsg();
-			return 0;
+			url = args[0].Replace(":",";PORT=");
 		}
-                url = args[0];
+		
 		if (args.Length == 2)
 		{
 			usr = args[1].Replace("/",";PWD=");
@@ -60,7 +61,7 @@ class Npsql {
 
                 // Connect to database
                 Console.WriteLine("Connecting to ... " + url);
-		String constr = "DATABASE=" + dbn + ";SERVER=" + url + ";PORT=5432;UID=" + usr + ";";
+				String constr = "DATABASE=" + dbn + ";SERVER=" + url + ";UID=" + usr + ";Encoding=UNICODE;";
                 cnDB = new NpgsqlConnection(constr);
 
 		try 
@@ -70,6 +71,7 @@ class Npsql {
 		catch (NpgsqlException ex)
 		{
 			Console.WriteLine(ex.ToString());
+			helpmsg();
 			return 1;
 		}
 
