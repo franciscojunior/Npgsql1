@@ -157,4 +157,37 @@
   <data name="$this.Text">
     <value>データ接続プロパティ</value>
   </data>
+  <data name="&gt;&gt;pgconn.Type">
+    <value>Npgsql.NpgsqlConnection, Npgsql, Version=0.99.3.0, Culture=neutral, PublicKeyToken=null</value>
+  </data>
+	<data name="&gt;&gt;$this.Name">
+		<value>ConnectionStringEditorForm</value>
+	</data>
+	<data name="&gt;&gt;$this.Type">
+		<value>System.Windows.Forms.Form, System.Windows.Forms, Version=1.0.3300.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+	</data>
+	<data name="MsgboxTitle_Error">
+		<value>エラー</value>
+	</data>
+	<data name="MsgboxTitle_Success">
+		<value>成功</value>
+	</data>
+	<data name="MsgboxText_Success">
+		<value>接続テストは成功しました!</value>
+	</data>
+	<data name="MsgboxText_NoServer">
+		<value>サーバ名かIPアドレスを指定してください!</value>
+	</data>
+	<data name="MsgboxText_NoUser">
+		<value>ユーザ名を指定してください!</value>
+	</data>
+	<data name="MsgboxText_NoDb">
+		<value>データベース名を指定してください!</value>
+	</data>
+	<data name="MsgboxText_TimeoutNaN">
+		<value>接続タイムアウトは数値を指定します!</value>
+	</data>
+	<data name="MsgboxText_TimeoutOverflow">
+		<value>接続タイムアウトは、int32までの値を指定できます;-)</value>
+	</data>
 </root>
