@@ -9,21 +9,31 @@ using System.Data;
 using Npgsql;
 
 class Npsql {
-	static string version = "0.4b";
+	static string version = "0.5b";
 	public static void supsql(NpgsqlCommand command)
 	{
 		if(String.Compare(command.CommandText,0,"\\l",0,2) ==0)
 			command.CommandText = "SELECT d.datname as \"Name\",u.usename as \"Owner\",pg_catalog.pg_encoding_to_char(d.encoding) as \"Encoding\" FROM pg_catalog.pg_database d LEFT JOIN pg_catalog.pg_user u ON d.datdba = u.usesysid ORDER BY 1;";
 		else
+		if(String.Compare(command.CommandText,0,"\\u",0,2) ==0)
+			command.CommandText = "SELECT r.rolname AS \"Role name\",CASE WHEN r.rolsuper THEN 'yes' ELSE 'no' END AS \"Superuser\",CASE WHEN r.rolcreaterole THEN 'yes' ELSE 'no' END AS \"Create role\",CASE WHEN r.rolcreatedb THEN 'yes' ELSE 'no' END AS \"Create DB\",CASE WHEN r.rolconnlimit < 0 THEN CAST('no limit' AS pg_catalog.text) ELSE CAST(r.rolconnlimit AS pg_catalog.text) END AS \"Connections\" FROM pg_catalog.pg_roles r ORDER BY 1;";
+		else
 		if(String.Compare(command.CommandText,0,"\\d",0,2) ==0)
-			command.CommandText = "SELECT n.nspname as \"Schema\", c.relname as \"Name\",CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' END as \"Type\", u.usename as \"Owner\" FROM pg_catalog.pg_class c LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ('r','v','S','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid) ORDER BY 1,2;";
+		{
+			if (command.CommandText.Length > 3)
+			    command.CommandText = "SELECT a.attname AS \"Field\",t.typname AS \"Type\" FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" + command.CommandText.Substring(3,command.CommandText.Length-3) + "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid;";
+			else
+			    command.CommandText = "SELECT n.nspname as \"Schema\", c.relname as \"Name\",CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' END as \"Type\", u.usename as \"Owner\" FROM pg_catalog.pg_class c LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.relkind IN ('r','v','S','') AND n.nspname NOT IN ('pg_catalog', 'pg_toast') AND pg_catalog.pg_table_is_visible(c.oid) ORDER BY 1,2;";
+		}
 	}
 	public static void welcommsg()
 	{
 		Console.WriteLine("Welcome to Npsql {0} , the PostgreSQL mini terminal.",version);
 		Console.WriteLine("Type:  \\l list all databases");
-		Console.WriteLine("       \\d describe table, index, sequence, or view");
+		Console.WriteLine("       \\d [NAME] describe table, index, sequence, or view");
+		Console.WriteLine("       \\u list users");
 		Console.WriteLine("       \\q to quit");
+		Console.WriteLine("       \\? this help");
 
 	}
 	public static void helpmsg()
@@ -41,7 +51,7 @@ class Npsql {
 		String dbn = "template1";
 		String usr = "postgres";
 
-		if ((args.Length == 1)||(args.Length == 2))
+		if (args.Length >= 1)
 		{
 			url = args[0].Replace(":",";PORT=");
 		}
@@ -99,6 +109,11 @@ class Npsql {
 			command.CommandText = Console.ReadLine();
 			if(String.Compare(command.CommandText,0,"\\q",0,2) ==0)
 				break;
+			if(String.Compare(command.CommandText,0,"\\?",0,2) ==0)
+			{
+				welcommsg();
+				continue;
+			}
 			// command helper
 			supsql(command);
 			command.Connection = cnDB;
