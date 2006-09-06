@@ -59,7 +59,7 @@ using System;
 //
 [assembly: AssemblyDelaySign(false)]
 #if _MS_VSBUILD_
-[assembly: AssemblyKeyFile("..\\..\\Npgsql.snk")]
+[assembly: AssemblyKeyFile("..\\..\\Npgsql\\Npgsql.snk")]
 #else
 [assembly: AssemblyKeyFile("Npgsql.snk")]
 #endif
