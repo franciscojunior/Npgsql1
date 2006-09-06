@@ -1,0 +1,644 @@
+<VisualStudioProject>
+    <CSHARP
+        ProjectType = "Local"
+        ProductVersion = "7.10.3077"
+        SchemaVersion = "2.0"
+        ProjectGuid = "{0F8DF2CB-CEB4-4A8B-897C-9FA0058BC155}"
+    >
+        <Build>
+            <Settings
+                ApplicationIcon = ""
+                AssemblyKeyContainerName = ""
+                AssemblyName = "Npgsql"
+                AssemblyOriginatorKeyFile = ""
+                DefaultClientScript = "JScript"
+                DefaultHTMLPageLayout = "Grid"
+                DefaultTargetSchema = "IE50"
+                DelaySign = "false"
+                OutputType = "Library"
+                PreBuildEvent = ""
+                PostBuildEvent = ""
+                RootNamespace = "Npgsql"
+                RunPostBuildEvent = "OnBuildSuccess"
+                StartupObject = ""
+            >
+                <Config
+                    Name = "Debug"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "WITHDESIGN,USE_VERSION_1_0,_MS_VSBUILD_"
+                    DocumentationFile = ""
+                    DebugSymbols = "true"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "false"
+                    OutputPath = "bin\Debug\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "4"
+                />
+                <Config
+                    Name = "Release"
+                    AllowUnsafeBlocks = "false"
+                    BaseAddress = "285212672"
+                    CheckForOverflowUnderflow = "false"
+                    ConfigurationOverrideFile = ""
+                    DefineConstants = "WITHDESIGN,USE_VERSION_1_0,_MS_VSBUILD_"
+                    DocumentationFile = ""
+                    DebugSymbols = "false"
+                    FileAlignment = "4096"
+                    IncrementalBuild = "false"
+                    NoStdLib = "false"
+                    NoWarn = ""
+                    Optimize = "true"
+                    OutputPath = "bin\Release\"
+                    RegisterForComInterop = "false"
+                    RemoveIntegerChecks = "false"
+                    TreatWarningsAsErrors = "false"
+                    WarningLevel = "4"
+                />
+            </Settings>
+            <References>
+                <Reference
+                    Name = "System"
+                    AssemblyName = "System"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.dll"
+                />
+                <Reference
+                    Name = "System.Data"
+                    AssemblyName = "System.Data"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Data.dll"
+                />
+                <Reference
+                    Name = "System.XML"
+                    AssemblyName = "System.Xml"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.XML.dll"
+                />
+                <Reference
+                    Name = "Mono.Security"
+                    AssemblyName = "Mono.Security"
+                    HintPath = "..\..\lib\Mono.Security.dll"
+                />
+                <Reference
+                    Name = "System.Design"
+                    AssemblyName = "System.Design"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Design.dll"
+                />
+                <Reference
+                    Name = "System.Windows.Forms"
+                    AssemblyName = "System.Windows.Forms"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
+                />
+                <Reference
+                    Name = "System.Drawing"
+                    AssemblyName = "System.Drawing"
+                    HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Drawing.dll"
+                />
+            </References>
+        </Build>
+        <Files>
+            <Include>
+                <File
+                    RelPath = "AssemblyInfo.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "HashAlgorithm.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MD5.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "MD5CryptoServiceProvider.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlAsciiRow.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlBackEndKeyData.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlBinaryRow.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlBind.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlCancelRequest.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlClosedState.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlClosedState.resx"
+                    DependentUpon = "NpgsqlClosedState.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.bmp"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.cs"
+                    SubType = "Component"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.de.resx"
+                    DependentUpon = "NpgsqlCommand.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.es.resx"
+                    DependentUpon = "NpgsqlCommand.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.fi.resx"
+                    DependentUpon = "NpgsqlCommand.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.ja.resx"
+                    DependentUpon = "NpgsqlCommand.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommand.resx"
+                    DependentUpon = "NpgsqlCommand.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlCommandBuilder.cs"
+                    SubType = "Component"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlCommandBuilder.resx"
+                    DependentUpon = "NpgsqlCommandBuilder.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnectedState.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlConnectedState.resx"
+                    DependentUpon = "NpgsqlConnectedState.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.bmp"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.cs"
+                    SubType = "Component"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.de.resx"
+                    DependentUpon = "NpgsqlConnection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.es.resx"
+                    DependentUpon = "NpgsqlConnection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.fi.resx"
+                    DependentUpon = "NpgsqlConnection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.ja.resx"
+                    DependentUpon = "NpgsqlConnection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnection.resx"
+                    DependentUpon = "NpgsqlConnection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnectionString.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlConnectionString.resx"
+                    DependentUpon = "NpgsqlConnectionString.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlConnector.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlConnectorPool.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlDataAdapter.bmp"
+                    BuildAction = "Content"
+                />
+                <File
+                    RelPath = "NpgsqlDataAdapter.cs"
+                    SubType = "Component"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlDataReader.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlDescribe.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlError.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.de.resx"
+                    DependentUpon = "NpgsqlEventLog.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.es.resx"
+                    DependentUpon = "NpgsqlEventLog.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.fi.resx"
+                    DependentUpon = "NpgsqlEventLog.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.ja.resx"
+                    DependentUpon = "NpgsqlEventLog.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlEventLog.resx"
+                    DependentUpon = "NpgsqlEventLog.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlException.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlException.resx"
+                    DependentUpon = "NpgsqlException.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlExecute.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlFlush.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlMediator.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlMessageTypes.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlNotificationEventArgs.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.de.resx"
+                    DependentUpon = "NpgsqlParameter.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.es.resx"
+                    DependentUpon = "NpgsqlParameter.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.fi.resx"
+                    DependentUpon = "NpgsqlParameter.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.ja.resx"
+                    DependentUpon = "NpgsqlParameter.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameter.resx"
+                    DependentUpon = "NpgsqlParameter.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.de.resx"
+                    DependentUpon = "NpgsqlParameterCollection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.es.resx"
+                    DependentUpon = "NpgsqlParameterCollection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.fi.resx"
+                    DependentUpon = "NpgsqlParameterCollection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.ja.resx"
+                    DependentUpon = "NpgsqlParameterCollection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterCollection.resx"
+                    DependentUpon = "NpgsqlParameterCollection.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlParameterStatus.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlParse.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlPasswordPacket.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlQuery.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlReadyState.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlReadyState.resx"
+                    DependentUpon = "NpgsqlReadyState.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlResultSet.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlRow.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlRowDescription.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlSchema.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlStartupPacket.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlStartupState.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlState.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlState.resx"
+                    DependentUpon = "NpgsqlState.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlSync.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.de.resx"
+                    DependentUpon = "NpgsqlTransaction.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.es.resx"
+                    DependentUpon = "NpgsqlTransaction.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.fi.resx"
+                    DependentUpon = "NpgsqlTransaction.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.ja.resx"
+                    DependentUpon = "NpgsqlTransaction.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "NpgsqlTransaction.resx"
+                    DependentUpon = "NpgsqlTransaction.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "PGUtil.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "PGUtil.resx"
+                    DependentUpon = "PGUtil.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditor.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.cs"
+                    SubType = "Form"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.de.resx"
+                    DependentUpon = "ConnectionStringEditorForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.es.resx"
+                    DependentUpon = "ConnectionStringEditorForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.fi.resx"
+                    DependentUpon = "ConnectionStringEditorForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.ja.resx"
+                    DependentUpon = "ConnectionStringEditorForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\ConnectionStringEditorForm.resx"
+                    DependentUpon = "ConnectionStringEditorForm.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+                <File
+                    RelPath = "Design\NpgsqlParameterConverter.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Design\NpgsqlParametersEditor.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Design\NpgsqlSysDescriptionAttribute.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "Design\CVS\Entries"
+                    BuildAction = "None"
+                />
+                <File
+                    RelPath = "Design\CVS\Repository"
+                    BuildAction = "None"
+                />
+                <File
+                    RelPath = "Design\CVS\Root"
+                    BuildAction = "None"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\FastPath.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\FastPathArg.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\LargeObject.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\LargeObjectManager.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\NpgsqlDbType.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\NpgsqlTypeConverters.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\NpgsqlTypes.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\NpgsqlTypesHelper.cs"
+                    SubType = "Code"
+                    BuildAction = "Compile"
+                />
+                <File
+                    RelPath = "NpgsqlTypes\NpgsqlTypesHelper.resx"
+                    DependentUpon = "NpgsqlTypesHelper.cs"
+                    BuildAction = "EmbeddedResource"
+                />
+            </Include>
+        </Files>
+    </CSHARP>
+</VisualStudioProject>
+

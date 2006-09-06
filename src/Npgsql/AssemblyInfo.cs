@@ -58,4 +58,8 @@ using System;
 // This is not required, if you don't want signing let these attributes like they're.
 //
 [assembly: AssemblyDelaySign(false)]
+#if _MS_VSBUILD_
+[assembly: AssemblyKeyFile("..\\..\\Npgsql.snk")]
+#else
 [assembly: AssemblyKeyFile("Npgsql.snk")]
+#endif
