@@ -50,21 +50,50 @@
     <target name="resources" depends="init">
         <resgen todir="${ms.res.dir}">
             <resources>
+                <include name="ConnectionStringEditorForm.de.resx"/>
+                <include name="ConnectionStringEditorForm.es.resx"/>
+                <include name="ConnectionStringEditorForm.fi.resx"/>
+                <include name="ConnectionStringEditorForm.ja.resx"/>
+                <include name="ConnectionStringEditorForm.resx"/>
+                <include name="NpgsqlClosedState.resx"/>
+                <include name="NpgsqlCommand.de.resx"/>
+                <include name="NpgsqlCommand.es.resx"/>
+                <include name="NpgsqlCommand.fi.resx"/>
+                <include name="NpgsqlCommand.ja.resx"/>
                 <include name="NpgsqlCommand.resx"/>
                 <include name="NpgsqlCommandBuilder.resx"/>
-                <include name="NpgsqlConnection.resx"/>
-                <include name="NpgsqlEventLog.resx"/>
-                <include name="NpgsqlParameter.resx"/>
-                <include name="NpgsqlParameterCollection.resx"/>
-                <include name="NpgsqlTransaction.resx"/>
-                <include name="NpgsqlClosedState.resx"/>
                 <include name="NpgsqlConnectedState.resx"/>
+                <include name="NpgsqlConnection.de.resx"/>
+                <include name="NpgsqlConnection.es.resx"/>
+                <include name="NpgsqlConnection.fi.resx"/>
+                <include name="NpgsqlConnection.ja.resx"/>
+                <include name="NpgsqlConnection.resx"/>
+                <include name="NpgsqlConnectionString.resx"/>
+                <include name="NpgsqlEventLog.de.resx"/>
+                <include name="NpgsqlEventLog.es.resx"/>
+                <include name="NpgsqlEventLog.fi.resx"/>
+                <include name="NpgsqlEventLog.ja.resx"/>
+                <include name="NpgsqlEventLog.resx"/>
                 <include name="NpgsqlException.resx"/>
-                <include name="NpgsqlState.resx"/>
+                <include name="NpgsqlParameter.de.resx"/>
+                <include name="NpgsqlParameter.es.resx"/>
+                <include name="NpgsqlParameter.fi.resx"/>
+                <include name="NpgsqlParameter.ja.resx"/>
+                <include name="NpgsqlParameter.resx"/>
+                <include name="NpgsqlParameterCollection.de.resx"/>
+                <include name="NpgsqlParameterCollection.es.resx"/>
+                <include name="NpgsqlParameterCollection.fi.resx"/>
+                <include name="NpgsqlParameterCollection.ja.resx"/>
+                <include name="NpgsqlParameterCollection.resx"/>
                 <include name="NpgsqlReadyState.resx"/>
-                <include name="PGUtil.resx"/>                                        
-                <include name="NpgsqlConnectionString.resx"/>                                        
-                                
+                <include name="NpgsqlState.resx"/>
+                <include name="NpgsqlTransaction.de.resx"/>
+                <include name="NpgsqlTransaction.es.resx"/>
+                <include name="NpgsqlTransaction.fi.resx"/>
+                <include name="NpgsqlTransaction.ja.resx"/>
+                <include name="NpgsqlTransaction.resx"/>
+                <include name="PGUtil.resx"/>
+                <include name="NpgsqlTypesHelper.resx"/>
 
             </resources>
         </resgen>
