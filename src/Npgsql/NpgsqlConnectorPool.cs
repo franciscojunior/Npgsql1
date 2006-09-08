@@ -316,23 +316,7 @@ namespace Npgsql
 
                 // Check if the connector is still valid.
 
-                while (true)
-                {
-                    Connector = (NpgsqlConnector)Queue.Dequeue();
-                    if (Connector.IsValid())
-                    {
-                        Queue.UseCount++;
-                        break;
-                    }
-
-                    // Don't need - we dequeue connector = decrease Queue.Count.
-                    //Queue.UseCount--;
-
-                    if (Queue.Count <= 0)
-                        return GetPooledConnector(Connection);
-
-
-                }
+                Connector = (NpgsqlConnector)Queue.Dequeue();
 
 
 
@@ -460,9 +444,7 @@ namespace Npgsql
             Queue = (ConnectorQueue)PooledConnectors[Connector.ConnectionString.ToString()];
 
             if (Queue == null)
-            {
-                throw new InvalidOperationException("Internal: No connector queue found for existing connector.");
-            }
+                return;  // Queue may be emptied by connection problems. See ClearPool below.
 
             Connector.CertificateSelectionCallback -= Connection.CertificateSelectionCallbackDelegate;
             Connector.CertificateValidationCallback -= Connection.CertificateValidationCallbackDelegate;
@@ -511,5 +493,59 @@ namespace Npgsql
         {
             // To be implemented
         }
+
+        private void ClearQueue(ConnectorQueue Queue)
+        {
+            if (Queue == null)
+                return;
+
+            while (Queue.Count > 0)
+            {
+                NpgsqlConnector connector = (NpgsqlConnector)Queue.Dequeue();
+
+                try
+                {
+                    connector.Close();
+                }
+                catch {
+                    // Maybe we should log something here to say we got an exception while closing connector?
+
+                }
+
+            }
+
+        }
+
+
+        internal void ClearPool(NpgsqlConnection Connection)
+        {
+            // Prevent multithread access to connection pool count.
+            lock(this)
+            {
+                // Try to find a queue.
+                ConnectorQueue queue = (ConnectorQueue)PooledConnectors[Connection.ConnectionString.ToString()];
+                
+                ClearQueue(queue);
+
+                PooledConnectors[Connection.ConnectionString.ToString()] = null;
+
+            }
+
+
+        }
+
+        internal void ClearAllPools()
+        {
+
+            lock (this)
+            {
+                foreach (ConnectorQueue Queue in PooledConnectors.Values)
+                    ClearQueue(Queue);
+
+            }
+
+
+        }
+
     }
 }

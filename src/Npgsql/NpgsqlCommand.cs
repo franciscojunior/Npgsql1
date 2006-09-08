@@ -29,6 +29,7 @@ using System.Text;
 using System.Resources;
 using System.ComponentModel;
 using System.Collections;
+using System.IO;
 
 using NpgsqlTypes;
 
@@ -1418,6 +1419,9 @@ namespace Npgsql
 
         private void ExecuteCommand()
         {
+            try
+            {
+                
             // Check the connection state first.
             CheckConnectionState();
 
@@ -1472,6 +1476,16 @@ namespace Npgsql
                 {
                     connector.ResumeNotificationThread();
                 }
+            }
+
+            }
+
+            catch(IOException e)
+            {
+                Connection.ClearPool();
+                
+                throw new NpgsqlException("Connection Broken", e);
+
             }
 
         }

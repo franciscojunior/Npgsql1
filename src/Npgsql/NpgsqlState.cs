@@ -747,6 +747,10 @@ namespace Npgsql
                     break;
 
 
+                case -1:
+		    // Connection broken. Mono returns -1 instead of throw an exception as ms.net does.
+		    throw new IOException();
+
                 default :
                     // This could mean a number of things
                     //   We've gotten out of sync with the backend?
