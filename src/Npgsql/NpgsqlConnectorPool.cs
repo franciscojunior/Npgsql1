@@ -317,6 +317,7 @@ namespace Npgsql
                 // Check if the connector is still valid.
 
                 Connector = (NpgsqlConnector)Queue.Dequeue();
+                Queue.UseCount++;
 
 
 
