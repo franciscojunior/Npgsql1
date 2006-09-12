@@ -50,11 +50,6 @@
     <target name="resources" depends="init">
         <resgen todir="${ms.res.dir}">
             <resources>
-                <include name="ConnectionStringEditorForm.de.resx"/>
-                <include name="ConnectionStringEditorForm.es.resx"/>
-                <include name="ConnectionStringEditorForm.fi.resx"/>
-                <include name="ConnectionStringEditorForm.ja.resx"/>
-                <include name="ConnectionStringEditorForm.resx"/>
                 <include name="NpgsqlClosedState.resx"/>
                 <include name="NpgsqlCommand.de.resx"/>
                 <include name="NpgsqlCommand.es.resx"/>
@@ -93,12 +88,15 @@
                 <include name="NpgsqlTransaction.ja.resx"/>
                 <include name="NpgsqlTransaction.resx"/>
                 <include name="PGUtil.resx"/>
-                <include name="NpgsqlTypesHelper.resx"/>
 
             </resources>
         </resgen>
         <resgen todir="${ms.res.dir}/Design">
             <resources>
+                <include name="./Design/ConnectionStringEditorForm.de.resx"/>
+                <include name="./Design/ConnectionStringEditorForm.es.resx"/>
+                <include name="./Design/ConnectionStringEditorForm.fi.resx"/>
+                <include name="./Design/ConnectionStringEditorForm.ja.resx"/>
                 <include name="./Design/ConnectionStringEditorForm.resx"/>
             </resources>
         </resgen>
@@ -276,6 +274,14 @@
                 </documenter>
             </documenters>
         </ndoc>
+    </target>
+
+   <target name="install" depends="build" if="${platform::is-unix()}">
+	<exec program="gacutil" commandline="/i build/ms/Npgsql.dll /package 1.0"/>
+	<exec program="gacutil" commandline="/i build/ms/de/Npgsql.resources.dll /package 1.0"/>
+	<exec program="gacutil" commandline="/i build/ms/es/Npgsql.resources.dll /package 1.0"/>
+	<exec program="gacutil" commandline="/i build/ms/fi/Npgsql.resources.dll /package 1.0"/>
+	<exec program="gacutil" commandline="/i build/ms/ja/Npgsql.resources.dll /package 1.0"/>
     </target>
 
 </project>
