@@ -385,7 +385,19 @@ namespace Npgsql
         {
             NpgsqlEventLog.LogMethodEnter(LogLevel.Debug, CLASSNAME, "Cancel");
 
-            Connector.CancelRequest();
+            try
+            {
+                // get copy for thread safety of null test
+                NpgsqlConnector connector = Connector;
+                if (connector != null)
+                {
+                    connector.CancelRequest();
+                }
+            }
+            catch (NpgsqlException)
+            {
+                // Cancel documentation says the Cancel doesn't throw on failure
+            }
         }
         
         /// <summary>
