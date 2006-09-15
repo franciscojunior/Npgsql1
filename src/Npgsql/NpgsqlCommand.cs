@@ -394,6 +394,10 @@ namespace Npgsql
                     connector.CancelRequest();
                 }
             }
+            catch (IOException)
+            {
+                Connection.ClearPool();
+            }   
             catch (NpgsqlException)
             {
                 // Cancel documentation says the Cancel doesn't throw on failure
@@ -811,6 +815,10 @@ namespace Npgsql
                     
                     bind = new NpgsqlBind("", planName, new Int16[Parameters.Count], null, resultFormatCodes);
                 }    
+                catch (IOException e)
+                {
+                    ClearPoolAndThrowException(e);
+                }
                 catch
                 {
                     // See ExecuteCommand method for a discussion of this.
@@ -1494,10 +1502,7 @@ namespace Npgsql
 
             catch(IOException e)
             {
-                Connection.ClearPool();
-                
-                throw new NpgsqlException("Connection Broken", e);
-
+                ClearPoolAndThrowException(e);
             }
 
         }
@@ -1508,6 +1513,13 @@ namespace Npgsql
                 timeout = Connector.CommandTimeout;
             else
                 timeout = ConnectionStringDefaults.CommandTimeout;
+        }
+
+        private void ClearPoolAndThrowException(Exception e)
+        {
+            Connection.ClearPool();
+            throw new NpgsqlException(resman.GetString("Exception_ConnectionBroken"), e);
+
         }
 
         
