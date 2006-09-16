@@ -23,6 +23,7 @@ xxxx-xx-xx
         Clean up patch by Chris Morgan: "This patch fixes dozens of warnings in the testsuite and removes a bunch of extra whitespace from around and inside of functions.  I tried to fix the warnings in the best manner possible by adding new asserts where possible". Thanks for patch.
         Fixed localization assemblies compilation. (Hiroshi Saito)
         Fixed NpgsqlCommand.Cancel implementation. Now it doesn't throw exceptions if connection is closed or if there is any problems. Cancel documentation says the Cancel doesn't throw on failure. (Josh Cooley)
+        NpgsqlDataReader.cs:  Changed the behavior of RecordsAffected to match that of SqlDataReader and ODBCDataReader. (Josh Cooley)
 
 2006-08-14
 
