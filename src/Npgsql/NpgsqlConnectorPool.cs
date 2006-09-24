@@ -310,6 +310,11 @@ namespace Npgsql
                 PooledConnectors[Connection.ConnectionString.ToString()] = Queue;
             }
 
+            // Fix queue use count. Use count may be dropped below zero if Queue was cleared and there were connections open.
+            if (Queue.UseCount < 0)
+                Queue.UseCount = 0;
+
+
             if (Queue.Count > 0)
             {
                 // Found a queue with connectors.  Grab the top one.
