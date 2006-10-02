@@ -39,7 +39,10 @@ DEVELOPERS
     Ulrich Sprick
     Glen Parker
     Josh Cooley
-    
+    Jon Asher
+    Chris Morgan
+    Thilo Utke
+    Hiroshi Saito
 
     
 CONTACT INFO
