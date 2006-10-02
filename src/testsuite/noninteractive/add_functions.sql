@@ -73,3 +73,22 @@ begin
 end;
 ' language 'plpgsql';
 
+create function "FunctionCaseSensitive"(int4, text) returns int4 as
+$BODY$
+begin
+	return 0;
+end
+$BODY$
+language 'plpgsql';
+
+create function testtimestamptzparameter(timestamptz) returns refcursor as
+$BODY$
+declare ref refcursor;
+begin
+	open ref for select * from tablea;
+	return ref;
+end
+$BODY$
+language 'plpgsql' volatile called on null input security invoker;
+
+

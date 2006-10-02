@@ -2241,6 +2241,92 @@ namespace NpgsqlTests
             
             Assert.AreEqual(new NpgsqlInet("127.0.0.1"), result);
         }
+
+        [Test]
+        public void FunctionCaseSensitiveName()
+        {
+            NpgsqlCommand command = new NpgsqlCommand("\"FunctionCaseSensitive\"", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.Add(new NpgsqlParameter("p1", NpgsqlDbType.Integer));
+            command.Parameters.Add(new NpgsqlParameter("p2", NpgsqlDbType.Text));
+
+            Object result = command.ExecuteScalar();
+
+            Assert.AreEqual(0, result);
+            
+        }
+
+        [Test]
+        public void FunctionCaseSensitiveNameWithSchema()
+        {
+            NpgsqlCommand command = new NpgsqlCommand("\"public\".\"FunctionCaseSensitive\"", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+            
+            command.Parameters.Add(new NpgsqlParameter("p1", NpgsqlDbType.Integer));
+            command.Parameters.Add(new NpgsqlParameter("p2", NpgsqlDbType.Text));
+            
+            Object result = command.ExecuteScalar();
+            
+            Assert.AreEqual(0, result);
+            
+        }
+
+        [Test]
+        public void FunctionCaseSensitiveNameDeriveParameters()
+        {
+            NpgsqlCommand command = new NpgsqlCommand("\"FunctionCaseSensitive\"", _conn);
+
+            
+
+            NpgsqlCommandBuilder.DeriveParameters(command);
+            
+            
+            Assert.AreEqual(NpgsqlDbType.Integer, command.Parameters[0].NpgsqlDbType);
+            Assert.AreEqual(NpgsqlDbType.Text, command.Parameters[1].NpgsqlDbType);
+            
+        }
+        
+        [Test]
+        public void FunctionCaseSensitiveNameDeriveParametersWithSchema()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("\"public\".\"FunctionCaseSensitive\"", _conn);
+            
+            NpgsqlCommandBuilder.DeriveParameters(command);
+            
+            
+            Assert.AreEqual(NpgsqlDbType.Integer, command.Parameters[0].NpgsqlDbType);
+            Assert.AreEqual(NpgsqlDbType.Text, command.Parameters[1].NpgsqlDbType);
+
+            
+            
+        }
+
+        [Test]
+        public void FunctionTestTimestamptzParameterSupport()
+        {
+            
+            NpgsqlCommand command = new NpgsqlCommand("testtimestamptzparameter", _conn);
+            command.CommandType = CommandType.StoredProcedure;
+
+            command.Parameters.Add(new NpgsqlParameter("p1", NpgsqlDbType.TimestampTZ));
+            
+            NpgsqlDataReader dr = command.ExecuteReader();
+
+            Int32 count = 0;
+            
+            while (dr.Read())
+                count++;
+
+            Assert.IsTrue(count > 1);
+            
+            
+            
+            
+            
+            
+        }
     }
 }
 
