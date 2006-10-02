@@ -1049,7 +1049,11 @@ namespace Npgsql
         
         private Boolean CheckFunctionReturn(String ReturnType)
         {
-            String returnRecordQuery = "select count(*) > 0 from pg_proc p left join pg_namespace n on p.pronamespace = n.oid where prorettype = ( select oid from pg_type where typname = :typename ) and proargtypes=:proargtypes and proname=:proname and n.nspname=:nspname";
+            // Updated after 0.99.3 to support the optional existence of a name qualifying schema and allow for case insensitivity
+            // when the schema or procedure name do not contain a quote.
+            // The hard-coded schema name 'public' was replaced with code that uses schema as a qualifier, only if it is provided.
+
+            String returnRecordQuery;
 
             StringBuilder parameterTypes = new StringBuilder("");
 
@@ -1072,17 +1076,22 @@ namespace Npgsql
             String procedureName = String.Empty;
             
             
-            String[] schemaProcedureName = CommandText.Split('.');
+            String[] fullName = CommandText.Split('.');
             
-            if (schemaProcedureName.Length == 2)
+            if (fullName.Length == 2)
             {
-                schemaName = schemaProcedureName[0];
-                procedureName = schemaProcedureName[1];
+                returnRecordQuery = "select count(*) > 0 from pg_proc p left join pg_namespace n on p.pronamespace = n.oid where prorettype = ( select oid from pg_type where typname = :typename ) and proargtypes=:proargtypes and proname=:proname and n.nspname=:nspname";
+
+                schemaName = (fullName[0].IndexOf("\"") != -1) ? fullName[0] : fullName[0].ToLower();
+                procedureName = (fullName[1].IndexOf("\"") != -1) ? fullName[1] : fullName[1].ToLower();
             }
             else
             {
-                schemaName = "public";
-                procedureName = CommandText;
+                // Instead of defaulting don't use the nspname, as an alternative, query pg_proc and pg_namespace to try and determine the nspname.
+                //schemaName = "public"; // This was removed after build 0.99.3 because the assumption that a function is in public is often incorrect.
+                returnRecordQuery = "select count(*) > 0 from pg_proc p where prorettype = ( select oid from pg_type where typname = :typename ) and proargtypes=:proargtypes and proname=:proname";
+                
+                procedureName = (CommandText.IndexOf("\"") != -1) ? CommandText : CommandText.ToLower();
             }
                 
             
@@ -1093,12 +1102,16 @@ namespace Npgsql
             c.Parameters.Add(new NpgsqlParameter("typename", NpgsqlDbType.Text));
             c.Parameters.Add(new NpgsqlParameter("proargtypes", NpgsqlDbType.Text));
             c.Parameters.Add(new NpgsqlParameter("proname", NpgsqlDbType.Text));
-            c.Parameters.Add(new NpgsqlParameter("nspname", NpgsqlDbType.Text));
             
             c.Parameters[0].Value = ReturnType;
             c.Parameters[1].Value = parameterTypes.ToString();
             c.Parameters[2].Value = procedureName;
-            c.Parameters[3].Value = schemaName;
+
+            if (schemaName != null && schemaName.Length > 0)
+            {
+                c.Parameters.Add(new NpgsqlParameter("nspname", NpgsqlDbType.Text));
+                c.Parameters[3].Value = schemaName;
+            }
             
 
             Boolean ret = (Boolean) c.ExecuteScalar();
