@@ -7,7 +7,8 @@ xxxx-xx-xx
 
         Changed README.txt location. It is now located on much more useful root Npgsql folder. Thanks Chris Morgan (cmorgan at alum dot wpi dot edu) for patch.
         Implemented NpgsqlCommand.Cancel method. It is now possible to cancel in progress commands. Sample added to user docs.
-        Added to user manual a sample by Josh Cooley about a possible way of retrieve the last inserted id in table with an auto generated value. 
+        Added to user manual a sample by Josh Cooley about a possible way of retrieve the last inserted id in table with an auto generated value.
+        Improved Connection pool handling. Npgsql doesn't do anymore a costly check for connection status each time it grabs a connection from pool. It also clears connection pool in case there is any problem with a connection.
 
 
         * NpgsqlConnectorPool.cs,
@@ -22,8 +23,21 @@ xxxx-xx-xx
 
         Clean up patch by Chris Morgan: "This patch fixes dozens of warnings in the testsuite and removes a bunch of extra whitespace from around and inside of functions.  I tried to fix the warnings in the best manner possible by adding new asserts where possible". Thanks for patch.
         Fixed localization assemblies compilation. (Hiroshi Saito)
-        Fixed NpgsqlCommand.Cancel implementation. Now it doesn't throw exceptions if connection is closed or if there is any problems. Cancel documentation says the Cancel doesn't throw on failure. (Josh Cooley)
+        Fixed NpgsqlCommand.Cancel implementation. Now it doesn't throw exceptions if connection is closed or if there are any problems. Cancel documentation says the Cancel doesn't throw on failure. (Josh Cooley)
         NpgsqlDataReader.cs:  Changed the behavior of RecordsAffected to match that of SqlDataReader and ODBCDataReader. (Josh Cooley)
+        NpgsqlConnectorPool.cs: Fixed Queue UseCount problem where it could get negative when pool was cleared and there were pending connections. Thanks Aaron Clauson ( aaron dot clauson at blueface dot ie) for heads up, tests and discussions.
+        NpgsqlState.cs: Fixed problem where Npgsql could hang if socket communication has problems while starting a session with server after has connected to socket server. Thanks Aaron Clauson ( aaron dot clauson at blueface dot ie) for heads up.
+
+        Fixes for bugs: [1000736], [1000737], [1000740], [1000742]
+        NpgsqlCommand.cs,
+        NpgsqlCommandBuilder.cs: Adds case handling and improved schema support for function names on NpgsqlCommand and NpgsqlCommandBuilder.
+        NpgsqlDbType.cs,
+        NpgsqlTypesHelper.cs: Adds timestamptz data type.
+        Thanks Patrick Greenwald (patrickg at novarad dot net) for patches.
+
+        
+
+
 
 2006-08-14
 
