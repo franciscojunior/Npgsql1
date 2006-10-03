@@ -28,7 +28,7 @@
 
     
     <property name="testfiles.dir" value="../testsuite/noninteractive/NUnit20"/>
-    <property name="locales" value="de,es,fi"/>
+    <property name="locales" value="de,es,fi,ja"/>
 
     <target name="clean" description="cleans the build directory">
         <delete dir="${build.dir}" verbose="true" failonerror="true"/>
