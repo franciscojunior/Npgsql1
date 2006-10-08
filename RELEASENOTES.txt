@@ -1,5 +1,5 @@
 
-xxxx-xx-xx
+2006-10-08
 
     Npgsql 1.0
 
@@ -28,7 +28,10 @@ xxxx-xx-xx
         NpgsqlConnectorPool.cs: Fixed Queue UseCount problem where it could get negative when pool was cleared and there were pending connections. Thanks Aaron Clauson ( aaron dot clauson at blueface dot ie) for heads up, tests and discussions.
         NpgsqlState.cs: Fixed problem where Npgsql could hang if socket communication has problems while starting a session with server after has connected to socket server. Thanks Aaron Clauson ( aaron dot clauson at blueface dot ie) for heads up.
 
-        Fixes for bugs: [1000736], [1000737], [1000740], [1000742]
+        [1000736],
+        [1000737],
+        [1000740],
+        [1000742]
         NpgsqlCommand.cs,
         NpgsqlCommandBuilder.cs: Adds case handling and improved schema support for function names on NpgsqlCommand and NpgsqlCommandBuilder.
         NpgsqlDbType.cs,
