@@ -137,11 +137,16 @@ Password:
 
 
 <p> If you are using cvs from command line, just do that: </p>
+<pre class="CodeBox">
 cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql login
+</pre>
+
 <br />
 Hit Enter key when prompted for a password
 <br />
+<pre class="CodeBox">
 cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql checkout Npgsql
+</pre>
 
 <p> You will start to get the code: </p>
 
@@ -175,7 +180,7 @@ U Npgsql/docs/SuggestedReadings.htm
 
 <p> This section explains Npgsql usage in a .Net Application. If you are used to developing Data Access applications using the
 Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
-<p> In order to use Npgsql, server must be listening to TCP/IP connections. TCP connections are enabled by default on 8.0 servers. 7.3 and below, should have postmaster started with -i option. Check Postgresql Documentation for details: <a href="http://www.postgresql.org/docs/7.4/static/postmaster-start.html">http://www.postgresql.org/docs/7.4/static/postmaster-start.html</a> </p>
+<p> In order to use Npgsql, server must be listening to TCP/IP connections. TCP connections are enabled by default on 8.0 servers. Previous versions should have postmaster started with -i option. Check Postgresql Documentation for details: <a href="http://www.postgresql.org/docs/7.4/static/postmaster-start.html">http://www.postgresql.org/docs/7.4/static/postmaster-start.html</a> </p>
 <p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
 
 <h3> Adding required namespaces to your source file </h3>
@@ -187,6 +192,15 @@ System.Data namespace as a lot of classes used for data manipulation reside in i
 using System.Data;
 using Npgsql;
 </pre>
+
+<p> If you are using ASP.NET, you may put the following lines in top of your .aspx page:
+
+<pre class="CodeBox">
+<%@ Assembly name="System.Data" %>
+<%@ Assembly name="Npgsql" %>
+</pre>
+
+You can see more details about that on <a href="http://www.mono-project.com/FAQ:_ASP.NET">FAQ Mono Page about ASP.NET</a>
 
 <h3> Establishing a connection </h3>
 <p>To establish a connection to a server located at ip 127.0.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
@@ -349,6 +363,55 @@ public static class NpgsqlUserManual
 </pre>
 
 This code assumes there is a table called tablea in the database.
+
+<p> <font color="red"> Warning: </font> There is a known issue when calling ExecuteReader and large tables. Currently Npgsql gets all data from table before returning. If you are experiencing bad performance in such cases, you may need to use a server cursor to page through rows. For that, you can use a code like the following:</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+public static class NpgsqlUserManual
+{
+    public static void Main(String[] args)
+    {
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+        conn.Open();
+    
+        NpgsqlCommand command = new NpgsqlCommand("declare te cursor for select * from tablea;", _conn);
+        
+        command.ExecuteNonQuery();
+        
+        command.CommandText = "fetch forward 3 in te;";
+        
+        NpgsqlDataReader dr = command.ExecuteReader();
+        
+        
+        while (dr.Read())
+        {
+            //work with your data here.
+        }
+
+        dr.Close();
+
+
+        // get more three rows.
+
+        dr = command.ExecuteReader();
+
+        while (dr.Read())
+        {
+        //work with your data here.
+        }
+        
+        dr.Close();
+
+    }
+}
+
+</pre>
+
+<p> We are working to get that done automatically on next versions.</p>
 
 
 <h3> Using parameters in a query </h3>
@@ -773,7 +836,6 @@ public class t
 
 <h3>Working with binary data and bytea datatype</h3>
 
-<p> <font color="red"> Warning: </font> There is a known issue when working with bytea datatype and large data. Npgsql will consume very much memory. Please, if you need to insert more that 4MB of data, please, use Large Object API. For updates on this issue, check <a href="http://pgfoundry.org/tracker/index.php?func=detail&aid=1000458&group_id=1000140&atid=590">here </a> </p>
 <p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix "database" in its end.</p>
 <p> table schema: 
     create table tableBytea (field_serial serial, field_bytea bytea)
@@ -1132,7 +1194,7 @@ public class c
 
 <h3>Cancelling a command in progress </h3>
 
-<p> Npgsql from cvs since 2006-08-28 is able to cancel commands in progress. To do that, you have to call Cancel method of NpgsqlCommand. Note that this has to be done with another thread as the main thread will be blocked waiting for command to finish. Also, this main thread will raise an exception due to user cancellation. The error code will be 57014. Here is a sample code which demonstrates how to do that:</p>
+<p> Npgsql is able to ask server to cancel commands in progress. To do that, you have to call Cancel method of NpgsqlCommand. Note that this has to be done with another thread as the main thread will be blocked waiting for command to finish. Also, this main thread will raise an exception due to user cancellation. The error code will be 57014. Here is a sample code which demonstrates how to do that. This code assumes there is a function called funcwaits which do a lot of work:</p>
 
 <pre class="CodeBox">
 using System;
@@ -1145,50 +1207,124 @@ using System.Threading;
 public class c
 {
 
-        static NpgsqlConnection conn = null;
-        static NpgsqlCommand command = null;
+    // This method expects the following table in the backend:
+    //
+    /*      CREATE OR REPLACE FUNCTION funcwaits() returns integer as
+    '
+    declare t integer;
+    begin
+    
+    t := 0;
+    
+    while t < 1000000 loop
+    t := t + 1;
+    end loop;
+    
+    return t;
+    end;
+    '
+    */
 
-        public static void Main(String[] args)
+
+
+    static NpgsqlConnection conn = null;
+    static NpgsqlCommand command = null;
+
+    public static void Main(String[] args)
+    {
+        //NpgsqlEventLog.Level = LogLevel.Debug;
+        //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
+        //NpgsqlEventLog.EchoMessages = true;
+
+        try
         {
-                //NpgsqlEventLog.Level = LogLevel.Debug;
-                //NpgsqlEventLog.LogName = "NpgsqlTests.LogFile";
-                //NpgsqlEventLog.EchoMessages = true;
 
-                try
-                {
+        conn = new NpgsqlConnection("Server=127.0.0.1;User id=npgsql_tests;password=npgsql_tests;");
+        conn.Open();
 
-                conn = new NpgsqlConnection("Server=127.0.0.1;User id=npgsql_tests;password=npgsql_tests;");
-                conn.Open();
+        NpgsqlCommand d = new NpgsqlCommand();
 
-                NpgsqlCommand d = new NpgsqlCommand();
-
-                Thread t = new Thread(new ThreadStart(CancelRequest));
+        Thread t = new Thread(new ThreadStart(CancelRequest));
 
 
-                command = new NpgsqlCommand("select * from funcwaits()", conn);
+        command = new NpgsqlCommand("select * from funcwaits()", conn);
 
-                Console.WriteLine("Cancelling command...");
-                t.Start();
+        Console.WriteLine("Cancelling command...");
+        t.Start();
 
-                Console.WriteLine(command.ExecuteScalar());
-                conn.Close();
-                }
-                catch(NpgsqlException e)
-                {
-                        if (e.Code == "57014")
-                                Console.WriteLine("Command was cancelled");
-                }
+        Console.WriteLine(command.ExecuteScalar());
+        conn.Close();
         }
-
-        public static void CancelRequest()
+        catch(NpgsqlException e)
         {
-                command.Cancel();
-                Console.WriteLine("command cancelled");
+                if (e.Code == "57014")
+                        Console.WriteLine("Command was cancelled");
         }
+    }
+
+    public static void CancelRequest()
+    {
+        command.Cancel();
+        Console.WriteLine("command cancelled");
+    }
 }
 
 </pre>
 
+<h3>Working with Notifications</h3>
+
+<p> Npgsql allows user to receive events based on notifications sent by backend server. There are two ways of receive them with Npgsql: asynchronously or synchronously. Synchronous notification is only supported by Npgsql 1.0 and above.</p>
+
+<h4> Asynchronous notifications </h4>
+
+This is the default notification mechanism used in Npgsql. It is called asynchronous because Npgsql doesn't receive the notification as soon as the event which generated it inside backend server is executed. Npgsql receives it on next server interation. This next interation occurs when Npgsql sends the next command which could be from few seconds to many hours later. With this in mind, users have to keep poling server to receive notifications as soon as possible. This could be done sending empty commands to server. ie.: ";"
+
+<h4> Synchronous notifications </h4>
+
+Starting with Npgsql 1.0 there is support for synchronous notifications. When working in this mode, as soon as server sends the notification, Npgsql is able to receive it and deliver it to client. All this is done without any other interation from client.
+
+
+The code to receive the notification is the same for both modes:
+
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+using System.Threading;
+
+
+public class c
+{
+
+    public static void Main(String[] args)
+    {
+
+        conn = new NpgsqlConnection("Server=127.0.0.1;User id=npgsql_tests;password=npgsql_tests;");
+        conn.Open();
+    
+        NpgsqlCommand command = new NpgsqlCommand("listen notifytest;", conn);
+        command.ExecuteNonQuery();
+        
+        conn.Notification += new NotificationEventHandler(NotificationSupportHelper);
+        
+        
+        command = new NpgsqlCommand("notify notifytest;", _conn);
+        command.ExecuteNonQuery();
+
+        Console.ReadLine();  // To prevent program termination before notification is handled. 
+    }
+    
+    private void NotificationSupportHelper(Object sender, NpgsqlNotificationEventArgs args)
+    {
+        // process notification here. 
+    }
+}
+
+</pre>
+
+<p> This code registers to listen for a notification and raises the notification to test it will be delivered to NotificationSupportHelper method.</p>
 
 
 <h3> 3.1 Using Npgsql Logging support </h3>
@@ -1292,8 +1428,19 @@ There is also a Dialog to edit and validate the ConnectionString
 	<li>Click add/remove element</li>
 	<li>On the .Net-Tab select NpgsqlConnection</li>
 </ol>
-As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
+
+For VS.Net 2005 you have to "Add a registry key under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx with whatever name you like ( I named mine PostGresql ) with a default value of the directory ( trailing backslash ) where the assembly resides. " Thanks Edward Diener for tip.
 </p>
+
+
+<p>As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
+</p>
+
+
+<h3> 3.3 ConnectionPool considerations </h3>
+
+<p> Npgsql will clear all connections from pool whenever it finds any problems with a connection. This will allow easy recovery of any instability problems which can occur while the connection is in pool. Although this strategy may not have the best performance as other connections may still be ok, this behavior will assure that pool will stay consistent in case of problems. Two methods to clear pools are available through NpgsqlConnection: ClearPool and ClearAllPools. You can use them to clear pool manually.
+
 
 <h2> 4. Current Npgsql Status </h2>
 
@@ -1390,8 +1537,14 @@ As result you will have an icon named NpgsqlConnection in the Data-Tab of the To
         <td>DateTime</td>
     </tr>
     <tr class="H2">
-        <td>timestamp, timestamptz</td>
+        <td>timestamp</td>
         <td>Timestamp</td>
+        <td>DateTime</td>
+        <td>DateTime</td>
+    </tr>
+    <tr class="H2">
+        <td>timestamptz</td>
+        <td>TimestampTZ</td>
         <td>DateTime</td>
         <td>DateTime</td>
     </tr>
