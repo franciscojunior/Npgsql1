@@ -7,7 +7,7 @@ Imports System.Runtime.InteropServices
 <Assembly: AssemblyDescription("")>
 <Assembly: AssemblyCompany("Npgsql Development Team")> 
 <Assembly: AssemblyProduct("ImageMake")> 
-<Assembly: AssemblyCopyright("2005 (C) Npgsql Development Team")> 
+<Assembly: AssemblyCopyright("2002-2006 (C) Npgsql Development Team")> 
 <Assembly: AssemblyTrademark("")>
 <Assembly: AssemblyCulture("")>
 

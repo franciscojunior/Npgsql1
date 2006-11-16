@@ -1,8 +1,8 @@
 '
 ' Author:
-'	Hiroshi Saito.(saito@inetrt.skcapi.co.jp)
+'	Hiroshi Saito.(z-saito@guitar.ocn.ne.jp)
 '
-'	Copyright (C) 2002-2005 The Npgsql Development Team
+'	Copyright (C) 2002-2006 The Npgsql Development Team
 ' This library is free software; you can redistribute it and/or
 ' modify it under the terms of the GNU Lesser General Public
 ' License as published by the Free Software Foundation; either
@@ -508,7 +508,7 @@ Friend Class Form1
         Me.Label7.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Label7.Size = New System.Drawing.Size(360, 16)
         Me.Label7.TabIndex = 21
-        Me.Label7.Text = "Copyright(C) 2002-2005 Npgsql Developer Group"
+        Me.Label7.Text = "Copyright(C) 2002-2006 Npgsql Developer Group"
         Me.Label7.TextAlign = System.Drawing.ContentAlignment.TopCenter
         '
         'Label4
@@ -675,7 +675,7 @@ Friend Class Form1
         Me.Name = "Form1"
         Me.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.StartPosition = System.Windows.Forms.FormStartPosition.Manual
-        Me.Text = "ImageMake(Npgsql) Powerd by PostgreSQL"
+        Me.Text = "ImageMake(Npgsql) Powered by PostgreSQL"
         Me.GroupBox1.ResumeLayout(False)
         Me.Picture1.ResumeLayout(False)
         Me.ResumeLayout(False)
