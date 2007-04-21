@@ -81,49 +81,49 @@ p.headnotes {
 
 <h2> 1. What is Npgsql? </h2>
 
-<p> <a href="http://pgfoundry.org/projects/npgsql/">Npgsql </a> is a .Net Data Provider for <a href="http://www.postgresql.org">Postgresql Database Server</a>. </p>
+<p> <a href="http://pgfoundry.org/projects/npgsql/">Npgsql </a> is a .Net Data Provider for the <a href="http://www.postgresql.org">PostgreSQL Database Server</a>. </p>
 
-<p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to use a PostgreSQL server to send and receive data. It is developed using the
-guidelines specified in the .Net docs.</p>
+<p> It allows a .Net client application (Console, WinForms, ASP.NET, Web Services...) to send and receive data with a PostgreSQL server. It is actively developed based on the
+guidelines specified in the .Net documentation.</p>
 
 <h2> 2. How to get and compile Npgsql </h2>
 
 <h3> 2.1 Binary package </h3>
-<p> You can get Npgsql compiled for MS.Net and Mono in the <a href="http://pgfoundry.org/frs/?group_id=1000140">Files section </a> of the project.</p>
-<p> Inside this package you will have the following directory layout: </p>
+<p> You can download Npgsql compiled for MS.Net and Mono in the <a href="http://pgfoundry.org/frs/?group_id=1000140">Files section </a> of the project.</p>
+<p> Inside this package, you will find the following directory layout: </p>
 <p> Npgsql/bin/docs - Documentation </p>
 <p> Npgsql/bin/docs/apidocs - API Documentation </p>
 <p> Npgsql/bin/ms1.1 - Npgsql compiled for MS.Net 1.1 </p>
 <p> Npgsql/bin/mono - Npgsql compiled for Mono </p>
 
-<p>As soon as Npgsql is released for other platforms/versions, they will be added accordingly to this layout.<p>
+<p>As soon as Npgsql is released on other platforms/versions, they will be added accordingly to this layout.<p>
 
 <h3> 2.2 Installing binary package </h3>
 
-<p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be put in the same directory the application is, unless you specify another 
-directory as a path to private components through a configuration file (using the probing element). Please, see the .Net docs for information
-on how the runtime probes (locates) assemblies to be loaded. There is also a section called "Path to Private Components" </p>
+<p> In order for the .Net Runtime to locate the Npgsql.dll library, this file must be placed in your application directory- unless you specify another 
+directory as a path to private components through a configuration file (using the probing element). Please see the .Net docs for information
+on how the runtime probes (locates) assemblies to be loaded.  Specifically, see the section called "Path to Private Components" </p>
 <p> In ASP.NET and Web Services .Net Applications, there must be a directory called "bin" below the ASP.NET root application directory.
-So, for example the application directory is called "ASPNETApplication", Npgsql.dll and Mono.Security.dll must be placed in the "ASPNETApplication\bin" directory.
-If it's not, you will get a lot of compiling errors when trying to use Npgsql.</p>
-<p> You can also put the Npgsql assembly in the Global Cache Assembly. Since 0.4 version, Npgsql is strongly signed which means you can
-use gacutil to install it. Issue the following command to do it:</p>
+For example, if the application directory is called "ASPNETApplication", then Npgsql.dll and Mono.Security.dll must be placed in the "ASPNETApplication\bin" directory.
+If these files are not in the right directory, you can expect to see the compiler generate errors on code that uses Npgsql classes.</p>
+<p> Alternatively, you can put the Npgsql assembly in the Global Assembly Cache (GAC). Since version 0.4, Npgsql is strongly signed- meaning that you can
+use "gacutil" to install it. Simply issue the following command:</p>
 <pre class="CodeBox">
 gacutil -i Npgsql.dll
 </pre>
 
-<p> Please, refer to "Installing an Assembly in the Global Cache Assembly" section of MSDN docs for more help.
+<p> Please refer to "Installing an Assembly in the Global Cache Assembly" section of MSDN docs for more information.  Use of the GAC has implications
+that you should fully understand before going down this path.
 
-<p> Alternatively, you can install Npgsql on GAC (Global Assembly Cache) in order to all your applications have access to it without needing to copy Npgsql.dll all times. Note that put Npgsql in GAC is required if you want to use Npgsql design time support on VS.Net. 
+<p> Note that placing Npgsql in the GAC is required for Npgsql design time support in Visual Studio .Net. 
 
-<p> Note that Npgsql compiled for Mono doesn't need Mono.Security.dll as it is already integrated in Mono Runtime.</p>
+<p> (Npgsql compiled for Mono doesn't require Mono.Security.dll as it's already integrated in the Mono Runtime.)</p>
 
+<p> Once you copy or set up the assemblies, you're ready to try the examples- jump to <a href="#section3">section 3</a>. </p>
 
-<p> After that, you are set to try the examples. Just go to <a href="#section3">section 3</a>. </p>
+<h3> 2.3 Getting Npgsql from CVS </h3>
 
-<h3> 2.3 Getting Npgsql from cvs </h3>
-
-<p> To get Npgsql from cvs use the following info in your cvs client: </p>
+<p> To get Npgsql from CVS, use the following info in your CVS client: </p>
 Server: cvs.pgfoundry.org
 <br />
 Repository: /cvsroot/npgsql
@@ -136,19 +136,19 @@ Password:
 
 
 
-<p> If you are using cvs from command line, just do that: </p>
+<p> If you are using CVS from a command line, use this command: </p>
 <pre class="CodeBox">
 cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql login
 </pre>
 
 <br />
-Hit Enter key when prompted for a password
+Hit the Enter key when prompted for a password (none required):
 <br />
 <pre class="CodeBox">
 cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql checkout Npgsql
 </pre>
 
-<p> You will start to get the code: </p>
+<p> The code will begin transferring: </p>
 
 <pre class="CodeBox">
 $ cvs -d :pserver:anonymous@cvs.pgfoundry.org:/cvsroot/npgsql login
@@ -168,42 +168,44 @@ U Npgsql/docs/SuggestedReadings.htm
 
 <h3> 2.4 Compiling Npgsql</h3>
 
-<p>The officially supported method to compile Npgsql is using <a href="http://nant.sf.net">NAnt</a>.</p>
+<p>The officially supported method for compiling Npgsql is <a href="http://nant.sf.net">NAnt</a>.</p>
 
-<p>You just need to run <i>nant</i> from Npgsql/src/Npgsql folder and you are done. It will create a folder called build where it will put the assembly in the build/ms folder.</p>
+<p>Simply run <i>nant</i> from  the Npgsql/src/Npgsql folder and you're done. It will create a folder named "build"; see the "build/ms" folder for the resulting assemblies.</p>
 
-<p>To run nunit tests, you just need to call <i>nant tests</i>. Note that first you need to setup database for tests by executing the add_* scripts in the Npgsql/src/testsuite/noninteractive folder.
+<p>To run nUnit tests, simply run <i>nant tests</i>. Note that first you need to prepare the database for testing by executing "add_* scripts" in the Npgsql/src/testsuite/noninteractive folder.
 
-<p>We will provide solution projects for other development platforms like VS.Net, SharpDevelop and MonoDevelop. We already received reports of success solution projects and will make them available soon.</p>
+<p>We will provide solution projects for other development platforms such as Visual Studio .Net, SharpDevelop, and MonoDevelop.  (We have already received reports of successful solution projects created for these other environments and will make them available soon.)</p>
 
 <h2> <a name="section3"></a>3. Npgsql Usage </h2>
 
-<p> This section explains Npgsql usage in a .Net Application. If you are used to developing Data Access applications using the
-Sql Server, OleDB or ODBC.NET providers, using Npgsql is very similar.</p>
-<p> In order to use Npgsql, server must be listening to TCP/IP connections. TCP connections are enabled by default on 8.0 servers. Previous versions should have postmaster started with -i option. Check Postgresql Documentation for details: <a href="http://www.postgresql.org/docs/7.4/static/postmaster-start.html">http://www.postgresql.org/docs/7.4/static/postmaster-start.html</a> </p>
-<p> Note: Npgsql is still under development. Only features currently supported will be demonstrated. As Npgsql matures, more functionality will be available to be used. </p>
+<p> This section explains Npgsql usage in a .Net application (Windows or ASP.NET). If you have experience developing data access applications using the
+Sql Server, OleDB or ODBC.NET providers, you will find that Npgsql is very similar, in most respects equally or more robust, and backed by an active community.</p>
+<p> In order to use Npgsql, the PostgreSQL server must be listening to TCP/IP connections. TCP connections are enabled by default on 8.0 + servers. Previous versions should have postmaster started with the "-i" option. Check PostgreSQL Documentation for details: <a href="http://www.postgresql.org/docs/7.4/static/postmaster-start.html">http://www.postgresql.org/docs/7.4/static/postmaster-start.html</a> </p>
+<p> Note: Npgsql is still under development. Only features currently supported will be demonstrated.  As Npgsql matures, more functionality will become available. </p>
 
 <h3> Adding required namespaces to your source file </h3>
 
-<p> First, to use Npgsql objects more easily, you have to tell the compiler to use the Npgsql namespace. It will also be needed to use the
-System.Data namespace as a lot of classes used for data manipulation reside in it. To do that, in C#, you use the using directive: </p>
+<p> First, in order to access Npgsql objects more easily (i.e. Intellisense in Visual Studio .Net), you need to instruct the compiler 
+to use the Npgsql namespace. As you manipulate data retrieved by Npgsql, classes in System.Data will also be required.
+In C#, add this directive to the appropriate page or class: </p>
 
 <pre class="CodeBox">
 using System.Data;
 using Npgsql;
 </pre>
 
-<p> If you are using ASP.NET, you may put the following lines in top of your .aspx page:
+<p> If you are using ASP.NET without code-behind files, you may need to add the following lines in top of your ASPX pages:
 
 <pre class="CodeBox">
 <%@ Assembly name="System.Data" %>
 <%@ Assembly name="Npgsql" %>
 </pre>
 
-You can see more details about that on <a href="http://www.mono-project.com/FAQ:_ASP.NET">FAQ Mono Page about ASP.NET</a>
+You can read more details here <a href="http://www.mono-project.com/FAQ:_ASP.NET">FAQ Mono Page about ASP.NET</a>
 
 <h3> Establishing a connection </h3>
-<p>To establish a connection to a server located at ip 127.0.0.1, port 5432, as the user joe, with the password secret, using the database joedata, you use the NpgsqlConnection as:</p>
+<p>To establish a connection to a server located at IP 127.0.0.1, port 5432, 
+as user "joe", with password "secret", on database "joedata", open NpgsqlConnection with the following connection string:</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -221,12 +223,12 @@ public class NpgsqlUserManual
 </pre>
 
 <h3> Connection String parameters </h3>
-<p> When establishing a connection, NpgsqlConnection accepts many parameters which can be used to modify its behavior. Here is the list of current parameters you can tweak: (From NpgsqlConnection source) </p>
+<p> When establishing a connection, NpgsqlConnection accepts many parameters which modify its behavior.  Here is the list of current parameters you can tweak: (From NpgsqlConnection source) </p>
 
 <pre class="CodeBox">
  Gets or sets the string used to connect to a PostgreSQL database.
         /// Valid values are:
-        /// Server:                     Address/Name of Postgresql Server;
+        /// Server:                     Address/Name of PostgreSQL Server;
         /// Port:                       Port to connect to;
         /// Protocol:                   Protocol version to use, instead of automatic; Integer 2 or 3;
         /// Database:                   Database name. Defaults to user name if not specified;
@@ -240,23 +242,23 @@ public class NpgsqlUserManual
         /// Timeout:                    Time to wait for connection open in seconds. Default is 15.
         /// CommandTimeout:             Time to wait for command to finish execution before throw an exception. In seconds. Default is 20.
         /// Sslmode:                    Mode for ssl connection control. 
-        /// ConnectionLifeTime:         Time to wait before closing unused connections in the pool in seconds. Default is 15.
+        /// ConnectionLifeTime:         Time to wait before closing unused connections in the pool, in seconds. Default is 15.
         /// SyncNotification:           Specifies if Npgsql should use synchronous notifications
-        Encoding can be ASCII or UNICODE. If your application uses characters with accents and with default settings it doesn't work, try changing that.
-        Min pool size when specified will make NpgsqlConnection pre allocates this number of connections with the server.
+        Encoding can be ASCII or UNICODE. If your application uses characters with accents and it doesn't work with the default settings, try changing it.
+        Min pool size, when specified, will make NpgsqlConnection pre-allocate the specified number of connections with the server.
         Sslmode can be one of the following values: 
-            Prefer - If it is possible to connect using ssl, it will be used.
-            Require - If an ssl connection cannot be made, an exception is thrown.
-            Allow - Not supported yet, just connects without ssl.
-            Disable - No ssl connection is done.
-            Default is Disable.
+            Prefer - If it is possible to connect via SLL, SSL will be used.
+            Require - If an SSL connection cannot be established, an exception is thrown.
+            Allow - Not supported yet; connects without SSL.
+            Disable - No SSL connection is attempted.
+            The default value is "Disable".
         
 </pre>
 
 <h3> Using NpgsqlCommand to add a row in a table </h3>
-<p>The previous example doesn't do anything useful. It only connects to the database and disconnects. If there is an error, a NpgsqlException is thrown.
-Now, suppose there is a table called table1 with two fields a and b both of type int. If you want to add the tuple (1, 1) in this table you could send the 
-insert statement as follows:</p>
+<p>The previous example doesn't do anything useful. It merely connects to the database and disconnects. If there is an error, a NpgsqlException is thrown.
+Now, suppose you have a table called "table1" with two fields, "fielda" and "fieldb", both of type int. If you want to insert tuple (1, 1) in this table you can send the 
+insert statement:</p>
 
 <pre class="CodeBox">
 using System;
@@ -288,8 +290,12 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-<h3> Getting a single result using NpgsqlCommand.ExecuteScalar() method </h3>
-<p> To execute statements which return just one value you use the ExecuteScalar() method of the Command object:</p>
+ExecuteNonQuery() is ideally suited for insert and update queries because it returns an integer indicating the number of rows affected
+by the last operation.
+
+<h3> Getting a single result value using the NpgsqlCommand.ExecuteScalar() method </h3>
+<p> In some scenarios, you only need to retrieve a single value (scalar) from a function.  Use the ExecuteScalar() 
+method on a Command object :</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -320,11 +326,14 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-Other queries could also be used, for example "select count(*) from table1". Also, queries that don't return single values
-could be used, but only the first column of the first row would be returned.
+You may also use ExecuteScalar against queries that return a recordset, such as "select count(*) from table1". 
+However, when calling a function that returns a set of one or more records, only the first column of the first row 
+is returned (DataSet.Tables[0].Rows[0][0]).
+In general, any query that returns a single value should be called with Command.ExecuteScalar.  
 
-<h3> Getting full results from a query using NpgsqlCommand.ExecuteReader() method and NpgsqlDataReader object </h3>
-<p> To execute statements which return full results from a query you use the ExecuteReader() method of the NpgsqlCommand object:</p>
+<h3> Getting a full result set with NpgsqlCommand.ExecuteReader() method and NpgsqlDataReader </h3>
+<p> There are several ways to return recordsets with Npgsql.  When you'd like to pass a SQL statement as
+command text and access the results with a memory-efficent DataReader, use the ExecuteReader() method of the NpgsqlCommand object:</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -362,7 +371,8 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-This code assumes there is a table called tablea in the database.
+Note that you can 'daily chain' select statements in a command object's commandtext to retrieve more than one
+record set:  "select * from tablea; select * from tableb"
 
 <p> <font color="red"> Warning: </font> There is a known issue when calling ExecuteReader and large tables. Currently Npgsql gets all data from table before returning. If you are experiencing bad performance in such cases, you may need to use a server cursor to page through rows. For that, you can use a code like the following:</p>
 
@@ -411,12 +421,13 @@ public static class NpgsqlUserManual
 
 </pre>
 
-<p> We are working to get that done automatically on next versions.</p>
-
+<p> We are working to do this automatically in the next version.</p>
 
 <h3> Using parameters in a query </h3>
-<p> You can also send a parameterized query to the server using NpgsqlParamenter and NpgsqlParamenterCollection objects.
-A parameter is a string prefixed by : in the query string. The example below uses a parameter called column1.</p>
+<p> Parameters let you dynamcially insert values into SQL queries at run-time.  Generally speaking, parameter
+binding is the best way to build dynamic SQL statements in your client code.  Other approaches, such as basic string concatenation,
+are less robust and can be vulerable to SQL injection attacks.
+To add parameters to your SQL query string, prefix the paramter name with ":". The example below uses a parameter named value1 (see ":value1").</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -430,10 +441,10 @@ public static class NpgsqlUserManual
     conn.Open();
     
     // Declare the parameter in the query string
-    NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = :column1", conn);
+    NpgsqlCommand command = new NpgsqlCommand("select * from tablea where column1 = :value1", conn);
     
     // Now add the parameter to the parameter collection of the command specifying its type.
-    command.Parameters.Add(new NpgsqlParameter("column1", DbType.Int32));
+    command.Parameters.Add(new NpgsqlParameter("value1", DbType.Int32));
 
     // Now, add a value to it and later execute the command as usual.
     command.Parameters[0].Value = 4;
@@ -461,14 +472,15 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-This code assumes a table called tablea with at least a column named column1 of type int4.
+You can also send a parameterized query to the server using NpgsqlParamenter and NpgsqlParamenterCollection objects.)
+This code assumes a table called "tablea" with at least one column named "column1" of type int4.
 
 <h3> Using prepared statements</h3>
-<p> The previous example can also be used to send prepared statements request to server. This way, the query plan is
-create just once and reused by subsequent calls. Note that this feature is only available in server 7.3+ versions. If
-you call it in a server which doesn't support it, Npgsql will silently ignore it. This is good as you can create code which
-calls it but it will only have effect when connected to the supported servers.
-To do it, you just call the Prepare() method of the command.</p>
+<p> The Prepare method lets you optimize the performance of frequently used queries.  Prepare() basically "caches" 
+the query plan so that it's used in subsequent calls.
+(Note that this feature is only available in server 7.3+ versions. If
+you call it in a server which doesn't support it, Npgsql will silently ignore it.)
+Simply call the Prepare() method of the NpgsqlCommand before query execution:</p>
 <pre class="CodeBox">
 using System;
 using System.Data;
@@ -516,7 +528,221 @@ public static class NpgsqlUserManual
 }
 </pre>
 
-This code assumes a table called tablea with at least a column named column1 of type int4.
+This code assumes a table called "tablea" with at least one column named "column1" of type int4.
+
+<h3> Function calling</h3>
+<p> To call a function, set the CommandType property of the NpgsqlCommand object to CommandType.StoredProcedure
+and pass the name of the function you want to call as the query string (CommandText property).</p>
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+
+// This example uses a function called funcC() with the following definition:
+// create function funcC() returns int8 as '
+// select count(*) from tablea;
+// ' language 'sql';
+
+// Note that the return type of select count(*) changed from int4 to int8 in 7.3+ versions. To use this function
+// in a 7.2 server, change the return type from int8 to int4.
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+      
+    try
+    {
+        NpgsqlCommand command = new NpgsqlCommand("funcC", conn);
+        command.CommandType = CommandType.StoredProcedure;
+  					
+        Object result = command.ExecuteScalar();
+  		
+        Console.WriteLine(result);
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+<p>Adding parameters to a PostgreSQL function is similar to our previous examples.  However,
+when specifying the CommandText string, you can exclude parameter names.  Use only the
+function name:</p>
+
+<pre class="CodeBox">
+using System;
+using System.Data;
+using Npgsql;
+
+
+// This example uses a function called funcC with the following definition:
+// create function funcC(int4) returns int8 as '
+// select count(*) from tablea where field_int4 = $1;
+// ' language 'sql';
+
+public static class NpgsqlUserManual
+{
+  public static void Main(String[] args)
+  {
+    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
+    conn.Open();
+    
+      
+    try
+    {
+        NpgsqlCommand command = new NpgsqlCommand("funcC", conn);
+        command.CommandType = CommandType.StoredProcedure;
+        
+ 		command.Parameters.Add(new NpgsqlParameter());
+            
+		command.Parameters[0].DbType = DbType.Int32;
+		command.Parameters[0].Value = 4;
+		
+        Object result = command.ExecuteScalar();
+  		
+        Console.WriteLine(result);
+
+
+    }
+    
+    finally
+    {
+      conn.Close();
+    }
+  }
+}
+</pre>
+
+<p> This code assumes a table called "tablea" with at least one field called "field_int4" of type int4.
+
+<h3>Getting full results in a DataSet object: Using refcursors</h3>
+
+<p>Refcursors are one of the most powerful ways to build functions in Postgres that return
+large result sets to the client.  Using refcursors, a single function can return the results of multiple queries
+to the client in a single round-trip.  Most Npgsql developers will learn that refcursors are quite easy to use once
+you grasp the basic syntax.</p>
+<p>This sample returns two result sets from a function using refcursors. With Npgsql's solid refcursor support, you can 
+get many result sets without having to worry about the internal workings of the refcursor in Postgres.</p>
+Consider the following refcursor-based function:</p>
+
+<pre class="CodeBox">
+CREATE OR REPLACE FUNCTION testrefcursor(int4) RETURNS SETOF refcursor AS
+
+'DECLARE 
+  ref1 refcursor;
+  ref2 refcursor;
+  ref3 refcursor;
+BEGIN
+
+OPEN ref1 FOR 
+ SELECT * FROM table1;
+RETURN NEXT ref1;
+
+OPEN ref2 FOR 
+ SELECT * FROM table2;
+RETURN next ref2;
+
+OPEN ref3 FOR EXECUTE 
+ 'SELECT * FROM table3 WHERE keyfield = ' || $1;
+RETURN next ref3;
+
+RETURN;
+END;'
+LANGUAGE plpgsql;
+</pre>
+
+<p>This function returns the full results of three select statements.  Notice that the
+last select statement is dynamically created on the server.</p>
+
+<p>Now, to call these function and retrieve the data using a DataReader, you should use the 
+following code:</p>
+
+<pre class="CodeBox">
+
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+
+public class c
+{
+    public static void Main(String[] args)
+    {
+                
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Initial Catalog=eeeeee;User id=npgsql_tests;password=npgsql_tests;");
+        conn.Open();
+
+        NpgsqlTransaction t = conn.BeginTransaction();          
+        NpgsqlCommand command = new NpgsqlCommand("testrefcursor", conn);
+        command.CommandType = CommandType.StoredProcedure;
+        
+        NpgsqlDataReader dr = command.ExecuteReader();
+    
+        while(dr.Read())
+        {
+        
+            Console.WriteLine(dr.GetValue(0));
+        }
+
+        dr.NextResult();
+    
+        while(dr.Read())
+        {
+    
+            Console.WriteLine(dr.GetValue(0));
+        }
+        dr.Close();
+        t.Commit();
+        conn.Close();
+    }
+}
+
+</pre>
+
+Alternatively, you can retrieve the results into a DataSet object:
+
+<pre class="CodeBox">
+
+using System;
+using System.Data;
+using Npgsql;
+using NpgsqlTypes;
+
+public class c
+{
+    public static void Main(String[] args)
+    {
+        DataSet myDS;
+        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Initial Catalog=eeeeee;User id=npgsql_tests;password=npgsql_tests;");
+        conn.Open();
+
+        NpgsqlTransaction t = conn.BeginTransaction();          
+        NpgsqlCommand command = new NpgsqlCommand("testrefcursor", conn);
+        command.CommandType = CommandType.StoredProcedure;
+        
+        con.Open();
+        NpgsqlDataAdapter da = new NpgsqlDataAdapter(command);
+        da.Fill(myDS);
+ 
+        t.Commit();
+        conn.Close();
+    }
+}
+
+</pre>
+
+<p> That's it!. One last thing worth noting is that <font color="red"> you have to use a transaction</font> in order for this to work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished (just after you do the function call).</p>
+
+<p> If you have parameters in your function, <font color="red"> assign only the function name </font> to the CommandText property and add parameters to the NpgsqlCommand.Parameters collection as usual. Npgsql will take care of binding your parameters correctly.
+</p>
 
 <h3> Using output parameters in a query </h3>
 <p> Output parameters can be used with Npgsql. Note that Npgsql "simulates" output parameter by parsing the first result set from the execution of a query and translating it to output parameters value. This can be done in two ways: mapped or not. A mapped parsing, tries to match the column name returned by resultset into a parameter with the same name. If a match is found, only the output parameters which has a match will be updated. If a map is not found, the output parameters are updated based on the order they were added to command parameters collection. This mapping is automatic. When parsing resultset, Npgsql tries to find a match. <b>Both Output and InputOutput parameter directions are supported</b>.</p>
@@ -562,105 +788,11 @@ public static class NpgsqlUserManual
 }
 </pre>
 
+<h3> Working with .NET Datasets </h3>
 
-
-<h3> Function calling</h3>
-<p> To call a function, you just set the CommandType property of the NpgsqlCommand object to CommandType.StoredProcedure
-and pass the name of the function you want to call as the query string.</p>
-<pre class="CodeBox">
-using System;
-using System.Data;
-using Npgsql;
-
-
-// This example uses a function called funcC() with the following definition:
-// create function funcC() returns int8 as '
-// select count(*) from tablea;
-// ' language 'sql';
-
-// Note that the return type of select count(*) changed from int4 to int8 in 7.3+ versions. To use this function
-// in a 7.2 server, change the return type from int8 to int4.
-
-public static class NpgsqlUserManual
-{
-  public static void Main(String[] args)
-  {
-    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
-    conn.Open();
-    
-      
-    try
-    {
-        NpgsqlCommand command = new NpgsqlCommand("funcC()", _conn);
-        command.CommandType = CommandType.StoredProcedure;
-  					
-        Object result = command.ExecuteScalar();
-  		
-        Console.WriteLine(result);
-
-
-    }
-    
-    finally
-    {
-      conn.Close();
-    }
-  }
-}
-</pre>
-
-<p>In the same way as clear queries, you can specify parameters to function calls.</p>
-
-<pre class="CodeBox">
-using System;
-using System.Data;
-using Npgsql;
-
-
-// This example uses a function called funcC() with the following definition:
-// create function funcC(int4) returns int8 as '
-// select count(*) from tablea where field_int4 = $1;
-// ' language 'sql';
-
-public static class NpgsqlUserManual
-{
-  public static void Main(String[] args)
-  {
-    NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Port=5432;User Id=joe;Password=secret;Database=joedata;");
-    conn.Open();
-    
-      
-    try
-    {
-        NpgsqlCommand command = new NpgsqlCommand("funcC(:a)", _conn);
-        command.CommandType = CommandType.StoredProcedure;
-        
-        command.Parameters.Add(new NpgsqlParameter("a", DbType.Int32));
-  					
-        command.Parameters[0].Value = 4;
-		
-        Object result = command.ExecuteScalar();
-  		
-        Console.WriteLine(result);
-
-
-    }
-    
-    finally
-    {
-      conn.Close();
-    }
-  }
-}
-</pre>
-
-<p> This code assumes a table called tablea with at least a field called field_int4 of type int4.
-
-
-<h3> Working with Datasets </h3>
-
-<p> You can use Npgsql when working with Datasets. This allows you to do changes in the dataset and have them propagated back to 
-backend. The below example shows how to add a row using the Dataset:</p>
+<p> Npgsql lets you propogate changes to a .NET DataSet object back to the
+database. The example below demonstrates the insertion of a record into a DataSet, 
+followed by a call to update the associated database:</p>
 <pre class="CodeBox">
 
 // This method expects the following table in the backend:
@@ -714,12 +846,12 @@ void AddWithDataSet(NpgsqlConnection conn)
 		
 </pre>
 
-<h3> Working with strong typed datasets </h3>
+<h3> Working with strongly typed datasets </h3>
 
-<p> This example will show how to use a strong typed dataset generated with xsd. To do so, we need a .xsd file specifing the 
-schema to the strong dataset. You can generate this file by hand, or you can use xsd to generate it for you. To have xsd generate
-the .xsd for you, you have to suppy it with a .xml file which it will infer the .xsd from. We can use a .xml file generated with 
-a DataAdapter.WriteXml() method:</p>
+<p> This example demonstrates the use of a strongly typed dataset generated by XSD. 
+To start, we need an XSD file specifing the appropiate schema.  You can generate this file by hand, or you can use an XSD tool to generate it for you. 
+In order to let NpgsqlDataAdapter generate XSD, you need to suppy it with an XML file; the XML file allows the inference of an XML schema. 
+</p>
 <pre class="CodeBox">
 public void GenerateXmlFromDataSet(NpgsqlConnection conn)
 {
@@ -737,7 +869,7 @@ public void GenerateXmlFromDataSet(NpgsqlConnection conn)
 </pre>
 
 
-<p> This will give us a file which looks similar to this:</p>
+<p> The example code results in a file which looks similar to:</p>
 
 <pre class="CodeBox">
 &lt;?xml version="1.0" standalone="yes"?&gt;
@@ -766,13 +898,13 @@ public void GenerateXmlFromDataSet(NpgsqlConnection conn)
 
 </pre>
 
-<p> This file will be used with xsd to generate the .xsd file with the following command:</p>
+<p> The following command uses the file to generate XSD:</p>
 <pre class="CodeBox">
 xsd StrongDataSetFeed.xml
 </pre>
 
-<p> xsd will produce an xml schema which will have all types specified as string, we just change the xsd to use the 
-correct types and have a .xsd file similar to this:</p>
+<p> XSD will produce an XML schema in which all types are specified as string.  As a consequence, we need to
+change the XSD to specify the correct types, resulting in an XSD file similar to:</p>
 <pre class="CodeBox">
 &lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata"&gt;
@@ -798,13 +930,14 @@ correct types and have a .xsd file similar to this:</p>
 </pre>
 
 
-<p> With this file we issue the following command to have xsd generate the strong dataset:</p>
+<p> Given the above file, the following command generates a strongly typed dataset:</p>
 
 <pre class="CodeBox">
 xsd StrongDataSetFeed.xsd /dataset
 </pre>
 
-<p>Which will generate a file we can compile to get an assembly with the strong dataset. To use it, we do the following:</p>
+<p>This command generates a file that compiles into an assembly for the strongly typed dataset. 
+It's used in the example below:</p>
 
 <pre class="CodeBox">
 using System;
@@ -836,7 +969,7 @@ public class t
 
 <h3>Working with binary data and bytea datatype</h3>
 
-<p> This sample takes a filename as argument, inserts its contents to a table called tableByteA which contains a field called field_bytea of type bytea and a field called field_serial of type serial. Later gets its contents and write a new file with the sufix "database" in its end.</p>
+<p> This sample takes a filename as an argument, inserts its contents into a table called "tableByteA".  The table contains a field named "field_bytea" of type bytea and a field named "field_serial" of type serial. Next, it retrieves the field contents and writes a new file with the suffix "database".</p>
 <p> table schema: 
     create table tableBytea (field_serial serial, field_bytea bytea)
 </p>
@@ -904,7 +1037,7 @@ public class t
 
 <h3>Working with large object support</h3>
 
-<p> This sample is the same as the bytea code support above. The difference is that we will use the large object support of Postgresql. This sample stores the file in postgresql and later removes it. As bytea sample, it writes a file with a "database" suffix.
+<p> This sample is nearly identical to the bytea code above.  It stores the retrieved file in Postgresql, and then later removes it. As with the bytea sample, it writes a file with a "database" suffix.
 
 </p>
 
@@ -977,7 +1110,8 @@ public class c
 </pre>
 
 
-<p> Another example, contributed by Mirek (mirek at mascort dot com dot pl), uses the large object support to get an image from database and shows it in a form. </p>
+<p> Another example, contributed by Mirek (mirek at mascort dot com dot pl), uses 
+large object support to get an image from the database and display it in a form on the client. </p>
 
 <pre class="CodeBox">
 
@@ -1052,84 +1186,6 @@ public Image pobierzRysunek(int idtowaru)
 pictureBox1.Image = Image pobierzRysunek(1); 
 </pre>
 
-<h3>Working with refcursors</h3>
-
-<p> This sample will show how you can get data from functions which return refcursors. With support provided by Npgsql you can get many resultsets from these functions without have to worry about how to work with refcursors.</p>
-<p> For example porpouses, consider the following refcursor-returning function:</p>
-
-<pre class="CodeBox">
-CREATE OR REPLACE FUNCTION testrefcursor() RETURNS SETOF refcursor AS
-
-'DECLARE ref1 refcursor;
-ref2 refcursor;
-BEGIN
-
-OPEN ref1 FOR SELECT 1;
-
-RETURN NEXT ref1;
-
-OPEN ref2 FOR SELECT 2;
-
-RETURN next ref2;
-
-RETURN;
-END;'
-LANGUAGE plpgsql;
-</pre>
-
-<p>Note that this function is really very simple as it just returns single-row resultsets. You can change the select 1 for any select you want.</p>
-
-<p>Now, to call these function and retrieve the data, you should use the following code:</p>
-
-
-<pre class="CodeBox">
-
-using System;
-using System.Data;
-using Npgsql;
-using NpgsqlTypes;
-
-public class c
-{
-    public static void Main(String[] args)
-    {
-                
-        NpgsqlConnection conn = new NpgsqlConnection("Server=127.0.0.1;Initial Catalog=eeeeee;User id=npgsql_tests;password=npgsql_tests;");
-        conn.Open();
-
-        NpgsqlTransaction t = conn.BeginTransaction();          
-        NpgsqlCommand command = new NpgsqlCommand("testrefcursor", conn);
-        command.CommandType = CommandType.StoredProcedure;
-        
-        NpgsqlDataReader dr = command.ExecuteReader();
-    
-        while(dr.Read())
-        {
-        
-            Console.WriteLine(dr.GetValue(0));
-        }
-
-        dr.NextResult();
-    
-        while(dr.Read())
-        {
-    
-            Console.WriteLine(dr.GetValue(0));
-        }
-        dr.Close();
-        t.Commit();
-        conn.Close();
-    }
-}
-
-</pre>
-
-<p> That's it!. One last thing worth noting is that <font color="red"> you have to use transaction</font> in order to this work. This is necessary to prevent cursors returned by refcursor function from closing after the implicity transaction is finished just after you do the function call.</p>
-
-<p> If you have parameters in your function, <font color="red"> you still have to put just the function name </font> as command text and add parameters to NpgsqlCommand.Parameters collection as usual. Npgsql will take care of using your parameters correctly.
-</p>
-
-
 <h3>Retrieving last inserted id on a table with serial values</h3>
 
 <p> This example was contributed by Josh Cooley when answering an <a href="http://pgfoundry.org/forum/forum.php?thread_id=943&forum_id=519">user question</a> on Npgsql Forums. This code assumes you have the following table and function in your database:</p>
@@ -1194,7 +1250,8 @@ public class c
 
 <h3>Cancelling a command in progress </h3>
 
-<p> Npgsql is able to ask server to cancel commands in progress. To do that, you have to call Cancel method of NpgsqlCommand. Note that this has to be done with another thread as the main thread will be blocked waiting for command to finish. Also, this main thread will raise an exception due to user cancellation. The error code will be 57014. Here is a sample code which demonstrates how to do that. This code assumes there is a function called funcwaits which do a lot of work:</p>
+<p> Npgsql is able to ask the server to cancel commands in progress. To do this, call the NpgsqlCommand's Cancel method. Note that another thread must handle the request as the main thread will be blocked waiting for command to finish. Also, the main thread will raise an exception as a result of user cancellation. (The error code is 57014.) 
+See the following code which demonstrates the technique:</p>
 
 <pre class="CodeBox">
 using System;
@@ -1273,15 +1330,15 @@ public class c
 
 <h3>Working with Notifications</h3>
 
-<p> Npgsql allows user to receive events based on notifications sent by backend server. There are two ways of receive them with Npgsql: asynchronously or synchronously. Synchronous notification is only supported by Npgsql 1.0 and above.</p>
+<p> Npgsql allows user to receive events based on notifications sent by a server. There are two ways to receive notications with Npgsql: asynchronously or synchronously. Synchronous notification is only supported by Npgsql 1.0 and above.</p>
 
 <h4> Asynchronous notifications </h4>
 
-This is the default notification mechanism used in Npgsql. It is called asynchronous because Npgsql doesn't receive the notification as soon as the event which generated it inside backend server is executed. Npgsql receives it on next server interation. This next interation occurs when Npgsql sends the next command which could be from few seconds to many hours later. With this in mind, users have to keep poling server to receive notifications as soon as possible. This could be done sending empty commands to server. ie.: ";"
+This is the default notification mechanism used in Npgsql. It is called asynchronous because Npgsql doesn't receive a notification upon execution of the event which generated it on the server. Npgsql receives the notification on the next instance of client interaction with the server.  This interaction actually occurs when Npgsql sends a subsequent command to the server- which might consist of a few seconds to many hours later. With this in mind, most users will need to actively poll the server in order to recieve notifications in a timely matter. One approach involves polling via empty commands such as ";"
 
 <h4> Synchronous notifications </h4>
 
-Starting with Npgsql 1.0 there is support for synchronous notifications. When working in this mode, as soon as server sends the notification, Npgsql is able to receive it and deliver it to client. All this is done without any other interation from client.
+Starting with Npgsql 1.0, there is support for synchronous notifications. When working in this mode, Npgsql is able to receive a notificaton upon its instantiation and deliver it to client. All this is done without any additional interaction between the client and server (as described above).
 
 
 The code to receive the notification is the same for both modes:
@@ -1324,12 +1381,12 @@ public class c
 
 </pre>
 
-<p> This code registers to listen for a notification and raises the notification to test it will be delivered to NotificationSupportHelper method.</p>
+<p> This code registers to listen for a notification and raises the notification.  It will be delivered to the NotificationSupportHelper method.</p>
 
 
 <h3> 3.1 Using Npgsql Logging support </h3>
 
-<p> Sometimes it is necessary to trace Npgsql's behaviour to track errors. Npgsql can log messages to a specified file or to the console or both.
+<p> Sometimes it's necessary to trace Npgsql's behaviour to track errors.  Npgsql can log messages to a specified file, to the console, or to both.
 
 <p> There are three levels of logging: <br/>
 <ul>
@@ -1339,7 +1396,7 @@ public class c
 </ul>
 </p>
 
-<p> The following NpgsqlEventLog static properties may also be used:
+<p> The following NpgsqlEventLog static properties may also be specified:
 <ul>
   <li> Level - Can be one of the LogLevel enum values: None, Normal, Debug. </li>
   <li> LogName - Full path of the file where to log into. </li>
@@ -1347,7 +1404,7 @@ public class c
 </ul>
 </p>
 
-<p> The example below shows how to log to the console and a file using the level Debug: </p>
+<p> The example below shows you how to log data to the console and to a file using level "Debug": </p>
 
 <pre class="CodeBox">
 using System.Data;
@@ -1408,38 +1465,42 @@ Connection completed
 Entering NpgsqlConnection.Close()
 </pre>
 
-<p>I used the Debug level to show that a lot of information can be obtained. Of course, using the Normal level would be less verbose.
-Also, this same information was added to the file NpgsqlTests.LogFile.</p>
+<p>I used the "Debug" level to show that a lot of information can be obtained. Of course, the "Normal" level is less verbose.
+(This data was written to file NpgsqlTests.LogFile.)</p>
 
 <h3> 3.2 Npgsql design time support - VS.Net support </h3>
 
 <p>
 Npgsql 0.6 and higher provide initial design time support.
-This means that you can drag and drop a NpgsqlConnection in the Form-Designer of Visual Studio .NET as you are used to with SqlConnections or OleDbConnections.<br>
-There is also a Dialog to edit and validate the ConnectionString
+This means that you can drag and drop a NpgsqlConnection in the Forms Designer of Visual Studio .NET (just like with SqlConnections or OleDbConnections).<br>
+In addition, a dialog is available for easily editing and validating the ConnectionString.
 </p>
 <p>To do so you must:
 <ol>
-	<li>Install Npgsql.dll into the gac</li>
+	<li>Install Npgsql.dll into the GAC</li>
 	<li>Add a new Registry-Key below 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\AssemblyFolders' and set 
-	it's default value to the path of your Npgsql.dll</li>
+	its default value to the path of your Npgsql.dll</li>
 	<li>Open Visual Studio .NET</li>
-	<li>Right-click the "Data"-Tab of the Toolbox</li>
-	<li>Click add/remove element</li>
-	<li>On the .Net-Tab select NpgsqlConnection</li>
+	<li>Right-click the "Data" tab in the toolbox</li>
+	<li>Click "Add/Remove Element"</li>
+	<li>On the .Net tab, select NpgsqlConnection</li>
 </ol>
 
-For VS.Net 2005 you have to "Add a registry key under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx with whatever name you like ( I named mine PostGresql ) with a default value of the directory ( trailing backslash ) where the assembly resides. " Thanks Edward Diener for tip.
+For VS.Net 2005 you have to "Add a registry key under HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx with whatever name you like ( I named mine PostgreSQL ) with a default value of the directory ( trailing backslash ) where the assembly resides. " Thanks Edward Diener for tip.
 </p>
 
 
-<p>As result you will have an icon named NpgsqlConnection in the Data-Tab of the Toolbox
+<p>As result you will have an icon named NpgsqlConnection in the "Data" tab of the toolbox.
 </p>
 
 
 <h3> 3.3 ConnectionPool considerations </h3>
 
-<p> Npgsql will clear all connections from pool whenever it finds any problems with a connection. This will allow easy recovery of any instability problems which can occur while the connection is in pool. Although this strategy may not have the best performance as other connections may still be ok, this behavior will assure that pool will stay consistent in case of problems. Two methods to clear pools are available through NpgsqlConnection: ClearPool and ClearAllPools. You can use them to clear pool manually.
+<p> Npgsql will clear all connections from the pool whenever it finds any problems with a connection. 
+This will allow easy recovery from any instability problems which might occur.  Although this strategy may not have 
+the best performance implications, it will ensure that the pool remains stay consistent 
+when problems arise. Two methods to clear the pools are available through NpgsqlConnection: ClearPool and ClearAllPools. 
+You can use them to clear the pool manually.
 
 
 <h2> 4. Current Npgsql Status </h2>
